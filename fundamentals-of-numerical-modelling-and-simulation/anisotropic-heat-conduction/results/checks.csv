@@ -1,0 +1,7 @@
+check,value,tolerance,passed,establishes
+"V1 course worked solution (rod, 4 steps)",max |dT| = 4.70e-05 C,<= 5e-5 C (half the last tabulated digit),True,the implicit-Euler / central-difference assembly reproduces the course's hand solution
+"V2 exact solution, spatial order (RMS)",1.971 (max norm 1.974),2 +/- 0.1,True,"second-order central differences and the ghost-node insulated boundary for smooth data; the square grid makes x and y interchangeable here, so this test cannot detect an exchange of alpha_x and alpha_y (V5 covers that)"
+"V2 exact solution, temporal order (RMS)",0.979 (max norm 0.979),1 +/- 0.1,True,first-order backward Euler
+V3 energy balance (every plate run),worst relative closure 5.2e-12,<= 1e-10,True,the scheme conserves energy: storage change = heat conducted in through the segments
+"V4 units: same case in (cm, h) vs (m, s)","max |dT| = 1.0e-12 K, heat input rel. diff 2.0e-15",<= 1e-8 K and <= 1e-10,True,no hidden unit assumption; Equation 3 gives seconds (m^2 kg/m^3 J/(kg K) / W/(m K) = s)
+"V5 anisotropy orientation (exact discrete solution, dx != dy)","max |dT| = 1.6e-12 K as implemented, 4.7e+00 K with alpha_x and alpha_y exchanged","<= 1e-09 K as implemented, and the exchanged case must exceed it",True,"alpha_x and alpha_y act on the correct derivatives: the solver reproduces the analytic solution of the discrete scheme, and exchanging them in the assembly breaks the match"

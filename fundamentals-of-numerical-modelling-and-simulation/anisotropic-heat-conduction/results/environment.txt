@@ -1,0 +1,11 @@
+started_utc: 2026-09-26T00:06:35+00:00
+command: python run_project.py
+python: 3.10.12
+implementation: CPython
+platform: Linux-6.8.0-138-generic-x86_64-with-glibc2.35
+machine: x86_64
+numpy: 2.2.6
+scipy: 1.15.3
+matplotlib: 3.10.9
+finished_utc: 2026-09-26T00:07:26+00:00
+wall_time_s: 51.5

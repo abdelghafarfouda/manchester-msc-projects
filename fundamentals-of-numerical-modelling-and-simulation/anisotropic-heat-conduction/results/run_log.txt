@@ -1,0 +1,58 @@
+Transient 2-D anisotropic heat conduction (course Assignment (3))
+started 2026-09-26T00:06:35+00:00 on Linux-6.8.0-138-generic-x86_64-with-glibc2.35
+Python 3.10.12, numpy 2.2.6, scipy 1.15.3, matplotlib 3.10.9
+
+1. PROBLEM (all inputs from Assignment (3))
+   plate 1.0 m x 1.0 m, kx = 16.0, ky = 20.0 W/(m K), rho = 7800.0 kg/m^3, cp = 500.0 J/(kg K)
+   alpha_x = 4.1026e-06 m^2/s, alpha_y = 5.1282e-06 m^2/s; T0 = 300.0 K; t_end = 18000 s (5 h)
+   top segment 500 K, bottom segment 300 sin(pi x/L) + 400 K, x in [L/4, 3L/4]; all other boundaries insulated
+
+2. VERIFICATION
+   [PASS] V1 course worked solution (rod, 4 steps): max |dT| = 4.70e-05 C  (tolerance <= 5e-5 C (half the last tabulated digit))
+   (lambda = kappa dt / dx^2 = 0.020875; the tutorial quotes 0.020875)
+   [PASS] V2 exact solution, spatial order (RMS): 1.971 (max norm 1.974)  (tolerance 2 +/- 0.1)
+   [PASS] V2 exact solution, temporal order (RMS): 0.979 (max norm 0.979)  (tolerance 1 +/- 0.1)
+   (for comparison, the one-sided insulated-boundary treatment converges at order 0.955 RMS / 0.830 max)
+   (time-step sensitivity of the spatial order: 1.971 at dt = 0.25 s, 1.989 at dt = 0.0625 s; the finest-grid RMS error falls from 2.506e-03 to 2.405e-03 K)
+   [PASS] V5 anisotropy orientation (exact discrete solution, dx != dy): max |dT| = 1.6e-12 K as implemented, 4.7e+00 K with alpha_x and alpha_y exchanged  (tolerance <= 1e-09 K as implemented, and the exchanged case must exceed it)
+   (analytic eigenvalue lambda_h = 2.403232e-04 1/s on 33 x 17 nodes, 19 steps of 189.4737 s)
+
+3. BASE CASE: assignment grid 13 x 12 nodes, Equation 3 time step
+   Equation 3 dt = 1354.17 s -> 14 equal steps of 1285.71 s to reach exactly 5 h; r_x = 0.760, r_y = 0.798
+   mean temperature after 5 h = 444.947 K
+   corner bottom_left  T = 465.882 K
+   corner bottom_right T = 465.882 K
+   corner top_left     T = 406.592 K
+   corner top_right    T = 406.592 K
+   heat conducted in: top 181.94 MJ/m, bottom 325.39 MJ/m (per metre of depth)
+   units check: Equation 3 gives 1354.1667 s in (m, s) and 1354.1667 s in (cm, h)
+   [PASS] V4 units: same case in (cm, h) vs (m, s): max |dT| = 1.0e-12 K, heat input rel. diff 2.0e-15  (tolerance <= 1e-8 K and <= 1e-10)
+
+4. GRID SENSITIVITY (Equation 4, criterion 0.2 %)
+   (a) assignment study: nx refined, ny = 12
+       13 x 12: dt =  1285.71 s, steps =   14, T_avg = 444.9474 K, change = nan %
+       17 x 12: dt =   750.00 s, steps =   24, T_avg = 444.7326 K, change = 0.0483 %
+       33 x 12: dt =   189.47 s, steps =   95, T_avg = 444.4388 K, change = 0.0661 %
+       65 x 12: dt =    47.49 s, steps =  379, T_avg = 444.3356 K, change = 0.0232 %
+       73 x 12: dt =    37.58 s, steps =  479, T_avg = 444.3278 K, change = 0.0018 %
+   (b) nx and ny refined together (dx, dy halved; dt from Equation 3)
+       13 x  12: dt = 1285.714 s, steps =    14, T_avg = 444.9474 K, change = nan %, heat in = 507.33 MJ/m, energy closure = -8.0e-15, 0.0 s
+       25 x  23: dt =  333.333 s, steps =    54, T_avg = 441.7450 K, change = 0.7249 %, heat in = 525.67 MJ/m, energy closure = 3.6e-14, 0.0 s
+       49 x  45: dt =   84.507 s, steps =   213, T_avg = 439.9595 K, change = 0.4058 %, heat in = 532.74 MJ/m, energy closure = -1.5e-13, 0.1 s
+       97 x  89: dt =   21.152 s, steps =   851, T_avg = 439.0228 K, change = 0.2133 %, heat in = 535.75 MJ/m, energy closure = -1.1e-12, 1.1 s
+      193 x 177: dt =    5.289 s, steps =  3403, T_avg = 438.5441 K, change = 0.1092 %, heat in = 537.13 MJ/m, energy closure = -5.2e-12, 18.5 s
+   assignment study first meets 0.2 % at nx = 17 (ny fixed at 12)
+   joint refinement first meets 0.2 % at 193 x 177
+   ratios of successive changes (joint): 1.79, 1.91, 1.96  (2 = first order, 4 = second order)
+   (c) diagnostic: same problem with both heated segments extended over the full
+       top and bottom edges, which removes the four segment ends
+       13 x  12: T_avg = 463.4103 K, change = nan %
+       25 x  23: T_avg = 464.9162 K, change = 0.3239 %
+       49 x  45: T_avg = 465.3297 K, change = 0.0889 %
+       97 x  89: T_avg = 465.4365 K, change = 0.0229 %
+   ratios of successive changes (diagnostic): 3.64, 3.87
+   [PASS] V3 energy balance (every plate run): worst relative closure 5.2e-12  (tolerance <= 1e-10)
+
+5. RESULTS written to results/
+   finest grid 193 x 177: T_avg(5 h) = 438.544 K, heat in = 537.1 MJ/m (top 190.9, bottom 346.3)
+   checks: 6 of 6 passed; wall time 51.5 s
