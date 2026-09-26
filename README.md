@@ -55,6 +55,3 @@ Each project carries its own licence and its own source attribution. The
 heat-conduction project is MIT licensed, and its `SOURCE_MAP.md` traces every
 input, equation, numerical method and benchmark value to the specific teaching
 material it came from. No course teaching material is redistributed here.
-
-The heat-conduction project is also published on its own at
-[abdelghafarfouda/anisotropic-heat-conduction](https://github.com/abdelghafarfouda/anisotropic-heat-conduction).
