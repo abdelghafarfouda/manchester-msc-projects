@@ -11,6 +11,7 @@ its own.
 | Module | Project | What it does |
 |---|---|---|
 | [Fundamentals of Numerical Modelling and Simulation](fundamentals-of-numerical-modelling-and-simulation) | [anisotropic-heat-conduction](fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction) | Transient 2-D heat conduction in a plate whose thermal conductivity differs in x and y, solved in Python with an implicit finite-difference scheme: five-point central differences in space, backward Euler in time, and one sparse LU factorisation per run. Verified by five checks — a worked benchmark, an exact solution, an energy balance, a unit conversion and an anisotropy-orientation test — and used for a grid-refinement study of the mean plate temperature. |
+| [Advanced Subsurface Modelling](advanced-subsurface-modelling) | [SubsurfaceML](advanced-subsurface-modelling/SubsurfaceML) | CO₂ injection into a sealed, layered saline aquifer. A radial IMPES simulator in Python, with one bottom-hole pressure shared by all layers and verified by 18 analytical and conservation checks, generates 880 synthetic cases; machine-learning surrogates trained on them and tested on 55 reservoirs held out by realisation predict peak pressure build-up with an RMSE of 1.24 MPa (R² = 0.94). A surrogate-based screening of injection schedules is re-simulated, and its failure on one low-permeability reservoir is reported. |
 
 This index lists only the projects currently in the repository. Further module
 projects will be added in the same module-folder / project-folder structure.
