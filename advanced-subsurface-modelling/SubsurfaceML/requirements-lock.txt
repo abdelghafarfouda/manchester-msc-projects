@@ -1,0 +1,20 @@
+# Exact versions that produced results/study, results/demo and their model files
+# (Python 3.11.15, Linux x86_64). ipykernel lets the notebooks run in this environment.
+numpy==2.4.4
+scipy==1.17.1
+pandas==3.0.2
+scikit-learn==1.8.0
+matplotlib==3.10.9
+joblib==1.5.3
+PyYAML==6.0.3
+xgboost==3.2.0
+shap==0.51.0
+imbalanced-learn==0.14.2
+scikit-optimize==0.10.2
+umap-learn==0.5.12
+streamlit==1.64.0
+pytest==9.1.1
+numba==0.67.0
+nbformat==5.11.1
+nbconvert==7.17.1
+ipykernel==7.3.0

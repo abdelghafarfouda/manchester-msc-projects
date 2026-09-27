@@ -1,0 +1,47 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# --- environments ---
+.venv/
+venv/
+env/
+.python-version
+
+# --- tooling caches ---
+.pytest_cache/
+.ipynb_checkpoints/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- supplied course material: teaching files are NOT redistributed ---
+# (they live outside this folder; these rules stop an accidental copy being
+#  committed if anyone drops them in)
+Models/
+"Data Science and machine learning"/
+Data?Science?and?machine?learning/
+course_materials/
+*.zip
+*.pptx
+*.pdf
+!docs/**/*.pdf
+
+# --- run outputs ---
+# results/study, results/demo and results/historical ARE tracked on purpose:
+# they are the verified runs the documentation quotes. Scratch runs are not.
+results/scratch/
+results/tmp*/
+*.log
+!results/**/run.log
