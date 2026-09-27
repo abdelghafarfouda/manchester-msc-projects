@@ -1,0 +1,284 @@
+{
+  "models": {
+    "ffn_phys0_s0": {
+      "lambda": 0.0,
+      "physics": false,
+      "seed": 0,
+      "hidden": [
+        128,
+        128,
+        128
+      ],
+      "n_parameters": 34433,
+      "test": {
+        "n": 12000,
+        "rmse": 0.006285050389564017,
+        "mae": 0.0030698118234049913,
+        "max_abs_err": 0.12910290994517815,
+        "r2": 0.9994913962455471,
+        "mean_h2": 0.00048563400143505914,
+        "median_abs_h": 0.005690655665977484
+      },
+      "extrapolation": {
+        "n": 7931,
+        "rmse": 0.007032002963156148,
+        "mae": 0.004603020506019847,
+        "max_abs_err": 0.08189354832365325,
+        "r2": 0.9890943177903923,
+        "mean_h2": 0.00010735854117709185,
+        "median_abs_h": 0.005940875118014111
+      }
+    },
+    "ffn_phys0_s1": {
+      "lambda": 0.0,
+      "physics": false,
+      "seed": 1,
+      "hidden": [
+        128,
+        128,
+        128
+      ],
+      "n_parameters": 34433,
+      "test": {
+        "n": 12000,
+        "rmse": 0.006088503870741671,
+        "mae": 0.003242073379915264,
+        "max_abs_err": 0.14238822480585056,
+        "r2": 0.9995227090421613,
+        "mean_h2": 0.0005894189891958048,
+        "median_abs_h": 0.0060526501218198525
+      },
+      "extrapolation": {
+        "n": 7931,
+        "rmse": 0.011140966863767449,
+        "mae": 0.007377557591962895,
+        "max_abs_err": 0.10391642148687652,
+        "r2": 0.9726258581655105,
+        "mean_h2": 0.00024595513738545567,
+        "median_abs_h": 0.0094074205254411
+      }
+    },
+    "ffn_phys0_s2": {
+      "lambda": 0.0,
+      "physics": false,
+      "seed": 2,
+      "hidden": [
+        128,
+        128,
+        128
+      ],
+      "n_parameters": 34433,
+      "test": {
+        "n": 12000,
+        "rmse": 0.006704144597395556,
+        "mae": 0.003615743713457825,
+        "max_abs_err": 0.13682946460325884,
+        "r2": 0.9994213062667232,
+        "mean_h2": 0.0007246474424650001,
+        "median_abs_h": 0.006713040192163122
+      },
+      "extrapolation": {
+        "n": 7931,
+        "rmse": 0.006877398092958569,
+        "mae": 0.004387210811948126,
+        "max_abs_err": 0.09674608411651175,
+        "r2": 0.989568588548187,
+        "mean_h2": 9.578900723911175e-05,
+        "median_abs_h": 0.006428746032660047
+      }
+    },
+    "ffn_phys1_s0": {
+      "lambda": 0.1742075455779253,
+      "physics": true,
+      "seed": 0,
+      "hidden": [
+        128,
+        128,
+        128
+      ],
+      "n_parameters": 34433,
+      "test": {
+        "n": 12000,
+        "rmse": 0.005762163786510761,
+        "mae": 0.0034058872693927865,
+        "max_abs_err": 0.12158378400676262,
+        "r2": 0.9995725028425542,
+        "mean_h2": 0.0003792663149081437,
+        "median_abs_h": 0.00744901203362458
+      },
+      "extrapolation": {
+        "n": 7931,
+        "rmse": 0.008338438626262986,
+        "mae": 0.006221973637415489,
+        "max_abs_err": 0.061750553081818316,
+        "r2": 0.9846656906195317,
+        "mean_h2": 0.00016370230555152652,
+        "median_abs_h": 0.009351564570414327
+      }
+    },
+    "ffn_phys1_s1": {
+      "lambda": 0.1742075455779253,
+      "physics": true,
+      "seed": 1,
+      "hidden": [
+        128,
+        128,
+        128
+      ],
+      "n_parameters": 34433,
+      "test": {
+        "n": 12000,
+        "rmse": 0.005166256797950361,
+        "mae": 0.002680087553470006,
+        "max_abs_err": 0.12233859321023899,
+        "r2": 0.9996563518475238,
+        "mean_h2": 0.00029961726975602455,
+        "median_abs_h": 0.005219215181408943
+      },
+      "extrapolation": {
+        "n": 7931,
+        "rmse": 0.008324498321298224,
+        "mae": 0.005026405524721684,
+        "max_abs_err": 0.07821708961191554,
+        "r2": 0.9847169199374691,
+        "mean_h2": 0.00013653819113964186,
+        "median_abs_h": 0.0059515260858483965
+      }
+    },
+    "ffn_phys1_s2": {
+      "lambda": 0.1742075455779253,
+      "physics": true,
+      "seed": 2,
+      "hidden": [
+        128,
+        128,
+        128
+      ],
+      "n_parameters": 34433,
+      "test": {
+        "n": 12000,
+        "rmse": 0.0051102787917613225,
+        "mae": 0.0029058519284419627,
+        "max_abs_err": 0.11005955954935032,
+        "r2": 0.9996637585720128,
+        "mean_h2": 0.0003161810890025248,
+        "median_abs_h": 0.005750168681244547
+      },
+      "extrapolation": {
+        "n": 7931,
+        "rmse": 0.012501222702654309,
+        "mae": 0.006436120088987113,
+        "max_abs_err": 0.17992530806723017,
+        "r2": 0.965533297778332,
+        "mean_h2": 0.0002509705131922005,
+        "median_abs_h": 0.00617442225876727
+      }
+    }
+  },
+  "baselines": {
+    "training_mean_FV": {
+      "test": {
+        "n": 12000,
+        "rmse": 0.27868906926099823,
+        "mae": 0.24155030509464961,
+        "max_abs_err": 0.6203031080855085,
+        "r2": -4.384597783957389e-06,
+        "mean_h2": 0.44154869048470985,
+        "median_abs_h": 0.5729307111208717
+      },
+      "extrapolation": {
+        "n": 7931,
+        "rmse": 0.5622161464876564,
+        "mae": 0.5581691030159047,
+        "max_abs_err": 0.6206435882955782,
+        "r2": -68.7110102109457,
+        "mean_h2": 1.0448857385423564,
+        "median_abs_h": 1.0296508077848008
+      },
+      "value": 0.6206491595387054
+    }
+  },
+  "timing": {
+    "rows": 12000,
+    "bisection_solver_seconds_median": 0.03110947799996211,
+    "bisection_solver_seconds_min_max": [
+      0.02849079099996743,
+      0.031531988999859095
+    ],
+    "network_forward_seconds_median": 0.009974957000167706,
+    "network_forward_seconds_min_max": [
+      0.008930476999921666,
+      0.012952921000078277
+    ],
+    "speedup_median": 3.1187581058684337,
+    "note": "median of 15 timed repetitions after 3 warm-up calls; both vectorised over all test rows on the same CPU; the solver is numpy bisection to 1e-12 (40 iterations), the network is a single float32 forward pass on 2 torch threads",
+    "device": "cpu",
+    "torch_version": "2.14.0+cu130"
+  },
+  "sets": {
+    "test": {
+      "rows": 12000,
+      "realisations": 600
+    },
+    "extrapolation": {
+      "rows": 7931,
+      "realisations": 401
+    }
+  },
+  "summary": {
+    "data_only": {
+      "test_rmse_mean": 0.006359232952567081,
+      "test_rmse_std": 0.0002567497686711177,
+      "test_mae_mean": 0.003309209638926027,
+      "test_mae_std": 0.00022787549977949957,
+      "test_r2_mean": 0.9994784705181439,
+      "test_r2_std": 4.239446928012491e-05,
+      "test_mean_h2_mean": 0.0005999001443652881,
+      "test_mean_h2_std": 9.785788065185264e-05,
+      "test_median_abs_h_mean": 0.006152115326653486,
+      "test_median_abs_h_std": 0.0004232710125324793,
+      "extrapolation_rmse_mean": 0.008350122639960721,
+      "extrapolation_rmse_std": 0.0019744339741874935,
+      "extrapolation_mae_mean": 0.005455929636643622,
+      "extrapolation_mae_std": 0.0013616494788826843,
+      "extrapolation_r2_mean": 0.9837629215013632,
+      "extrapolation_r2_std": 0.007877472860337095,
+      "extrapolation_mean_h2_mean": 0.00014970089526721977,
+      "extrapolation_mean_h2_std": 6.822571789387784e-05,
+      "extrapolation_median_abs_h_mean": 0.00725901389203842,
+      "extrapolation_median_abs_h_std": 0.0015321537790913475,
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    "physics": {
+      "test_rmse_mean": 0.005346233125407482,
+      "test_rmse_std": 0.00029499392132560203,
+      "test_mae_mean": 0.002997275583768252,
+      "test_mae_std": 0.0003032765739643296,
+      "test_r2_mean": 0.9996308710873635,
+      "test_r2_std": 4.138320024288468e-05,
+      "test_mean_h2_mean": 0.00033168822455556437,
+      "test_mean_h2_std": 3.431565277640643e-05,
+      "test_median_abs_h_mean": 0.006139465298759357,
+      "test_median_abs_h_std": 0.000951021343203907,
+      "extrapolation_rmse_mean": 0.009721386550071839,
+      "extrapolation_rmse_std": 0.0019656492327691645,
+      "extrapolation_mae_mean": 0.0058948330837080955,
+      "extrapolation_mae_std": 0.0006202631133024663,
+      "extrapolation_r2_mean": 0.9783053027784443,
+      "extrapolation_r2_std": 0.00903119556142021,
+      "extrapolation_mean_h2_mean": 0.0001837370032944563,
+      "extrapolation_mean_h2_std": 4.881755775553873e-05,
+      "extrapolation_median_abs_h_mean": 0.007159170971676665,
+      "extrapolation_median_abs_h_std": 0.0015529247555961146,
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    }
+  }
+}

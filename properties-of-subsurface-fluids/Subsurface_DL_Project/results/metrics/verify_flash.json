@@ -1,0 +1,173 @@
+{
+  "source": "Models/3 - Two-phase flash calculation.pdf",
+  "case_A_saturation_pressures_p14": {
+    "T_R": 610.0,
+    "T_F": 150.0,
+    "z_from_moles": [
+      0.03875968992248062,
+      0.1937984496124031,
+      0.07751937984496124,
+      0.11627906976744186,
+      0.10852713178294573,
+      0.15503875968992248,
+      0.31007751937984496
+    ],
+    "z_printed_in_notes": [
+      0.0387597,
+      0.1937984,
+      0.0775194,
+      0.1162791,
+      0.1085271,
+      0.1550388,
+      0.3100775
+    ],
+    "max_abs_diff_in_z": 4.961240310241699e-08,
+    "p_b_psia_computed": 1590.8766896618613,
+    "p_b_psia_notes": 1590.8769,
+    "p_d_psia_computed": 1.9995762599391373,
+    "p_d_psia_notes": 1.9995691,
+    "p_b_relative_error": 1.3221521959743317e-07,
+    "p_d_relative_error": 3.580741039335823e-06,
+    "sum_zK_at_pb": 0.9999999999999994,
+    "sum_z_over_K_at_pd": 1.0
+  },
+  "case_B_flash_p15": {
+    "p_psia": 796.43821,
+    "T_R": 640.0,
+    "T_F": 180.0,
+    "K_computed": [
+      3.5785879981188655,
+      10.348850244323268,
+      2.0339844751602363,
+      0.2251761631688799,
+      0.09621285756761708,
+      0.0706857573174818,
+      0.0015096013343798248
+    ],
+    "K_notes": [
+      3.57859,
+      10.34885,
+      2.03398,
+      0.22518,
+      0.09622,
+      0.07069,
+      0.00151
+    ],
+    "K_max_abs_diff_against_5dp_print": 9.999999999996123e-06,
+    "FV_computed": 0.1916985022073076,
+    "FV_notes": 0.1917145,
+    "FV_difference": -1.5997792692401536e-05,
+    "bisection_iterations": 40,
+    "residual_at_our_root": -6.171729793891245e-13,
+    "residual_at_notes_FV": -5.187621523394803e-05,
+    "notes_stated_residual": 9.89e-06,
+    "x_computed": [
+      0.025938160173797273,
+      0.06940805996696789,
+      0.06469581121309266,
+      0.1365631444413582,
+      0.13127032485828657,
+      0.18864562924387943,
+      0.3834788701027363
+    ],
+    "x_notes": [
+      0.025937,
+      0.069404,
+      0.064695,
+      0.136565,
+      0.131273,
+      0.188649,
+      0.383486
+    ],
+    "y_computed": [
+      0.09282198869123566,
+      0.7182936183471597,
+      0.13159027561532802,
+      0.030750764895582584,
+      0.012629893068445149,
+      0.013334559167736508,
+      0.0005789002140135582
+    ],
+    "y_notes": [
+      0.092819,
+      0.718255,
+      0.131588,
+      0.030751,
+      0.01263,
+      0.013335,
+      0.000579
+    ],
+    "x_max_abs_diff": 7.129897263702389e-06,
+    "y_max_abs_diff": 3.8618347159680155e-05,
+    "comment": "the sheet's own Target cell prints a non-zero residual (9.89e-06), so it stopped short of the root; our bisection converges to ~1e-12.  That is consistent with the 1.6e-05 difference in f_v, but it does not fully explain it: the residual we measure at the sheet's f_v is -5.19e-05 and does not reproduce the printed 9.89e-06 under any combination of the printed (5 d.p.) or exact K and the printed (8 d.p.) or exact z.  The sheet's own y column also sums to 0.99996 rather than 1.  The cause of the remaining difference is therefore NOT established.",
+    "residual_at_notes_FV_with_printed_5dp_K": null,
+    "notes_printed_y_column_sum": 0.99996
+  },
+  "case_C_binary_pp16_18": {
+    "state_a": {
+      "K": [
+        1.4,
+        0.13
+      ],
+      "sum_zK": 0.892,
+      "notes_sum_zK": 0.89,
+      "sum_z_over_K": 3.5054945054945055,
+      "notes_sum_z_over_K": 3.5,
+      "phase": "liquid",
+      "notes_phase": "compressed (undersaturated) liquid"
+    },
+    "state_b": {
+      "K": [
+        3.8,
+        0.0029
+      ],
+      "sum_zK": 2.28116,
+      "notes_sum_zK": 2.28,
+      "sum_z_over_K": 138.08892921960074,
+      "notes_sum_z_over_K": 138.0,
+      "FV_bisection": 0.4588879178187112,
+      "bisection_iterations": 40,
+      "residual_at_root": 2.3936408410918375e-13,
+      "x": [
+        0.2625951383951252,
+        0.7374048616047649
+      ],
+      "y": [
+        0.9978615259014757,
+        0.002138474098653818
+      ],
+      "notes_FV": 0.457,
+      "notes_x": [
+        0.263,
+        0.737
+      ],
+      "notes_y": [
+        0.999,
+        0.001
+      ]
+    },
+    "why_the_notes_print_0_457": {
+      "exact_closed_form_1_p17": 0.4588879178188174,
+      "exact_closed_form_2_p18": 0.45888791781881755,
+      "the_two_exact_forms_agree_to": 1.6653345369377348e-16,
+      "exact_value_rounds_to_3dp": 0.459,
+      "K2_neglected_in_form_1": 0.45714285714285713,
+      "K2_neglected_in_form_2": 0.45714285714285713,
+      "K2_neglected_rounds_to_3dp": 0.457,
+      "K2_neglected_in_denominator_only": 0.45755714285714283,
+      "K2_neglected_in_numerator_only": 0.45847242718168396,
+      "x_from_exact_FV": [
+        0.262595138395091,
+        0.7374048616049089
+      ],
+      "x_from_neglected_FV_also_neglecting_K2_in_x2": [
+        0.2631578947368421,
+        0.7368421052631579
+      ],
+      "y1_from_rounded_x1_times_K1": 0.9994,
+      "conclusion": "K2 = 0.0029 is about 0.3 % of 1.  Neglecting it against 1 in the binary closed form gives (z1*K1 - 1)/(K1 - 1) = (2.28 - 1)/2.8 = 0.4571428..., which prints as 0.457 and so reproduces the printed value.  The full expression gives 0.4588879, which prints as 0.459, so the printed figure is not the full expression rounded.  The same neglect is also consistent with the printed x = (0.263, 0.737), and their y2 = 0.001 is 1 - y1 with y1 recomputed from the already-rounded x1 = 0.263.  The notes do not state this approximation; it is offered as the numerical explanation consistent with every figure they print, not as a claim about what was done."
+    }
+  },
+  "failures": [],
+  "passed": true
+}
