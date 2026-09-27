@@ -1,0 +1,165 @@
+==========================================================================
+SubsurfaceML pipeline - config 'demo'  ->  /home/claude/work/SubsurfaceML/results/demo
+==========================================================================
+
+=== STAGE 1  numerical verification & validation ===
+[validation] written to /home/claude/work/SubsurfaceML/results/demo/metrics/validation.json
+  verdict: ALL PASS  (237 s)
+
+=== STAGE 2  scenario dataset (SYNTHETIC, from the simulator) ===
+[dataset] 100 realisations x 3 schedules = 300 simulations
+[dataset] 300 ok, 0 failed, 102.6 s wall, 199.6 s CPU
+  data quality: 0 duplicate ids, 0 missing, checks {'saturation_in_bounds': True, 'mass_balance_below_1e-9': True, 'no_clipping': True, 'positive_buildup': True, 'common_bhp_below_1Pa': True}
+
+=== STAGE 3  surrogates (grouped by reservoir realisation) ===
+  rows: {'train': 168, 'calib': 57, 'test': 75}  realisations: {'train': 56, 'calib': 19, 'test': 25}  overlaps: {'train_calib': 0, 'train_test': 0, 'calib_test': 0}
+
+  --- target: dp_bh_max_MPa [MPa] ---
+    mean               CV RMSE =      5.603  (  0.6 s)
+    linear             CV RMSE =     0.9479  (  0.0 s)
+    ridge              CV RMSE =     0.9392  (  0.2 s)
+    lasso              CV RMSE =     0.8294  (  0.3 s)
+    elasticnet         CV RMSE =     0.8953  (  1.2 s)
+    knn                CV RMSE =      2.566  (  0.2 s)
+    svr                CV RMSE =      1.458  (  0.3 s)
+    tree               CV RMSE =      1.184  (  0.3 s)
+    random_forest      CV RMSE =     0.9491  (  8.9 s)
+    gradient_boosting  CV RMSE =     0.8975  ( 10.2 s)
+    adaboost           CV RMSE =      1.043  (  9.0 s)
+    xgboost            CV RMSE =     0.9351  (  3.6 s)
+    selected: lasso  (grouped-CV RMSE 0.8294 MPa; fitted on log(target))
+    test MAE 0.4093 MPa | RMSE 0.8258 | R2 0.9702 | mean-baseline RMSE 4.814
+    P5-P95 error band: measured test coverage 94.7%, mean width 2.639 MPa
+
+  --- target: r_plume_m95_m [m] ---
+    mean               CV RMSE =      156.2  (  0.0 s)
+    linear             CV RMSE =      10.25  (  0.0 s)
+    ridge              CV RMSE =      13.16  (  0.2 s)
+    lasso              CV RMSE =      13.84  (  0.3 s)
+    elasticnet         CV RMSE =      10.43  (  0.6 s)
+    knn                CV RMSE =      63.82  (  0.2 s)
+    svr                CV RMSE =      23.57  (  0.3 s)
+    tree               CV RMSE =      27.26  (  0.2 s)
+    random_forest      CV RMSE =      24.85  (  9.2 s)
+    gradient_boosting  CV RMSE =      18.44  (  9.7 s)
+    adaboost           CV RMSE =      23.41  (  8.1 s)
+    xgboost            CV RMSE =      21.67  (  3.4 s)
+    selected: linear  (grouped-CV RMSE 10.25 m; fitted on log(target))
+    test MAE 5.206 m | RMSE 7.638 | R2 0.9971 | mean-baseline RMSE 142.3
+    P5-P95 error band: measured test coverage 92.0%, mean width 29.17 m
+
+  --- target: sweep_efficiency [-] ---
+    mean               CV RMSE =    0.01112  (  0.0 s)
+    linear             CV RMSE =   0.001891  (  0.0 s)
+    ridge              CV RMSE =   0.001788  (  0.2 s)
+    lasso              CV RMSE =   0.002371  (  0.2 s)
+    elasticnet         CV RMSE =   0.001775  (  0.2 s)
+    knn                CV RMSE =   0.005221  (  0.2 s)
+    svr                CV RMSE =    0.00299  (  0.2 s)
+    tree               CV RMSE =    0.00267  (  0.2 s)
+    random_forest      CV RMSE =   0.002379  (  8.9 s)
+    gradient_boosting  CV RMSE =   0.002144  (  9.3 s)
+    adaboost           CV RMSE =   0.002479  (  8.2 s)
+    xgboost            CV RMSE =     0.0024  (  2.2 s)
+    selected: elasticnet  (grouped-CV RMSE 0.001775 -)
+    test MAE 0.001376 - | RMSE 0.001951 | R2 0.9695 | mean-baseline RMSE 0.01122
+    P5-P95 error band: measured test coverage 89.3%, mean width 0.004601 -
+
+=== STAGE 4  Monte Carlo propagation and error sources ===
+  dp_bh_max_MPa: P90(low) 0.9973 P50 3.926 P10(high) 14.28 | shares input/surrogate/numerical 97/3/1%
+  r_plume_m95_m: P90(low) 105.5 P50 203.2 P10(high) 464.8 | shares input/surrogate/numerical 98/0/2%
+  sweep_efficiency: P90(low) 0.00172 P50 0.00896 P10(high) 0.02925 | shares input/surrogate/numerical 92/3/5%
+
+=== STAGE 5  pressure-limit screening (classification) ===
+  positives: train 25%, test 21% | selected random_forest
+  test ROC-AUC 0.988 | default threshold: recall 0.94 precision 1.00 | high-recall threshold: recall 0.94 precision 1.00
+  traffic light (random_forest): test macro-F1 0.890 | regression-surrogate banding 0.952
+
+  saved 7 model files + manifest to /home/claude/work/SubsurfaceML/results/demo/models
+
+=== STAGE 6  inference cost vs simulation cost ===
+  simulator 0.90 s/case | surrogate batched 7.77e-05 s/case (11603x) | single call 5.13e-03 s (176x) | end-to-end single 1.74e-02 s (52x)
+
+=== STAGE 7  interpretation (model behaviour, not causality) ===
+  plume shapes: 4 PCs for 95% variance; k-means k=2 (silhouette 0.42); DBSCAN noise 18
+
+=== STAGE 8  ML-method studies (training realisations only) ===
+    study learning_curve           done (  2.9 s)
+    study scaler_comparison        done (  0.3 s)
+    study missing_descriptors      done ( 17.5 s)
+    study outliers                 done (  0.0 s)
+    study collinearity             done (  0.1 s)
+    study feature_selection        done (  3.6 s)
+    study polynomial               done (  0.1 s)
+    study column_transformer       done (  0.2 s)
+    study tuning_strategies        done ( 33.7 s)
+    study normal_equation          done (  0.1 s)
+    study split_comparison         done (  0.1 s)
+    study boosting_early_stopping  done (  0.2 s)
+    study ensembles                done (  8.1 s)
+
+=== STAGE 9a  conservation identity check ===
+  |retained - planned| / planned <= 4.10e-13 over 300 scenarios
+
+=== STAGE 9b  open-boundary variant: injected vs retained ===
+  7/10 runs lost CO2 across r_e; median retention 0.809
+
+=== STAGE 10  schedule screening on unseen reservoirs ===
+  5 test realisations: [5, 8, 9, 10, 11]
+  re-simulated 15 screened schedules: 0 violated a stated limit; baselines violating: 0; failed runs: 0
+  median improvement over constant rate: 2.7572425786194565
+
+# SubsurfaceML results - configuration `demo`
+
+Generated Sun Sep 20 14:51:47 2026 by `scripts/run_pipeline.py` from `metrics/summary.json`. Total wall time 9.29 min.
+
+All data are **synthetic**, produced by the simulator in this repository. No field data are used and no field validation is claimed. Pressure and plume limits are stated assumptions, not safety limits.
+
+| Section | Metric | Value | Notes |
+|---|---|---|---|
+| Simulator verification | All checks | **PASS** | 18/18 checks pass (validation.json) |
+| Simulator verification | steady radial pressure | **PASS** |  |
+| Simulator verification | well index bhp | **PASS** |  |
+| Simulator verification | closed tank | **PASS** |  |
+| Simulator verification | buckley leverett front | **PASS** |  |
+| Simulator verification | buckley leverett L1 | **PASS** |  |
+| Simulator verification | bl no clipping | **PASS** |  |
+| Simulator verification | radial mass balance | **PASS** |  |
+| Simulator verification | radial no clipping | **PASS** |  |
+| Simulator verification | radial saturation bounds | **PASS** |  |
+| Simulator verification | no odd even oscillation | **PASS** |  |
+| Simulator verification | time step control insensitive | **PASS** |  |
+| Simulator verification | upscaling 2x2 bounds | **PASS** |  |
+| Simulator verification | upscaling parallel exact | **PASS** |  |
+| Simulator verification | upscaling series exact | **PASS** |  |
+| Simulator verification | upscaling bounds random | **PASS** |  |
+| Simulator verification | well common bhp | **PASS** |  |
+| Simulator verification | well total rate conserved | **PASS** |  |
+| Simulator verification | well shut in no crossflow | **PASS** |  |
+| Dataset | Scenarios | **300 ok / 0 failed** | SYNTHETIC - produced by the in-repo IMPES simulator; no field data, no field validation |
+| Dataset | Generation cost | **103 s wall, 200 s CPU** | mean 0.665 s per simulation |
+| Surrogates (unseen reservoirs) | dp_bh_max_MPa: selected model | **lasso** | lowest grouped-CV RMSE among the course model families |
+| Surrogates (unseen reservoirs) | dp_bh_max_MPa: MAE / RMSE / R2 | **0.409 / 0.826 MPa / 0.9702** | mean-baseline RMSE 4.81 MPa; n = 75 |
+| Surrogates (unseen reservoirs) | dp_bh_max_MPa: P5-P95 error band | **94.7% measured coverage** | mean width 2.64 MPa; calibrated on 57 rows; no guarantee |
+| Surrogates (unseen reservoirs) | r_plume_m95_m: selected model | **linear** | lowest grouped-CV RMSE among the course model families |
+| Surrogates (unseen reservoirs) | r_plume_m95_m: MAE / RMSE / R2 | **5.21 / 7.64 m / 0.9971** | mean-baseline RMSE 142 m; n = 75 |
+| Surrogates (unseen reservoirs) | r_plume_m95_m: P5-P95 error band | **92% measured coverage** | mean width 29.2 m; calibrated on 57 rows; no guarantee |
+| Surrogates (unseen reservoirs) | sweep_efficiency: selected model | **elasticnet** | lowest grouped-CV RMSE among the course model families |
+| Surrogates (unseen reservoirs) | sweep_efficiency: MAE / RMSE / R2 | **0.00138 / 0.00195 - / 0.9695** | mean-baseline RMSE 0.0112 -; n = 75 |
+| Surrogates (unseen reservoirs) | sweep_efficiency: P5-P95 error band | **89.3% measured coverage** | mean width 0.0046 -; calibrated on 57 rows; no guarantee |
+| Pressure-limit screen | selected / test ROC-AUC | **random_forest / 0.988** | limit dp > 9 MPa |
+| Pressure-limit screen | recall / precision at chosen threshold | **0.938 / 1** | threshold chosen on out-of-fold scores for recall >= 0.95 |
+| Pressure-limit screen | traffic light macro-F1 (test) | **0.89** | regression surrogate banded: 0.952 |
+| Cost | simulator per case (serial) | **0.902 s** | 5 test scenarios re-run in-process |
+| Cost | surrogate batched / single call / single end-to-end | **7.77e-05 / 0.00513 / 0.0174 s** | 3 QoIs; end-to-end includes feature building |
+| Cost | speed-up batched / single / end-to-end | **1.16e+04 / 176 / 51.8** | excludes 103 s data generation and 99.3 s training |
+| Schedule screening | median improvement vs constant rate | **2.76%** | 4/5 unseen reservoirs improved (re-simulated) |
+| Schedule screening | screened schedules violating a limit | **0/15** | baselines violating: 0; failed re-simulations: 0 |
+| Physics checks | retained vs planned mass | **4.10e-13** | max relative difference, sealed boundary |
+| Physics checks | open boundary retention (median) | **0.809** | 7/10 runs lost CO2 across r_e |
+
+
+Total wall time 9.3 min
+Summary: /home/claude/work/SubsurfaceML/results/demo/metrics/summary.json
+Figures: /home/claude/work/SubsurfaceML/results/demo/figures
+Models:  /home/claude/work/SubsurfaceML/results/demo/models
