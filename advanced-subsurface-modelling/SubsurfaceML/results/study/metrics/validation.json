@@ -1,0 +1,361 @@
+{
+  "V1_V2_steady_radial_and_well_index": {
+    "r_near=0.15": {
+      "cell_pressure_rel_err": 5.045414060048761e-13,
+      "bhp_rel_err": 5.003368942881689e-13,
+      "volume_balance_err": 8.770034433475485e-13
+    },
+    "r_near=5": {
+      "cell_pressure_rel_err": 2.5863514574224568e-14,
+      "bhp_rel_err": 1.632801053621064e-14,
+      "volume_balance_err": 2.2160255609159498e-13
+    },
+    "r_near=20": {
+      "cell_pressure_rel_err": 9.293449136341091e-14,
+      "bhp_rel_err": 6.881090154545913e-14,
+      "volume_balance_err": 2.571262128467319e-13
+    }
+  },
+  "V3_closed_tank_material_balance": {
+    "p_avg_MPa": 18.72040595901491,
+    "p_analytic_MPa": 18.72040595901716,
+    "rel_err": 6.04792962127555e-13,
+    "volume_balance_err": 6.06652586839284e-13
+  },
+  "V5_buckley_leverett": {
+    "welge_shock_Sg": 0.36222109899555854,
+    "welge_shock_fg": 0.7917753483225203,
+    "shock_speed_dfdS": 2.185889641763328,
+    "endpoint_mobility_ratio": 4.363636363636363,
+    "grids": {
+      "100": {
+        "L1_saturation_error": 0.012153909847463104,
+        "front_position_sim_m": 88.5,
+        "front_position_analytic_m": 87.4355856705331,
+        "front_rel_err": 0.012173697028550017,
+        "mass_balance_err": 3.8978344361696927e-16,
+        "sg_min": 0.0,
+        "sg_max": 0.6868199868014347,
+        "n_clipped": 0,
+        "wall_time_s": 0.14844768299917632
+      },
+      "200": {
+        "L1_saturation_error": 0.006156295752428204,
+        "front_position_sim_m": 88.25,
+        "front_position_analytic_m": 87.4355856705331,
+        "front_rel_err": 0.00931444929683095,
+        "mass_balance_err": 2.5985562907797957e-16,
+        "sg_min": 0.0,
+        "sg_max": 0.7140982364085114,
+        "n_clipped": 0,
+        "wall_time_s": 0.3140828870000405
+      },
+      "400": {
+        "L1_saturation_error": 0.0034335287132969423,
+        "front_position_sim_m": 87.875,
+        "front_position_analytic_m": 87.4355856705331,
+        "front_rel_err": 0.005025577699252348,
+        "mass_balance_err": 0.0,
+        "sg_min": 0.0,
+        "sg_max": 0.7357643212915497,
+        "n_clipped": 0,
+        "wall_time_s": 0.6709988889997476
+      }
+    },
+    "profiles": null
+  },
+  "V6_V7_V8_radial_two_phase": {
+    "base": {
+      "r_plume_m95_m": 925.2836033996384,
+      "r_plume_m50_m": 551.3151049482476,
+      "dp_bh_max_Pa": 5628555.264869031,
+      "p_bh_max_Pa": 20628555.26486903,
+      "dp_cell_max_Pa": 4694613.766884882,
+      "r_plume_max_m": 1095.9837064659291,
+      "r_plume_end_m": 1095.9837064659291,
+      "r_plume_layer_max_m": 1095.9837064659291,
+      "r_plume_layer_min_m": 484.29576462459545,
+      "r_plume_spread_m": 611.6879418413337,
+      "mass_injected_kg": 4733640000.000001,
+      "mass_retained_kg": 4733640000.000013,
+      "mass_lost_kg": 0.0,
+      "retention_fraction": 1.0000000000000027,
+      "sweep_efficiency": 0.02963256800476264,
+      "storage_efficiency": 0.01076260293564695,
+      "sg_max": 0.5452270594335201,
+      "sg_min": 0.0,
+      "mass_balance_error": 2.6190766753029906e-15,
+      "n_steps": 34147,
+      "n_clipped": 0,
+      "max_clip": 0.0,
+      "wall_time_s": 20.39868240299984,
+      "max_bhp_spread_Pa": 0.0,
+      "max_rate_rel_err": 5.1810407815840636e-15,
+      "n_steps_layer_closed": 0,
+      "sg_threshold": 0.05,
+      "near_well_oscillation": 1
+    },
+    "n_r": {
+      "30": {
+        "dp_bh_max_MPa": 5.6259264673137475,
+        "r_plume_end_m": 1211.2866363188505,
+        "r_plume_m95_m": 980.9510236241936,
+        "sweep_efficiency": 0.03492444326450268,
+        "mass_retained_Mt": 4.733639999999981,
+        "wall_time_s": 8.181754926999929,
+        "n_steps": 14951
+      },
+      "60": {
+        "dp_bh_max_MPa": 5.62855526486903,
+        "r_plume_end_m": 1095.9837064659291,
+        "r_plume_m95_m": 925.2836033996384,
+        "sweep_efficiency": 0.02963256800476264,
+        "mass_retained_Mt": 4.733640000000014,
+        "wall_time_s": 21.184665429000233,
+        "n_steps": 34147
+      },
+      "120": {
+        "dp_bh_max_MPa": 5.62287406712218,
+        "r_plume_end_m": 1029.830755395064,
+        "r_plume_m95_m": 898.7070267885354,
+        "sweep_efficiency": 0.02715001110418326,
+        "mass_retained_Mt": 4.733639999999977,
+        "wall_time_s": 45.32470347799972,
+        "n_steps": 72671
+      },
+      "240": {
+        "dp_bh_max_MPa": 5.615881998727679,
+        "r_plume_end_m": 997.2096661365654,
+        "r_plume_m95_m": 889.1879507363869,
+        "sweep_efficiency": 0.025683390576137062,
+        "mass_retained_Mt": 4.733640000000019,
+        "wall_time_s": 106.39761978700153,
+        "n_steps": 149521
+      }
+    },
+    "r_near": {
+      "20.0": {
+        "dp_bh_max_MPa": 6.988832748998858,
+        "r_plume_end_m": 1054.5365527819108,
+        "r_plume_m95_m": 912.7305956417715,
+        "sweep_efficiency": 0.027404180845297325,
+        "mass_retained_Mt": 4.7336399999999905,
+        "wall_time_s": 1.8125313940017804,
+        "n_steps": 2705
+      },
+      "10.0": {
+        "dp_bh_max_MPa": 6.308278330063026,
+        "r_plume_end_m": 1066.974011725019,
+        "r_plume_m95_m": 916.8681513475865,
+        "sweep_efficiency": 0.02695130010414158,
+        "mass_retained_Mt": 4.733640000000017,
+        "wall_time_s": 5.697573452000142,
+        "n_steps": 9208
+      },
+      "5.0": {
+        "dp_bh_max_MPa": 5.62855526486903,
+        "r_plume_end_m": 1095.9837064659291,
+        "r_plume_m95_m": 925.2836033996384,
+        "sweep_efficiency": 0.02963256800476264,
+        "mass_retained_Mt": 4.733640000000014,
+        "wall_time_s": 20.517881334000776,
+        "n_steps": 34147
+      },
+      "2.5": {
+        "dp_bh_max_MPa": 5.48408893978931,
+        "r_plume_end_m": 1098.0186591357008,
+        "r_plume_m95_m": 926.3811495496961,
+        "sweep_efficiency": 0.031830809019230834,
+        "mass_retained_Mt": 4.733639999999974,
+        "wall_time_s": 78.65932309799973,
+        "n_steps": 130131
+      }
+    },
+    "max_dS": {
+      "0.1": {
+        "dp_bh_max_MPa": 5.603112414623707,
+        "r_plume_end_m": 1095.9837659910702,
+        "r_plume_m95_m": 925.2836492533878,
+        "sweep_efficiency": 0.02963256800476264,
+        "mass_retained_Mt": 4.733639999999987,
+        "wall_time_s": 20.8490157870001,
+        "n_steps": 34142
+      },
+      "0.05": {
+        "dp_bh_max_MPa": 5.62855526486903,
+        "r_plume_end_m": 1095.9837064659291,
+        "r_plume_m95_m": 925.2836033996384,
+        "sweep_efficiency": 0.02963256800476264,
+        "mass_retained_Mt": 4.733640000000014,
+        "wall_time_s": 20.533393880999938,
+        "n_steps": 34147
+      },
+      "0.02": {
+        "dp_bh_max_MPa": 5.638577124369607,
+        "r_plume_end_m": 1095.98375882826,
+        "r_plume_m95_m": 925.2836676219581,
+        "sweep_efficiency": 0.02963256800476264,
+        "mass_retained_Mt": 4.733640000000019,
+        "wall_time_s": 20.210196818999975,
+        "n_steps": 34211
+      },
+      "0.01": {
+        "dp_bh_max_MPa": 5.641172572631643,
+        "r_plume_end_m": 1095.98405877978,
+        "r_plume_m95_m": 925.2839760214365,
+        "sweep_efficiency": 0.02963256800476264,
+        "mass_retained_Mt": 4.733640000000009,
+        "wall_time_s": 20.368153239000094,
+        "n_steps": 34420
+      }
+    },
+    "cfl": {
+      "relaxed": {
+        "dp_bh_max_MPa": 5.62855526486903,
+        "r_plume_end_m": 1095.969782373401,
+        "mass_retained_Mt": 4.733639999999981,
+        "n_steps": 13107,
+        "wall_time_s": 11.066344843999104,
+        "near_well_oscillation": 9
+      },
+      "strict_default": {
+        "dp_bh_max_MPa": 5.62855526486903,
+        "r_plume_end_m": 1095.9837064659291,
+        "mass_retained_Mt": 4.733640000000014,
+        "n_steps": 34147,
+        "wall_time_s": 20.39868240299984,
+        "near_well_oscillation": 1
+      },
+      "rel_diff": {
+        "dp_bh_max": 0.0,
+        "r_plume_end": 1.2704814267835183e-05,
+        "mass_retained": 6.849892843100158e-15
+      },
+      "step_ratio_strict_over_relaxed": 2.6052491035324636
+    }
+  },
+  "V9_upscaling": {
+    "lecture_2x2_case": {
+      "k_eff_D": 1.4916512059369214,
+      "K_H": 1.3930348258706469,
+      "K_HA": 1.488888888888889,
+      "K_AH": 1.5,
+      "K_A": 1.5,
+      "flux_imbalance": 1.1908660900954406e-15
+    },
+    "exact_limits": {
+      "parallel_flow_k_eff": 8.666666666666666,
+      "parallel_flow_arithmetic": 8.666666666666666,
+      "series_flow_k_eff": 2.4,
+      "series_flow_harmonic": 2.4
+    },
+    "random_fields": [
+      {
+        "sigma_lnk": 0.5,
+        "V_DP": 0.37612910477518713,
+        "K_H": 0.8619532316793141,
+        "K_HA": 0.8693337729846018,
+        "K_star": 0.9332229729797996,
+        "K_AH": 1.0678976407920433,
+        "K_A": 1.0764607179587335,
+        "err_arithmetic_pct": 15.34871612960544,
+        "err_harmonic_pct": -7.636946728060043,
+        "err_HA_pct": -6.846080930819602,
+        "err_AH_pct": 14.43113507827875,
+        "bounds_respected": true,
+        "t_numerical_s": 0.006803734999266453,
+        "t_analytical_s": 9.934700028679799e-05
+      },
+      {
+        "sigma_lnk": 1.0,
+        "V_DP": 0.6405340554363291,
+        "K_H": 0.6059823594510599,
+        "K_HA": 0.6327250107706077,
+        "K_star": 0.8667960060566149,
+        "K_AH": 1.6151643793975101,
+        "K_A": 1.6923123907275666,
+        "err_arithmetic_pct": 95.23767748152649,
+        "err_harmonic_pct": -30.089391827276124,
+        "err_HA_pct": -27.004161723227735,
+        "err_AH_pct": 86.33731213708609,
+        "bounds_respected": true,
+        "t_numerical_s": 0.006261687000005622,
+        "t_analytical_s": 7.992499922693241e-05
+      },
+      {
+        "sigma_lnk": 1.75,
+        "V_DP": 0.8287175988008383,
+        "K_H": 0.1963073356099956,
+        "K_HA": 0.28716874259921327,
+        "K_star": 0.7059348773859444,
+        "K_AH": 3.714050433080203,
+        "K_A": 4.495389832546072,
+        "err_arithmetic_pct": 536.7995089281274,
+        "err_harmonic_pct": -72.19186331508145,
+        "err_HA_pct": -59.32078839019961,
+        "err_AH_pct": 426.1179964408644,
+        "bounds_respected": true,
+        "t_numerical_s": 0.006109877000199049,
+        "t_analytical_s": 8.311400051752571e-05
+      }
+    ]
+  },
+  "V10_upscaling_two_phase": {
+    "V_DP_layers": 0.8670628906564894,
+    "fine": {
+      "dp_bh_max_MPa": 2.5812962409437596,
+      "r_plume_end_m": 1449.0342420667357,
+      "mass_retained_Mt": 4.733639999999992,
+      "sweep_efficiency": 0.02705821322299347,
+      "wall_time_s": 18.803100781000467,
+      "n_cells": 240
+    },
+    "upscaled": {
+      "dp_bh_max_MPa": 2.76385154025279,
+      "r_plume_end_m": 878.837881711743,
+      "mass_retained_Mt": 4.733640000000012,
+      "sweep_efficiency": 0.029824711989011186,
+      "wall_time_s": 4.004663648998758,
+      "n_cells": 60
+    },
+    "relative_error": {
+      "dp_bh_max": 0.07072233570614324,
+      "r_plume_end": -0.39350095656934253,
+      "mass_retained": 4.029348731235377e-15,
+      "sweep_efficiency": 0.10224247784649756
+    },
+    "speedup": 4.695300886430649,
+    "interpretation": "Single-phase (thickness-weighted arithmetic / parallel) upscaling of a no-crossflow layered unit preserves total flow capacity kh, so pressure is reproduced well, but it destroys the layer-by-layer velocity contrast that controls the leading edge of the plume. The plume-radius error is therefore much larger than the pressure error: single-phase upscaling does NOT preserve the two-phase quantity of interest."
+  },
+  "V11_well_coupling": {
+    "max_bhp_spread_Pa": 0.0,
+    "max_rate_rel_err": 2.0036056147532122e-14,
+    "p_bh_max_MPa": 93.63923119680776,
+    "well_block_pressure_difference_MPa_end_injection": 5.41514784778285,
+    "layer_rate_fraction_high_k_end_injection": 0.7983253301352771,
+    "shut_in_layer_rates_all_zero": true,
+    "mass_balance_error": 1.8887572177665878e-16
+  },
+  "wall_time_s": 444.3341113080005,
+  "verdict": {
+    "steady_radial_pressure": true,
+    "well_index_bhp": true,
+    "closed_tank": true,
+    "buckley_leverett_front": true,
+    "buckley_leverett_L1": true,
+    "bl_no_clipping": true,
+    "radial_mass_balance": true,
+    "radial_no_clipping": true,
+    "radial_saturation_bounds": true,
+    "no_odd_even_oscillation": true,
+    "time_step_control_insensitive": true,
+    "upscaling_2x2_bounds": true,
+    "upscaling_parallel_exact": true,
+    "upscaling_series_exact": true,
+    "upscaling_bounds_random": true,
+    "well_common_bhp": true,
+    "well_total_rate_conserved": true,
+    "well_shut_in_no_crossflow": true,
+    "ALL_PASS": true
+  }
+}

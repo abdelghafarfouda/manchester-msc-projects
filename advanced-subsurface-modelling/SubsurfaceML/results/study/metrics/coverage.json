@@ -1,0 +1,10 @@
+{
+  "covered": 41,
+  "total": 42,
+  "percent": 97.61904761904762,
+  "not_covered": {
+    "P07": [
+      "No categorical variables exist in the physical inputs (every reservoir and schedule descriptor is continuous); inventing categories only to use an encoder would be artificial"
+    ]
+  }
+}
