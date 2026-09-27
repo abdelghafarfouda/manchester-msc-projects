@@ -80,7 +80,7 @@ are reported as measured.
 | case | what the notes print | measured here |
 |---|---|---|
 | **A** p. 14 — bubble/dew point of the 7-component mixture at 150 °F | `p_b = 1590.8769` psia, `p_d = 1.9995691` psia | `1590.8767` psia (rel. diff **1.3e−07**), `1.9995763` psia (rel. diff **3.6e−06**); closure `Σ z_iK_i = 1.000000` at `p_b`, `Σ z_i/K_i = 1.000000` at `p_d` |
-| **B** p. 15 — full flash at 796.43821 psia, 180 °F | seven `K_i`; `f_v = 0.1917145`; `x_i`, `y_i` | every `K_i` within 1e−05 of the printed 5 d.p. (one component differs by one unit in the last place); `F_V = 0.1916985`, difference **−1.6e−05**; `max|x − x_notes| = 7.1e−06`, `max|y − y_notes| = 3.9e−05` |
+| **B** p. 15 — full flash at 796.43821 psia, 180 °F | seven `K_i`; `f_v = 0.1917145`; `x_i`, `y_i` | every `K_i` within 1e−05 of the printed 5 d.p. (one component differs by one unit in the last place); `F_V = 0.1916985`, difference **−1.6e−05**; `max\|x − x_notes\| = 7.1e−06`, `max\|y − y_notes\| = 3.9e−05` |
 | **C** pp. 16–18 — C1/nC10 binary | phase labels; `F_V = 0.457`, `x = (0.263, 0.737)`, `y = (0.999, 0.001)` | labels agree; bisection root `0.4588879`, matching **both** closed forms the notes derive (pp. 17, 18) to 1e−09; `x = (0.2626, 0.7374)` |
 
 ### Case B: the cause of the 1.6e−05 difference is not established
