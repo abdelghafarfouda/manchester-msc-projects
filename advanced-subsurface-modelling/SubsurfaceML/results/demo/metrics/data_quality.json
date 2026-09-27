@@ -1,0 +1,27 @@
+{
+  "n_rows": 300,
+  "n_failed_runs": 0,
+  "duplicate_scenario_ids": 0,
+  "duplicate_input_rows": 0,
+  "missing_values_total": 0,
+  "constant_columns_dropped_from_analysis": [
+    "n_layers",
+    "mass_lost_kg",
+    "sg_min",
+    "n_clipped",
+    "max_clip",
+    "max_bhp_spread_Pa",
+    "sg_threshold",
+    "p_limit_Pa",
+    "mass_lost_Mt"
+  ],
+  "scenarios_with_a_rate_on_the_floor_or_ceiling": 0,
+  "checks": {
+    "saturation_in_bounds": true,
+    "mass_balance_below_1e-9": true,
+    "no_clipping": true,
+    "positive_buildup": true,
+    "common_bhp_below_1Pa": true
+  },
+  "duplicate_rows_dropped": 0
+}
