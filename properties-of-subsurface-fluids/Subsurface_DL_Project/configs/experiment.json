@@ -1,0 +1,44 @@
+{
+  "_purpose": "The exact configuration of the reported run. scripts/run_all.sh uses these values; changing them means re-running everything and replacing results/metrics/*.",
+  "dataset": {
+    "script": "scripts/make_dataset.py",
+    "n_realisations": 3000,
+    "states_per_realisation": 20,
+    "n_extrapolation": 600,
+    "seed": 20240920,
+    "split_fractions_by_mixture": [0.6, 0.2, 0.2],
+    "_units": "pressure in psia, temperature in degrees Rankine (T[F] + 460), F_V dimensionless",
+    "_component_source": "Models/3 - Two-phase flash calculation.pdf, pp. 14-15",
+    "_pT_window_source": "span of the flash states printed in Models/3 - ..., pp. 14-18"
+  },
+  "training": {
+    "script": "scripts/train.py",
+    "epochs": 200,
+    "batch": 64,
+    "lr": 0.001,
+    "hidden": [128, 128, 128],
+    "optimiser": "Adam",
+    "criterion": "nn.MSELoss",
+    "output_activation": "nn.Sigmoid",
+    "hidden_activation": "nn.ReLU",
+    "seeds": [0, 1, 2],
+    "physics_variants": [0, 1],
+    "model_selection": "parameters at the epoch of lowest validation DATA MSE (same criterion for both variants)",
+    "lambda": "measured on the training split: the value making the data and physics terms equal for the training-mean predictor"
+  },
+  "learning_curve": {
+    "script": "scripts/learning_curve.py",
+    "fractions_of_training_mixtures": [0.125, 0.25, 0.5, 1.0],
+    "epochs": 200,
+    "hidden": [128, 128, 128],
+    "seed": 0,
+    "physics": 0
+  },
+  "evaluation": {
+    "script": "scripts/evaluate.py",
+    "baseline": "training-mean F_V",
+    "sets": ["test", "extrapolation"],
+    "timing": "median of 15 repetitions after 3 warm-ups, both vectorised over the whole test set",
+    "summary_statistics": "mean and population standard deviation (ddof=0) over the three seeds of each per-seed metric"
+  }
+}
