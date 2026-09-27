@@ -1,0 +1,16 @@
+ok   test_flash.test_binary_worked_example_pp16_18
+ok   test_flash.test_component_table_shapes_and_printed_z
+ok   test_flash.test_compositions_come_from_integer_moles
+ok   test_flash.test_dataset_stays_inside_the_supplied_pT_window
+ok   test_flash.test_flash_of_the_p15_example
+ok   test_flash.test_group_split_keeps_mixtures_together
+ok   test_flash.test_material_balance_of_the_solution
+ok   test_flash.test_neglecting_K2_reproduces_the_printed_0457
+ok   test_flash.test_phase_label_liquid_case
+ok   test_flash.test_residual_is_zero_at_the_root
+ok   test_flash.test_saturation_pressures_of_the_p14_example
+ok   test_flash.test_sigmoid_output_is_inside_the_open_unit_interval
+ok   test_flash.test_standardiser_uses_training_statistics_only
+ok   test_flash.test_torch_residual_matches_numpy
+
+14 passed, 0 failed

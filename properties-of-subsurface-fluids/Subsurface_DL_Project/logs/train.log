@@ -1,0 +1,60 @@
+epoch    0  train mse 5.243e-03  val mse 1.615e-03  val h^2 2.420e-02
+epoch   25  train mse 2.392e-04  val mse 2.481e-04  val h^2 4.970e-03
+epoch   50  train mse 1.580e-04  val mse 2.115e-04  val h^2 2.622e-03
+epoch   75  train mse 1.156e-04  val mse 2.136e-04  val h^2 2.174e-03
+epoch  100  train mse 9.920e-05  val mse 1.094e-04  val h^2 2.142e-03
+epoch  125  train mse 9.980e-05  val mse 1.445e-04  val h^2 1.822e-03
+epoch  150  train mse 8.462e-05  val mse 9.435e-05  val h^2 1.109e-03
+epoch  175  train mse 9.152e-05  val mse 9.616e-05  val h^2 1.343e-03
+epoch  199  train mse 6.725e-05  val mse 3.225e-04  val h^2 4.448e-03
+ffn_phys0_s0: best val MSE 5.8222e-05 at epoch 189, 221.7 s on cpu, torch 2.14.0+cu130
+epoch    0  train mse 5.214e-03  val mse 1.412e-03  val h^2 1.642e-02
+epoch   25  train mse 2.040e-04  val mse 2.016e-04  val h^2 2.717e-03
+epoch   50  train mse 1.388e-04  val mse 1.632e-04  val h^2 1.507e-03
+epoch   75  train mse 9.722e-05  val mse 3.317e-04  val h^2 3.139e-03
+epoch  100  train mse 9.165e-05  val mse 1.155e-04  val h^2 1.911e-03
+epoch  125  train mse 8.054e-05  val mse 9.921e-05  val h^2 8.413e-04
+epoch  150  train mse 8.102e-05  val mse 7.390e-05  val h^2 8.133e-04
+epoch  175  train mse 7.112e-05  val mse 1.497e-04  val h^2 2.032e-03
+epoch  199  train mse 6.115e-05  val mse 1.584e-04  val h^2 1.809e-03
+ffn_phys1_s0: best val MSE 4.7322e-05 at epoch 185, 245.9 s on cpu, torch 2.14.0+cu130
+epoch    0  train mse 5.374e-03  val mse 1.560e-03  val h^2 2.337e-02
+epoch   25  train mse 2.165e-04  val mse 2.146e-04  val h^2 2.634e-03
+epoch   50  train mse 1.356e-04  val mse 1.422e-04  val h^2 1.509e-03
+epoch   75  train mse 1.188e-04  val mse 2.463e-04  val h^2 4.809e-03
+epoch  100  train mse 1.213e-04  val mse 2.152e-04  val h^2 2.496e-03
+epoch  125  train mse 9.385e-05  val mse 9.449e-05  val h^2 1.099e-03
+epoch  150  train mse 7.485e-05  val mse 1.065e-04  val h^2 2.058e-03
+epoch  175  train mse 7.868e-05  val mse 8.655e-05  val h^2 9.982e-04
+epoch  199  train mse 8.112e-05  val mse 7.356e-05  val h^2 6.738e-04
+ffn_phys0_s1: best val MSE 5.5957e-05 at epoch 179, 223.4 s on cpu, torch 2.14.0+cu130
+epoch    0  train mse 5.330e-03  val mse 1.515e-03  val h^2 1.937e-02
+epoch   25  train mse 2.016e-04  val mse 2.397e-04  val h^2 2.914e-03
+epoch   50  train mse 1.326e-04  val mse 2.265e-04  val h^2 2.957e-03
+epoch   75  train mse 9.311e-05  val mse 1.264e-04  val h^2 1.337e-03
+epoch  100  train mse 9.207e-05  val mse 1.880e-04  val h^2 2.247e-03
+epoch  125  train mse 8.049e-05  val mse 7.189e-05  val h^2 7.268e-04
+epoch  150  train mse 8.029e-05  val mse 8.197e-05  val h^2 9.805e-04
+epoch  175  train mse 5.696e-05  val mse 1.069e-04  val h^2 9.160e-04
+epoch  199  train mse 7.349e-05  val mse 4.717e-05  val h^2 5.285e-04
+ffn_phys1_s1: best val MSE 4.5440e-05 at epoch 164, 246.3 s on cpu, torch 2.14.0+cu130
+epoch    0  train mse 5.295e-03  val mse 1.347e-03  val h^2 1.681e-02
+epoch   25  train mse 2.469e-04  val mse 2.408e-04  val h^2 3.889e-03
+epoch   50  train mse 1.537e-04  val mse 1.666e-04  val h^2 2.114e-03
+epoch   75  train mse 1.244e-04  val mse 9.031e-05  val h^2 1.184e-03
+epoch  100  train mse 9.278e-05  val mse 9.302e-05  val h^2 9.703e-04
+epoch  125  train mse 7.458e-05  val mse 7.697e-05  val h^2 1.336e-03
+epoch  150  train mse 8.225e-05  val mse 1.045e-04  val h^2 1.368e-03
+epoch  175  train mse 8.342e-05  val mse 6.806e-05  val h^2 9.720e-04
+epoch  199  train mse 6.905e-05  val mse 1.224e-04  val h^2 2.136e-03
+ffn_phys0_s2: best val MSE 5.4554e-05 at epoch 141, 220.3 s on cpu, torch 2.14.0+cu130
+epoch    0  train mse 5.399e-03  val mse 1.455e-03  val h^2 1.494e-02
+epoch   25  train mse 1.987e-04  val mse 2.299e-04  val h^2 2.763e-03
+epoch   50  train mse 1.367e-04  val mse 1.298e-04  val h^2 1.291e-03
+epoch   75  train mse 9.328e-05  val mse 1.295e-04  val h^2 1.160e-03
+epoch  100  train mse 7.894e-05  val mse 9.805e-05  val h^2 1.193e-03
+epoch  125  train mse 6.391e-05  val mse 5.786e-05  val h^2 6.484e-04
+epoch  150  train mse 7.313e-05  val mse 1.271e-04  val h^2 1.335e-03
+epoch  175  train mse 7.137e-05  val mse 8.109e-05  val h^2 7.736e-04
+epoch  199  train mse 7.168e-05  val mse 1.657e-04  val h^2 1.915e-03
+ffn_phys1_s2: best val MSE 4.0482e-05 at epoch 160, 242.6 s on cpu, torch 2.14.0+cu130

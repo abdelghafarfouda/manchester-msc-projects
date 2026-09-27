@@ -1,0 +1,123 @@
+{
+  "domain": {
+    "T_min_R": 610.0,
+    "T_max_R": 680.0,
+    "p_min_psia": 2.0,
+    "p_max_psia": 4000.0,
+    "p_max_train_psia": 2000.0,
+    "moles_min": 1,
+    "moles_max": 40,
+    "components": [
+      "CO2",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C10"
+    ],
+    "Tc_R": [
+      547.91,
+      343.33,
+      549.92,
+      750.04,
+      818.68,
+      845.8,
+      1129.2
+    ],
+    "pc_psia": [
+      1071.0,
+      666.4,
+      706.5,
+      539.25,
+      481.0,
+      488.6,
+      359.84
+    ],
+    "omega": [
+      0.2667,
+      0.0104,
+      0.0979,
+      0.19235,
+      0.22523,
+      0.2514,
+      0.389
+    ],
+    "composition_rule": "z_i = n_i / sum(n_j) from integer mole charges drawn uniformly in [1, 40] -- the construction of Models/3 - ... p. 2 and of the ni/zi columns on p. 14",
+    "source_of_component_constants": "Models/3 - Two-phase flash calculation.pdf, pp. 14-15",
+    "source_of_pT_window": [
+      "610 R / 1590.8769 psia -- p. 14, bubble point of the example mixture at 150 F",
+      "610 R / 1.9996 psia -- p. 14, dew point of the example mixture at 150 F",
+      "640 R / 796.4382 psia -- p. 15, flash of the example mixture at 180 F",
+      "680 R / 4000.0000 psia -- p. 16, C1/nC10 example, 220 F",
+      "620 R / 1000.0000 psia -- p. 17, C1/nC10 example, 160 F"
+    ]
+  },
+  "feature_names": [
+    "z_CO2",
+    "z_C1",
+    "z_C2",
+    "z_C3",
+    "z_C4",
+    "z_C5",
+    "z_C10",
+    "p_psia",
+    "T_R"
+  ],
+  "seed": 20240920,
+  "states_requested_per_realisation": 20,
+  "realisations_requested": 3000,
+  "realisations_with_at_least_one_state": 3000,
+  "rows_total": 60000,
+  "split": "by realisation (60 / 20 / 20 of mixtures)",
+  "composition_rule": "z_i = n_i / sum(n_j) from integer mole charges drawn uniformly in [1, 40] -- the construction of Models/3 - ... p. 2 and of the ni/zi columns on p. 14",
+  "units": {
+    "p": "psia",
+    "T": "degrees Rankine (T[F] + 460)",
+    "FV": "dimensionless"
+  },
+  "train": {
+    "rows": 36000,
+    "realisations": 1800,
+    "FV_min": 0.00010780961802017786,
+    "FV_mean": 0.6206491595387054,
+    "FV_max": 0.9999884587890853,
+    "p_psia_min": 2.0950575576507857,
+    "p_psia_max": 1999.5492610298245,
+    "T_R_min": 610.001322103021,
+    "T_R_max": 679.9996750156272
+  },
+  "val": {
+    "rows": 12000,
+    "realisations": 600,
+    "FV_min": 7.761554534166948e-05,
+    "FV_mean": 0.6307664786239222,
+    "FV_max": 0.9999793702085304,
+    "p_psia_min": 2.1318920901563865,
+    "p_psia_max": 1999.3908813734267,
+    "T_R_min": 610.0046142233939,
+    "T_R_max": 679.9934854263338
+  },
+  "test": {
+    "rows": 12000,
+    "realisations": 600,
+    "FV_min": 0.000346051453196879,
+    "FV_mean": 0.6212327173181781,
+    "FV_max": 0.9999744412847582,
+    "p_psia_min": 2.499566347102515,
+    "p_psia_max": 1999.5657976007185,
+    "T_R_min": 610.0203694840887,
+    "T_R_max": 679.9941122371366
+  },
+  "extrapolation": {
+    "p_range_psia": [
+      2000.0,
+      4000.0
+    ],
+    "realisations_requested": 600,
+    "realisations_with_at_least_one_state": 401,
+    "rows": 7931,
+    "FV_mean": 0.06248005652280069
+  },
+  "leakage_check_train_test_realisation_overlap": 0
+}

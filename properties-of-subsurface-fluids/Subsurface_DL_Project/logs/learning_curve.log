@@ -1,0 +1,4 @@
+  225 mixtures (  4500 rows): val MSE 5.6453e-04, test RMSE 0.0233  [40 s]
+  450 mixtures (  9000 rows): val MSE 2.7393e-04, test RMSE 0.0155  [64 s]
+  900 mixtures ( 18000 rows): val MSE 1.3996e-04, test RMSE 0.0106  [111 s]
+ 1800 mixtures ( 36000 rows): val MSE 5.8222e-05, test RMSE 0.0063  [229 s]
