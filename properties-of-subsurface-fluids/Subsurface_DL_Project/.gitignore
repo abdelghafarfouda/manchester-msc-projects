@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------------------
+# Course material and local history are NOT part of this repository.
+# The teaching PDFs and notebooks are copyright of the University of Manchester
+# and its lecturers and are not redistributed here; the project cites them by
+# page and cell instead (docs/SOURCE_MAP.md).
+# ---------------------------------------------------------------------------
+archive/
+Models/
+Deep Learning/
+*.zip
+
+# Environments
+.venv/
+venv/
+env/
+.conda/
+conda-meta/
+
+# Caches and editor state
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Scratch
+/tmp/
+*.log.tmp
+
+# ---------------------------------------------------------------------------
+# Deliberately TRACKED, despite being generated: they are what makes the
+# documented quick demonstration runnable without a 45-minute rebuild.
+#   data/flash_dataset.npz        (6.4 MB)  the dataset, split indices included
+#   results/checkpoints/*.pt      (6 x 140 kB)  the six reported models
+#   results/metrics/*.json        the numbers quoted in README.md
+#   results/figures/*.png         the figures quoted in README.md
+#   logs/*.log                    the run records behind those numbers
+# ---------------------------------------------------------------------------

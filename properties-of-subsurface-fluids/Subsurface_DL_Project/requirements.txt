@@ -1,0 +1,7 @@
+# Python 3.10+
+numpy
+matplotlib
+torch
+# only needed to run / rebuild the notebook
+notebook
+nbformat

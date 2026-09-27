@@ -1,0 +1,25 @@
+# Conda environment for this project.
+#
+# The pinned versions under `pip:` are the ones the reported run actually used
+# (see requirements-lock.txt and results/metrics/environment.json).  They were
+# recorded on Linux/CPU; on Windows conda will resolve the nearest available
+# builds, which is why the Python pin is a minor-version range rather than an
+# exact build string.
+#
+#   conda env create -f environment.yml
+#   conda activate flash-surrogate
+#
+name: flash-surrogate
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - numpy==2.4.4
+      - matplotlib==3.10.9
+      - torch==2.14.0
+      # only needed to open or regenerate the notebook
+      - notebook
+      - nbformat==5.11.1
+      - nbconvert==7.17.1

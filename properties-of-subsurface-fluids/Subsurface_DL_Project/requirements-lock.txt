@@ -1,0 +1,9 @@
+# Exact versions used by the reported run.
+# Recorded by scripts/record_environment.py; see results/metrics/environment.json
+# python==3.11.15 on Linux-6.18.44-fc-v37-x86_64-with-glibc2.39
+
+numpy==2.4.4
+torch==2.14.0+cu130
+matplotlib==3.10.9
+nbformat==5.11.1
+nbconvert==7.17.1
