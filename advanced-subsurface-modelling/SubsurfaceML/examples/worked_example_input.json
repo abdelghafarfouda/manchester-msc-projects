@@ -1,0 +1,22 @@
+{
+  "_comment": "Worked example: one sealed, layered compartment; four 1.25-year injection periods then 5 years shut-in (config/demo.yaml). Assumed generic deep-saline-aquifer values - not a real site. The closed-form reference rate of this reservoir is 2.75 kg/s, so the mean rate of 4 kg/s is 1.45x q_ref, inside the training design (0.15-4x).",
+  "reservoir": {
+    "k_median_mD": 150.0,
+    "V_DP": 0.6,
+    "phi_mean": 0.2,
+    "h_total_m": 40.0,
+    "r_e_m": 2500.0,
+    "n_g": 2.0,
+    "n_a": 3.0,
+    "krg0": 0.45,
+    "S_ar": 0.25,
+    "mu_g_cP": 0.06,
+    "rho_g": 700.0
+  },
+  "rates_kg_s": [
+    5.0,
+    4.5,
+    3.5,
+    3.0
+  ]
+}
