@@ -1,0 +1,221 @@
+# Claimed coverage: purpose, implementation (file::symbol), executed evidence
+# (keys of results/<cfg>/metrics/summary.json and files under results/<cfg>/)
+# and what was learned. scripts/build_coverage.py verifies every symbol and
+# every evidence item; the "learned" statements refer to results/demo.
+
+P01:
+  purpose: "Check the simulated dataset before learning: duplicate scenarios/inputs, missing values, bounds, mass balance, clipping, common BHP; drop constant columns from analysis"
+  implementation: ["src/subsurfaceml/pipeline.py::def data_quality"]
+  evidence_keys: [data_quality.checks, data_quality.duplicate_input_rows]
+  learned: "300/300 runs succeeded; no duplicate scenarios or input rows (after the rate-floor fix; the earlier design produced 16 duplicates), no missing values, no rate on the floor/ceiling; every run conserves CO2 to <1e-9, never clips and keeps one BHP across layers. Nine constant columns (e.g. n_layers, the fixed saturation threshold) carry no information and are excluded."
+P02:
+  purpose: "Keep all fitted preprocessing inside training data: imputer/scaler live in each pipeline, calibration and test reservoirs are held out"
+  implementation: ["src/subsurfaceml/pipeline.py::def make_split", "src/subsurfaceml/models.py::def _pre"]
+  evidence_keys: [ml.leakage.overlaps, ml.split.test_ids]
+  learned: "Train/calibration/test = 56/19/25 reservoirs (168/57/75 rows) with zero overlap; imputer and scaler statistics are learned inside training folds only."
+P03:
+  purpose: "See the distributions of the simulated outputs and how pressure build-up relates to the inputs before modelling"
+  implementation: ["src/subsurfaceml/pipeline.py::def _figure_eda"]
+  evidence_files: [figures/03_eda_targets.png, figures/04_eda_scatter.png, figures/05_eda_correlation.png]
+  learned: "Peak build-up is right-skewed (median ~4 MPa, a tail to ~20 MPa from aggressive schedules on tight or thin units) and rises with the rate relative to the reference rate; many engineered inputs are strongly correlated with each other."
+P04:
+  purpose: "What if a reservoir descriptor is not measured at prediction time? Mask it (and every feature derived from it) for half the validation reservoirs"
+  implementation: ["src/subsurfaceml/studies.py::def missing_descriptors"]
+  evidence_keys: [studies.missing_descriptors]
+  learned: "If permeability is unknown, mean/median imputation makes the log-pressure error five times larger (0.102 -> 0.50-0.51), while a model trained without the permeability group loses only ~24% (0.126): the sampled rates were scaled by a permeability-dependent reference rate, so the rate itself carries information about k - a design property to remember. Unknown V_DP, krg0 or Corey exponents change the error by <1%."
+P05:
+  purpose: "Decide whether extreme scenarios are errors to remove or cases the model must handle (IQR and z-score rules)"
+  implementation: ["src/subsurfaceml/studies.py::def outlier_study"]
+  evidence_keys: [studies.outliers]
+  learned: "Neither rule flags anything: the IQR fence for build-up is 21 MPa and no scenario exceeds it; no |z| > 3. The upper tail is continuous and physically explained (aggressive schedules on tight/thin units), so nothing is removed."
+P06:
+  purpose: "Does the choice of scaler matter for distance-, kernel- and linear models on these inputs?"
+  implementation: ["src/subsurfaceml/studies.py::def scaler_comparison"]
+  evidence_keys: [studies.scaler_comparison]
+  evidence_files: [figures/14_ml_studies.png]
+  learned: "Unscaled KNN and SVR are 1.6-2.2x worse (log-RMSE 0.74 / 0.64 vs 0.44-0.46 / 0.28-0.34); among scalers the differences are small for them. Ridge is more sensitive: standard 0.104, robust 0.123, unscaled 0.159, MinMax 0.168 (the penalty acts on differently scaled coefficients)."
+P08:
+  purpose: "Physically meaningful inputs (log k, kh, pore volume, rate relative to reference, schedule shape, fill radius) and a test of polynomial/interaction terms"
+  implementation: ["src/subsurfaceml/features.py::def engineer", "src/subsurfaceml/studies.py::def polynomial_study"]
+  evidence_keys: [studies.polynomial, ml.features]
+  learned: "On the engineered log-scale inputs the response is close to log-linear: ridge on 7 key inputs (0.093) beats ridge on all 29 (0.104), and adding quadratic/interaction terms makes grouped-CV error worse (0.113), i.e. over-fitting."
+P09:
+  purpose: "Treat column groups differently: log-transform only the rate/mass columns with a FunctionTransformer inside a ColumnTransformer"
+  implementation: ["src/subsurfaceml/studies.py::def column_transformer_study", "src/subsurfaceml/models.py::Pipeline(_pre()"]
+  evidence_keys: [studies.column_transformer]
+  learned: "Log-transforming only the skewed rate/mass columns inside a ColumnTransformer helps KNN (0.455 -> 0.361) and ridge (0.104 -> 0.097); every model is a Pipeline, so preprocessing is refitted per fold."
+P10:
+  purpose: "Many engineered features are near-duplicates; does the |r| > 0.75 rule of thumb help the linear surrogate?"
+  implementation: ["src/subsurfaceml/studies.py::def collinearity_study"]
+  evidence_keys: [studies.collinearity]
+  learned: "24 feature pairs exceed |r| = 0.75. Blindly dropping one of each pair removes the physically essential kh, pore-volume and rate-multiple features and makes the linear model 4.5x worse (0.102 -> 0.464) with less stable coefficients: collinearity here needs domain knowledge or regularisation, not a correlation threshold."
+P11:
+  purpose: "Which inputs does each surrogate rely on for unseen reservoirs?"
+  implementation: ["src/subsurfaceml/interpret.py::def permutation_importances"]
+  evidence_keys: [interpretation.dp_bh_max_MPa.permutation_top8]
+  learned: "The selected (lasso) pressure surrogate relies almost entirely on the rate relative to the reference rate, then the fill-radius ratio and front loading; the plume-radius surrogate on flow capacity (log kh), schedule shape (ramp, front load) and permeability. Correlated inputs share credit; this is model behaviour, not causality."
+P12:
+  purpose: "How few inputs are enough? Filter (SelectKBest), wrapper (RFE) and embedded (Lasso) selection inside the folds"
+  implementation: ["src/subsurfaceml/studies.py::def feature_selection_study"]
+  evidence_keys: [studies.feature_selection]
+  learned: "Embedded Lasso selection (10 inputs) and RFE with 12 inputs slightly beat all 29 (0.105 vs 0.102 is within noise); 5 inputs cost ~10% (RFE 0.112, filter 0.117). Schedule intensity relative to the reservoir's capacity carries most of the signal."
+P13:
+  purpose: "About one scenario in four exceeds the pressure limit; compare class weights, random over/under-sampling and SMOTE applied inside training folds"
+  implementation: ["src/subsurfaceml/classify.py::RandomOverSampler", "src/subsurfaceml/classify.py::SMOTE"]
+  evidence_keys: [classifier.binary.imbalance_study_logistic_oof]
+  learned: "At the default threshold, class weights or over/under-sampling raise out-of-fold recall of exceedances from 0.96 to 0.98 at a precision cost (0.96 -> 0.90-0.95); SMOTE changes little. ROC-AUC stays ~0.995: re-balancing mainly moves the operating point, as threshold adjustment does."
+P14:
+  purpose: "All schedules of a reservoir stay in one partition (the reservoir is the 'geographic block'); quantify the optimism of a random row split"
+  implementation: ["src/subsurfaceml/splits.py::def split_by_realisation", "src/subsurfaceml/studies.py::def split_comparison"]
+  evidence_keys: [ml.leakage, studies.split_comparison]
+  learned: "Splitting by reservoir keeps every schedule of a reservoir together. Here a random row split was only 0.7% more optimistic than a grouped split (5 repeats; in the study configuration the sign even reversed), so the leakage risk is small for this smooth response - but grouped splitting is still the only way to claim 'unseen reservoir' performance."
+A01:
+  purpose: "Ordinary least squares as a baseline surrogate, checked against the normal equation and gradient descent"
+  implementation: ["src/subsurfaceml/studies.py::def normal_equation_study", "src/subsurfaceml/models.py::LinearRegression()"]
+  evidence_keys: [studies.normal_equation, ml.targets.dp_bh_max_MPa.model_comparison_cv_rmse.linear]
+  learned: "Normal-equation and scikit-learn OLS coefficients agree to 7e-11; batch gradient descent reaches the same cost to 4% after 20,000 steps. X'X has condition number ~8e15 because mean rate and planned mass are exactly proportional - the reason regularised models are preferred."
+A02:
+  purpose: "Regularised linear surrogates (ridge, lasso, elastic net) with alpha tuned inside grouped CV"
+  implementation: ["src/subsurfaceml/models.py::ElasticNet(", "src/subsurfaceml/models.py::Ridge()"]
+  evidence_keys: [ml.targets.dp_bh_max_MPa.model_comparison_cv_rmse.elasticnet, studies.normal_equation.max_abs_diff_ridge_closed_form_vs_sklearn]
+  learned: "Regularised linear models are selected for all three targets (lasso, plain OLS for plume radius, elastic net for sweep); test R2 0.970 / 0.997 / 0.970. Ridge's closed form matches scikit-learn to 5e-14."
+A03:
+  purpose: "Interpretable baseline for the pressure-limit screen"
+  implementation: ["src/subsurfaceml/classify.py::LogisticRegression(max_iter=5000, C=1.0)"]
+  evidence_keys: [classifier.binary.families.logistic]
+  learned: "Logistic regression reaches out-of-fold ROC-AUC 0.996 - practically equal to the random forest (0.997) that was selected on average precision."
+A04:
+  purpose: "Green/amber/red screen (below 80% of the allowed build-up / near / above); multinomial vs one-vs-rest vs one-vs-one"
+  implementation: ["src/subsurfaceml/classify.py::def run_multiclass"]
+  evidence_keys: [classifier.traffic_light.test, classifier.traffic_light.families]
+  learned: "The random forest is best out of fold (macro-F1 0.68) and scores 0.89 on test (amber recalled 3/4); simply banding the regression surrogate's prediction does better (0.95). Multinomial, one-vs-rest and one-vs-one logistic regression score 0.63-0.67 out of fold."
+A05:
+  purpose: "Local-interpolation surrogate and classifier"
+  implementation: ["src/subsurfaceml/models.py::KNeighborsRegressor()", "src/subsurfaceml/classify.py::KNeighborsClassifier("]
+  evidence_keys: [ml.targets.dp_bh_max_MPa.model_comparison_cv_rmse.knn, classifier.binary.families.knn]
+  learned: "KNN is the weakest non-trivial regressor (test RMSE 2.1 MPa vs ~0.8): with 29 inputs and 56 training reservoirs the neighbourhoods are sparse; as a classifier it is adequate (OOF AUC 0.99)."
+A06:
+  purpose: "Kernel surrogate and classifier"
+  implementation: ["src/subsurfaceml/models.py::SVR(kernel=\"rbf\")", "src/subsurfaceml/classify.py::SVC(kernel=\"rbf\""]
+  evidence_keys: [ml.targets.dp_bh_max_MPa.model_comparison_cv_rmse.svr, classifier.binary.families.svc]
+  learned: "SVR needs scaling (scaler study) and still trails the linear models on these log-linear responses (test RMSE 0.93 MPa vs 0.83)."
+A07:
+  purpose: "Single-tree surrogate / screen (the interpretable end of the tree family)"
+  implementation: ["src/subsurfaceml/models.py::DecisionTreeRegressor(", "src/subsurfaceml/classify.py::DecisionTreeClassifier("]
+  evidence_keys: [ml.targets.dp_bh_max_MPa.model_comparison_cv_rmse.tree, classifier.binary.families.tree]
+  learned: "A single tree gives the weakest out-of-fold classifier (ROC-AUC 0.96, AP 0.89) and a piecewise-constant pressure prediction (CV 1.18 MPa); bagging it helps (A08)."
+A08:
+  purpose: "Bagged trees and random forests; impurity importance"
+  implementation: ["src/subsurfaceml/models.py::RandomForestRegressor(", "src/subsurfaceml/studies.py::BaggingRegressor("]
+  evidence_keys: [ml.targets.dp_bh_max_MPa.model_comparison_cv_rmse.random_forest, studies.ensembles.bagged_tree_cv_rmse, classifier.binary.selected]
+  learned: "Bagging 100 trees cuts the single-tree error by 20% (log-RMSE 0.137 -> 0.109); the random forest is the selected pressure-limit classifier."
+A09:
+  purpose: "Boosted surrogates, and early stopping from the XGBoost validation curve"
+  implementation: ["src/subsurfaceml/models.py::GradientBoostingRegressor(", "src/subsurfaceml/models.py::AdaBoostRegressor(", "src/subsurfaceml/studies.py::def boosting_early_stopping"]
+  evidence_keys: [studies.boosting_early_stopping, ml.targets.dp_bh_max_MPa.model_comparison_cv_rmse.xgboost]
+  evidence_files: [figures/14_ml_studies.png]
+  learned: "XGBoost's grouped validation error stops improving after ~260 rounds while training error keeps falling; boosting ranks 3rd (gradient boosting) in CV for pressure and is best on the test set (0.77 MPa) - within the noise of 25 test reservoirs."
+A10:
+  purpose: "Can combining surrogates beat the best single one?"
+  implementation: ["src/subsurfaceml/studies.py::def ensemble_study"]
+  evidence_keys: [studies.ensembles]
+  learned: "Averaging lasso, elastic net and gradient boosting improves grouped-CV log-RMSE from 0.092 (best single) to 0.088 (~4%); stacking gives 0.089. Small gains for the added complexity."
+A11:
+  purpose: "How many independent shapes do simulated plumes have? PCA of final saturation profiles (and of the reservoir inputs)"
+  implementation: ["src/subsurfaceml/interpret.py::def profile_structure", "src/subsurfaceml/interpret.py::def pca_regimes"]
+  evidence_keys: [interpretation.plume_shapes.explained_variance_ratio, interpretation.reservoir_pca]
+  learned: "Four components explain 95% of the plume-shape variance (PC1 alone 69%); with 3 components the reconstruction error is 7% of the standardised variance. The reservoir inputs, sampled independently, show no dominant component (PC1 17%) - a property of the sampling design, not of reservoirs."
+A12:
+  purpose: "Does a non-linear (RBF) projection separate plume shapes better than linear PCA?"
+  implementation: ["src/subsurfaceml/interpret.py::KernelPCA("]
+  evidence_keys: [interpretation.plume_shapes.kmeans_on_kernel_pca_silhouette]
+  evidence_files: [figures/13_plume_shapes.png]
+  learned: "k-means on the 2-D kernel-PCA map has silhouette 0.47 vs 0.42 on the PCA scores: a modest gain from the non-linear projection."
+A13:
+  purpose: "Group plumes (and reservoirs) into regimes"
+  implementation: ["src/subsurfaceml/interpret.py::def cluster_regimes"]
+  evidence_keys: [interpretation.plume_shapes.kmeans_on_pca, interpretation.reservoir_kmeans]
+  learned: "Two plume regimes: a high-saturation, compact plume and a lower-saturation, farther-reaching one - the end-point mobility-ratio effect of 4-CO2 BL.pdf p.18."
+A14:
+  purpose: "Find unusual plume shapes that fit no regime"
+  implementation: ["src/subsurfaceml/interpret.py::DBSCAN("]
+  evidence_keys: [interpretation.plume_shapes.dbscan]
+  learned: "DBSCAN finds one dense group and marks 18 of 300 profiles as noise - the most extreme plateau/front combinations, a short list of cases to inspect."
+A15:
+  purpose: "2-D maps of the plume-shape space for inspection"
+  implementation: ["src/subsurfaceml/interpret.py::TSNE(", "src/subsurfaceml/interpret.py::umap.UMAP("]
+  evidence_files: [figures/13_plume_shapes.png]
+  evidence_keys: [interpretation.plume_shapes.n_profiles]
+  learned: "Both t-SNE and UMAP separate the two k-means regimes; as the course warns, the distances between their islands carry no meaning."
+E01:
+  purpose: "Report surrogate error on unseen reservoirs in physical units"
+  implementation: ["src/subsurfaceml/models.py::def regression_metrics"]
+  evidence_keys: [ml.targets.dp_bh_max_MPa.test, ml.targets.r_plume_m95_m.test, ml.targets.sweep_efficiency.test]
+  learned: "Peak build-up: MAE 0.41 MPa, RMSE 0.83 MPa, max error 3.6 MPa; plume radius: MAE 5.2 m, RMSE 7.6 m; sweep: MAE 0.0014 (all on 75 scenarios of 25 unseen reservoirs)."
+E02:
+  purpose: "Every surrogate is compared with a training-mean predictor on the same test reservoirs"
+  implementation: ["src/subsurfaceml/models.py::DummyRegressor(strategy=\"mean\")"]
+  evidence_keys: [ml.targets.dp_bh_max_MPa.mean_baseline_test]
+  learned: "The training-mean predictor has RMSE 4.8 MPa for build-up and 142 m for plume radius - 5.8x and 19x worse than the selected surrogates."
+E03:
+  purpose: "How many simulated reservoirs are needed?"
+  implementation: ["src/subsurfaceml/studies.py::def learning_curve_study"]
+  evidence_keys: [studies.learning_curve]
+  evidence_files: [figures/14_ml_studies.png]
+  learned: "Grouped-CV error of the boosted model falls from 0.26 to 0.12 (log-RMSE) by ~54 training rows and to 0.10 at 126, while its training error stays near zero: the remaining gap is variance, so more reservoirs help, but slowly."
+E04:
+  purpose: "Judge the pressure-limit screen with the confusion matrix, precision, recall and F1"
+  implementation: ["src/subsurfaceml/classify.py::def _cls_metrics"]
+  evidence_keys: [classifier.binary.test_selected_threshold]
+  learned: "On the 75 test scenarios the screen misses 1 of 16 exceedances and raises no false alarm (confusion matrix [[59, 0], [1, 15]]; recall 0.94, precision 1.0)."
+E05:
+  purpose: "Choose the decision threshold for high recall on out-of-fold scores"
+  implementation: ["src/subsurfaceml/classify.py::def threshold_for_recall"]
+  evidence_keys: [classifier.binary.threshold_selected, classifier.binary.oof_at_selected_threshold]
+  learned: "The out-of-fold threshold for recall >= 0.95 is 0.48 (default 0.5) with OOF recall 0.96, precision 0.93; on the test set it changes nothing. The one missed exceedance (R0036_S+02, 11.8 MPa) is also the regression surrogate's worst case (predicted 8.2 MPa): a 40 mD unit where errors are largest."
+E06:
+  purpose: "Threshold-free comparison of classifiers"
+  implementation: ["src/subsurfaceml/classify.py::roc_auc_score"]
+  evidence_keys: [classifier.binary.test_selected_threshold.roc_auc, classifier.binary.families]
+  evidence_files: [figures/10_classifier.png]
+  learned: "Test ROC-AUC 0.988; out of fold, every family except the single tree exceeds 0.99."
+E07:
+  purpose: "Model selection by K-fold CV with the reservoir as the group"
+  implementation: ["src/subsurfaceml/splits.py::def grouped_cv"]
+  evidence_keys: [ml.targets.dp_bh_max_MPa.model_comparison_cv_rmse]
+  learned: "CV and test rankings agree for plume radius and sweep (Spearman 0.94-0.95) and less for build-up (0.80): CV chose the lasso (CV 0.83 MPa, test 0.83) while gradient boosting scored best on test (0.77). The top families lie within ~10% - below what 25 test reservoirs can resolve."
+E08:
+  purpose: "Tune hyper-parameters within grouped folds; grid vs randomised search at equal budget"
+  implementation: ["src/subsurfaceml/studies.py::GridSearchCV(", "src/subsurfaceml/models.py::RandomizedSearchCV("]
+  evidence_keys: [studies.tuning_strategies.grid, studies.tuning_strategies.random]
+  learned: "At 12 candidates each, the grid (0.0997) slightly beat random search (0.1016) for gradient boosting; both prefer shallow trees."
+E09:
+  purpose: "Bayesian optimisation of the same search"
+  implementation: ["src/subsurfaceml/studies.py::BayesSearchCV("]
+  evidence_keys: [studies.tuning_strategies.bayesian]
+  learned: "BayesSearchCV (0.1023) did not beat the grid or random search at the same budget and took twice as long - the problem is cheap and smooth."
+E10:
+  purpose: "Choose k and judge clusters: inertia (elbow), silhouette, Davies-Bouldin, adjusted mutual information"
+  implementation: ["src/subsurfaceml/interpret.py::davies_bouldin_score", "src/subsurfaceml/interpret.py::adjusted_mutual_info_score"]
+  evidence_keys: [interpretation.plume_shapes.kmeans_on_pca.table, interpretation.plume_shapes.ami_kmeans_vs_reference]
+  learned: "Silhouette and Davies-Bouldin both favour k = 2 (0.42 / 0.90); AMI between plume regimes and the pressure traffic light is only 0.27 - plume shape and pressure risk are largely different questions."
+E11:
+  purpose: "Explain the tree-based pressure surrogate"
+  implementation: ["src/subsurfaceml/interpret.py::def shap_summary"]
+  evidence_keys: [interpretation.shap]
+  evidence_files: [figures/11_shap_dp.png]
+  learned: "SHAP attributes most of the boosted model's log-pressure to the rate multiple of the reference rate (mean |SHAP| 0.57), then dimensionless mass (0.16) and fill-radius ratio (0.09)."
+E12:
+  purpose: "Explain one prediction near the limit with a locally weighted linear surrogate"
+  implementation: ["src/subsurfaceml/interpret.py::def lime_explanation"]
+  evidence_keys: [interpretation.local_case.lime_top6]
+  learned: "For the test case closest to the 9 MPa limit (R0072_S+02, 9.19 simulated vs 9.46 predicted), the local surrogate attributes the prediction almost entirely to the rate multiple; other inputs have local effects an order of magnitude smaller."
+E13:
+  purpose: "What-if: how much could this schedule be scaled before the predicted build-up reaches the limit?"
+  implementation: ["src/subsurfaceml/interpret.py::def what_if_rate_scaling"]
+  evidence_keys: [interpretation.local_case.what_if]
+  evidence_files: [figures/12_what_if.png]
+  learned: "For that case the predicted build-up reaches the limit if the whole schedule is scaled by 0.94, i.e. it sits ~6% above the largest schedule predicted to stay below 9 MPa."
+P07:
+  status: not_covered
+  reason: "No categorical variables exist in the physical inputs (every reservoir and schedule descriptor is continuous); inventing categories only to use an encoder would be artificial"

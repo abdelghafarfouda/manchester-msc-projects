@@ -1,0 +1,188 @@
+# FROZEN inventory of the substantive topics taught in the supplied
+# "Data Science and machine learning" folder (identical to its .zip).
+#
+# Frozen on 2026-09-20 BEFORE any coverage method was chosen. Do not edit the
+# topic list to change the percentage; scripts/build_coverage.py refuses to
+# run if the hash of this list changes without the `frozen_hash` being updated
+# deliberately.
+#
+# Granularity rule: one topic = one method or concept that the course teaches
+# as a unit (a lecture section / exercise notebook heading). Variants taught
+# together in the same section (e.g. Ridge/Lasso/ElasticNet, t-SNE/UMAP,
+# grid/random search) are ONE topic. Duplicate notebooks are never counted
+# twice. Setup/administration material is excluded (listed under `excluded`).
+#
+# Coverage = substantively implemented topics / total topics below (42).
+
+topics:
+  # ---------------- 1. Data preprocessing ----------------
+  P01: {name: "Data cleaning: duplicate removal, dropping uninformative columns",
+        sources: [Lecture01.ipynb, "E01_EDA (1).ipynb", "E01_Preprocessing (1).ipynb", "E01_FeatureEngineering_Encoding (1).ipynb", "E01_Pipeline (1).ipynb", OptionalE03.ipynb, E03_geographicalspliting.ipynb]}
+  P02: {name: "Hold-out split and leakage-free fit/transform (fit on train only)",
+        sources: [Lecture01.ipynb, Extra_transformer.ipynb, "E01_Preprocessing (1).ipynb", "E01_EDA (1).ipynb"]}
+  P03: {name: "Exploratory data analysis: summary statistics, histograms, scatter, correlation heat map",
+        sources: [Lecture02.ipynb, "E01_EDA (1).ipynb", LiveCode1.ipynb, LiveCode2.ipynb]}
+  P04: {name: "Missing data and imputation (SimpleImputer)",
+        sources: [Lecture01.ipynb, "E01_Preprocessing (1).ipynb", Extra_transformer.ipynb, OptionalE03.ipynb]}
+  P05: {name: "Outlier detection and handling (z-score, IQR)",
+        sources: [Lecture02.ipynb, "E01_EDA (1).ipynb", "E01_Preprocessing (1).ipynb", "E01_FeatureEngineering_Encoding (1).ipynb"]}
+  P06: {name: "Feature scaling (Standard, MinMax, Robust scalers)",
+        sources: [Lecture01.ipynb, "E01_Preprocessing (1).ipynb", "E01_Pipeline (1).ipynb", OptionalE03.ipynb]}
+  P07: {name: "Categorical encoding (one-hot, label/ordinal, target encoding)",
+        sources: [Lecture03.ipynb, "E01_FeatureEngineering_Encoding (1).ipynb", "E01_Pipeline (1).ipynb", E03_geographicalspliting.ipynb]}
+  P08: {name: "Feature engineering: log transforms, binning, derived/domain features, polynomial and interaction terms",
+        sources: [Lecture02.ipynb, Lecture03.ipynb, Lecture08.ipynb, "E01_FeatureEngineering_Encoding (1).ipynb", OptionalE03.ipynb]}
+  P09: {name: "Pipelines, ColumnTransformer, FunctionTransformer",
+        sources: [Lecture04.ipynb, "E01_Pipeline (1).ipynb", E03_geographicalspliting.ipynb, LiveCode1.ipynb, LiveCode2.ipynb]}
+  P10: {name: "Collinearity analysis and correlation-threshold feature removal",
+        sources: [Lecture05.ipynb, "E01_FeatureSelection (1).ipynb", E03_geographicalspliting.ipynb, Lecture07.ipynb, 01-Swarm-Behaviour_VL.ipynb]}
+  P11: {name: "Permutation feature importance",
+        sources: [Lecture05.ipynb, "E01_FeatureSelection (1).ipynb", 01-Swarm-Behaviour_VL.ipynb]}
+  P12: {name: "Feature-selection families: filter, wrapper, embedded",
+        sources: [Lecture05.ipynb]}
+  P13: {name: "Imbalanced data: under/over-sampling, SMOTE, class weights",
+        sources: [Lecture06.ipynb, E04_Imbalance.ipynb, 01-Swarm-Behaviour_VL.ipynb]}
+  P14: {name: "Geographical and temporal (grouped) train/test splitting",
+        sources: [Lecture08.ipynb, E03_geographicalspliting.ipynb]}
+  # ---------------- 2. Machine-learning algorithms ----------------
+  A01: {name: "Linear regression: cost function, normal equation, gradient descent",
+        sources: [Lecture01.ipynb, mathematics_regression.ipynb, "E02_ModelingAndEvaluation (1).ipynb"]}
+  A02: {name: "Regularised regression: Ridge, Lasso, ElasticNet",
+        sources: [Lecture02.ipynb, "E02_Regularization (1).ipynb", mathematics_regression.ipynb, "E03-LearningCurve (1).ipynb"]}
+  A03: {name: "Logistic regression (binary classification)",
+        sources: [Lecture03.ipynb, "E02_logisticRegression (1).ipynb", math_classifications.ipynb, 01-Swarm-Behaviour_VL.ipynb]}
+  A04: {name: "Multiclass classification (OvR, OvO, multinomial) and multiclass confusion matrix",
+        sources: ["E02_Multiclassification (1).ipynb", multiclassification.ipynb, Lecture03.ipynb]}
+  A05: {name: "K-nearest neighbours",
+        sources: [Lecture04.ipynb, "E03_ROC_AUC (1).ipynb", "E02_Multiclassification (1).ipynb", math_classifications.ipynb]}
+  A06: {name: "Support vector machines (SVC/SVR, kernels, C)",
+        sources: [Lecture05.ipynb, "E01_HyperparameterSVM (1).ipynb", math_classifications.ipynb]}
+  A07: {name: "Decision trees",
+        sources: [Lecture05.ipynb, math_classifications.ipynb, "E02_Ensembles (1).ipynb"]}
+  A08: {name: "Bagging and random forests (incl. impurity feature importance)",
+        sources: [Lecture06.ipynb, "E02_Ensembles (1).ipynb", "E03_TuningRandomforest (1).ipynb"]}
+  A09: {name: "Boosting: AdaBoost, gradient boosting, XGBoost (with early stopping)",
+        sources: [Lecture06.ipynb, "E02_Ensembles (1).ipynb"]}
+  A10: {name: "Voting and stacking ensembles",
+        sources: [Lecture06.ipynb, "E02_Ensembles (1).ipynb"]}
+  A11: {name: "Principal component analysis (explained variance, scree, choosing k, PCA as preprocessing)",
+        sources: [Lecture07.ipynb, "E01_PCA (1).ipynb", PCA.ipynb, multiclassification.ipynb]}
+  A12: {name: "Kernel PCA",
+        sources: [Lecture07.ipynb]}
+  A13: {name: "K-means clustering",
+        sources: [Lecture07.ipynb, E02_clustering.ipynb]}
+  A14: {name: "DBSCAN",
+        sources: [Lecture07.ipynb]}
+  A15: {name: "t-SNE and UMAP manifold projections",
+        sources: [Lecture08.ipynb, "E01_UMAP_tSNE (1).ipynb", utils.py]}
+  # ---------------- 3. Model selection and evaluation ----------------
+  E01: {name: "Regression metrics: MAE, MSE, RMSE, R2, max error",
+        sources: [Lecture01.ipynb, "E03_Evaluationmetrics (1).ipynb", "E02_ModelingAndEvaluation (1).ipynb", results.csv]}
+  E02: {name: "Baseline models (mean / dummy predictor) as the reference score",
+        sources: [Lecture01.ipynb, "E01_FeatureSelection (1).ipynb", 02-core_RPlatt.ipynb, 03-Asteroid-Impact_RPlatt.ipynb]}
+  E03: {name: "Bias-variance, over/under-fitting and learning curves",
+        sources: [Lecture02.ipynb, "E03-LearningCurve (1).ipynb", LiveCode1.ipynb, LiveCode2.ipynb, "E02_Ensembles (1).ipynb"]}
+  E04: {name: "Classification metrics: confusion matrix, accuracy, precision, recall, F1",
+        sources: [Lecture03.ipynb, "E02_logisticRegression (1).ipynb", "E02-Threshold (1).ipynb"]}
+  E05: {name: "Precision-recall trade-off and decision-threshold adjustment",
+        sources: [Lecture04.ipynb, "E02-Threshold (1).ipynb", 01-Swarm-Behaviour_VL.ipynb]}
+  E06: {name: "ROC curve and AUC",
+        sources: [Lecture04.ipynb, "E03_ROC_AUC (1).ipynb", 03-Asteroid-Impact_RPlatt.ipynb]}
+  E07: {name: "K-fold cross-validation",
+        sources: [Lecture05.ipynb, LiveCode2.ipynb, "E01_FeatureSelection (1).ipynb", 02-core_RPlatt.ipynb]}
+  E08: {name: "Hyper-parameter search: grid search and randomised search (incl. inside pipelines)",
+        sources: [Lecture06.ipynb, "E03_TuningRandomforest (1).ipynb", "E01_HyperparameterSVM (1).ipynb", "E01_PCA (1).ipynb"]}
+  E09: {name: "Bayesian optimisation of hyper-parameters (BayesSearchCV)",
+        sources: [Lecture06.ipynb, "E03_TuningRandomforest (1).ipynb"]}
+  E10: {name: "Clustering evaluation: inertia/elbow, silhouette, Davies-Bouldin, adjusted mutual information",
+        sources: [Lecture07.ipynb]}
+  E11: {name: "SHAP explanations",
+        sources: [Lecture08.ipynb, E02_SHAP.ipynb]}
+  E12: {name: "LIME local surrogate explanations",
+        sources: [Lecture08.ipynb]}
+  E13: {name: "Counterfactual / what-if analysis of model predictions",
+        sources: [Lecture08.ipynb]}
+
+excluded:
+  - {what: "Environment setup, canonical imports, random_state conventions", files: [E0_Instruction.ipynb, "E0_Instruction (1).ipynb"], reason: "administrative setup, not a method"}
+  - {what: "Module logistics, assessment description, acknowledgements", files: [Lecture01.ipynb], reason: "administrative sections of an otherwise mapped notebook"}
+  - {what: "Saving results to CSV", files: ["E02_ModelingAndEvaluation (1).ipynb"], reason: "file I/O, not a method"}
+  - {what: "Past assessments", files: [01-Swarm-Behaviour.ipynb, 01-Swarm-Behaviour_VL.ipynb, 02-core.ipynb, 02-core_RPlatt.ipynb, 03-Asteroid-Impact.ipynb, 03-Asteroid-Impact_RPlatt.ipynb], reason: "applications of topics already listed; they add no new topic (their contributions are cited as secondary sources above)"}
+  - {what: "Optional open exercise with no content beyond a title", files: [E03_houseprice.ipynb, "E03_houseprice (1).ipynb"], reason: "no taught method"}
+
+# Every file in the folder, with the topics it supports. Byte-identical
+# duplicates are marked; unexecuted originals point at their executed copy.
+files:
+  01-Swarm-Behaviour.ipynb: {status: "assessment brief (unexecuted)", topics: []}
+  01-Swarm-Behaviour_VL.ipynb: {status: "assessment solution", topics: [P10, P11, P13, A03, E05]}
+  02-core.ipynb: {status: "assessment brief (unexecuted)", topics: []}
+  02-core_RPlatt.ipynb: {status: "assessment solution", topics: [P09, E02, E07]}
+  03-Asteroid-Impact.ipynb: {status: "assessment brief (unexecuted)", topics: []}
+  03-Asteroid-Impact_RPlatt.ipynb: {status: "assessment solution", topics: [E02, E06]}
+  "E01_EDA (1).ipynb": {status: "executed exercise", topics: [P01, P02, P03, P05]}
+  E01_EDA.ipynb: {status: "unexecuted copy of 'E01_EDA (1).ipynb'", topics: [P01, P02, P03, P05]}
+  "E01_FeatureEngineering_Encoding (1).ipynb": {status: "executed exercise", topics: [P01, P05, P07, P08]}
+  E01_FeatureEngineering_Encoding.ipynb: {status: "unexecuted copy", topics: [P01, P05, P07, P08]}
+  "E01_FeatureSelection (1).ipynb": {status: "executed exercise", topics: [P10, P11, E02, E07]}
+  E01_FeatureSelection.ipynb: {status: "unexecuted copy", topics: [P10, P11]}
+  "E01_HyperparameterSVM (1).ipynb": {status: "executed exercise", topics: [A06, E08]}
+  E01_HyperparameterSVM.ipynb: {status: "unexecuted copy", topics: [A06, E08]}
+  "E01_PCA (1).ipynb": {status: "executed exercise", topics: [A11, E08]}
+  E01_PCA.ipynb: {status: "unexecuted copy", topics: [A11]}
+  "E01_Pipeline (1).ipynb": {status: "executed exercise", topics: [P01, P06, P07, P09]}
+  E01_Pipeline.ipynb: {status: "unexecuted copy", topics: [P09]}
+  "E01_Preprocessing (1).ipynb": {status: "executed exercise", topics: [P01, P02, P04, P05, P06]}
+  E01_Preprocessing.ipynb: {status: "unexecuted copy", topics: [P04, P06]}
+  "E01_UMAP_tSNE (1).ipynb": {status: "executed exercise", topics: [A11, A15]}
+  E01_UMAP_tSNE.ipynb: {status: "executed copy (differs only in outputs)", topics: [A11, A15]}
+  "E02-Threshold (1).ipynb": {status: "executed exercise", topics: [E04, E05]}
+  E02-Threshold.ipynb: {status: "unexecuted copy", topics: [E04, E05]}
+  "E02_Ensembles (1).ipynb": {status: "executed exercise", topics: [A05, A07, A08, A09, A10, E03]}
+  E02_Ensembles.ipynb: {status: "unexecuted copy", topics: [A08, A09, A10]}
+  "E02_ModelingAndEvaluation (1).ipynb": {status: "executed exercise", topics: [A01, E01]}
+  E02_ModelingAndEvaluation.ipynb: {status: "unexecuted copy", topics: [A01, E01]}
+  "E02_Multiclassification (1).ipynb": {status: "executed exercise", topics: [A04, A05, E04]}
+  E02_Multiclassification.ipynb: {status: "partly executed copy", topics: [A04]}
+  "E02_Regularization (1).ipynb": {status: "executed exercise", topics: [A02]}
+  E02_Regularization.ipynb: {status: "partly executed copy", topics: [A02]}
+  "E02_SHAP (1).ipynb": {status: "BYTE-IDENTICAL duplicate of E02_SHAP.ipynb", topics: [E11]}
+  E02_SHAP.ipynb: {status: "executed exercise", topics: [E11]}
+  "E02_clustering (1).ipynb": {status: "BYTE-IDENTICAL duplicate of E02_clustering.ipynb", topics: [A13]}
+  E02_clustering.ipynb: {status: "open exercise (data load only)", topics: [A13]}
+  "E02_logisticRegression (1).ipynb": {status: "executed exercise", topics: [A03, E04]}
+  E02_logisticRegression.ipynb: {status: "unexecuted copy", topics: [A03]}
+  "E03-LearningCurve (1).ipynb": {status: "executed exercise", topics: [A02, E03]}
+  E03-LearningCurve.ipynb: {status: "unexecuted copy", topics: [E03]}
+  "E03_Evaluationmetrics (1).ipynb": {status: "executed exercise", topics: [E01]}
+  E03_Evaluationmetrics.ipynb: {status: "unexecuted copy", topics: [E01]}
+  "E03_ROC_AUC (1).ipynb": {status: "executed exercise", topics: [A05, E06]}
+  E03_ROC_AUC.ipynb: {status: "unexecuted copy", topics: [E06]}
+  "E03_TuningRandomforest (1).ipynb": {status: "executed exercise", topics: [A08, E08, E09]}
+  E03_TuningRandomforest.ipynb: {status: "unexecuted copy", topics: [A08, E08, E09]}
+  "E03_geographicalspliting (1).ipynb": {status: "BYTE-IDENTICAL duplicate of E03_geographicalspliting.ipynb", topics: [P01, P07, P09, P10, P14]}
+  E03_geographicalspliting.ipynb: {status: "executed exercise", topics: [P01, P07, P09, P10, P14]}
+  "E03_houseprice (1).ipynb": {status: "BYTE-IDENTICAL duplicate", topics: []}
+  E03_houseprice.ipynb: {status: "title only", topics: []}
+  "E04_Imbalance (1).ipynb": {status: "BYTE-IDENTICAL duplicate of E04_Imbalance.ipynb", topics: [P13]}
+  E04_Imbalance.ipynb: {status: "open exercise (data load only)", topics: [P13]}
+  "E0_Instruction (1).ipynb": {status: "BYTE-IDENTICAL duplicate; setup", topics: []}
+  E0_Instruction.ipynb: {status: "setup instructions", topics: []}
+  Extra_transformer.ipynb: {status: "worked example", topics: [P02, P04]}
+  Lecture01.ipynb: {status: "lecture", topics: [P01, P02, P04, P06, A01, E01, E02]}
+  Lecture02.ipynb: {status: "lecture", topics: [P03, P05, P08, A02, E03]}
+  Lecture03.ipynb: {status: "lecture", topics: [P07, P08, A03, A04, E04]}
+  Lecture04.ipynb: {status: "lecture", topics: [P09, A05, E05, E06]}
+  Lecture05.ipynb: {status: "lecture", topics: [P10, P11, P12, A06, A07, E07]}
+  Lecture06.ipynb: {status: "lecture", topics: [P13, A08, A09, A10, E08, E09]}
+  Lecture07.ipynb: {status: "lecture", topics: [P10, A11, A12, A13, A14, E10]}
+  Lecture08.ipynb: {status: "lecture", topics: [P08, P14, A15, E11, E12, E13]}
+  LiveCode1.ipynb: {status: "live-coding session", topics: [P03, P09, E03]}
+  LiveCode2.ipynb: {status: "live-coding session", topics: [P03, P09, E03, E07]}
+  "OptionalE03 (1).ipynb": {status: "BYTE-IDENTICAL duplicate of OptionalE03.ipynb", topics: [P01, P04, P06, P08]}
+  OptionalE03.ipynb: {status: "executed optional exercise", topics: [P01, P04, P06, P08]}
+  PCA.ipynb: {status: "worked example", topics: [A11]}
+  math_classifications.ipynb: {status: "derivations (logistic, SVM, KNN, trees)", topics: [A03, A05, A06, A07]}
+  mathematics_regression.ipynb: {status: "derivations (normal equation, ridge)", topics: [A01, A02]}
+  multiclassification.ipynb: {status: "worked example", topics: [A04, A11]}
+  results.csv: {status: "predictions table (y_test, y_pred) used by E03_Evaluationmetrics; not reservoir data", topics: [E01]}
+  utils.py: {status: "plotting helpers for the UMAP/t-SNE notebook", topics: [A15]}
