@@ -7,6 +7,29 @@ against a worked benchmark, exact solutions, an energy balance and a units check
 The study then measures how the predicted mean temperature depends on refinement
 of the grid and time step.
 
+## Summary
+
+- **Objective.** Find the temperature field, mean temperature and heat input of an
+  anisotropic plate after 5 h of partial heating (an assignment problem), and how
+  fine the grid must be before the mean temperature changes by less than 0.2 %.
+- **Method.** Implicit finite differences in Python: five-point central differences
+  in space with ghost-node insulated boundaries, backward Euler in time, and one
+  sparse LU factorisation per run, with six verification checks: a course worked
+  solution, space and time convergence against an exact solution, an energy
+  balance, a units test and an anisotropy-orientation test.
+- **Key result.** All six checks pass (observed orders 1.97 in space and 0.98 in
+  time). After 5 h the finest grid, 193 × 177 nodes, gives a mean temperature of
+  438.5 K and 537 MJ/m conducted in; the assignment's 13 × 12 grid gives 444.9 K
+  and 507 MJ/m. Refining both directions together, successive mean temperatures
+  first agree within 0.2 % at 193 × 177.
+- **Main limitation.** This is verification, not validation: there are no
+  measurements, and the constant assignment properties describe no real rock or
+  geothermal system. The mean temperature converges at only about first order,
+  consistent with (but not proven to come from) the ends of the heated segments,
+  and the 0.2 % criterion measures the change between grids, not the error.
+- **How to run.** `python -m pip install -r requirements.txt`, then
+  `python run_project.py` (about a minute; see [Run it](#run-it)).
+
 ## Question
 
 A 1 m x 1 m plate is initially at 300 K. Its conductivity is anisotropic (kx = 16,
@@ -203,10 +226,13 @@ results/            CSV tables, figures, summary.json, run_log.txt, environment.
 ## Author and attribution
 
 Abdelghafar Fouda — problem set-up, implementation, verification and analysis.
+I developed the original project myself. AI tools were subsequently used to help
+publish it on GitHub and make minor quality improvements. Every number in this
+README is produced by `run_project.py` and stored in `results/`.
+
 The equations, physical inputs, numerical methods and benchmark values come from
 the course materials cited in [SOURCE_MAP.md](SOURCE_MAP.md); no course material is
-redistributed here. The code uses NumPy, SciPy and Matplotlib (BSD licences). AI
-assistance was used while writing and reviewing the code and documentation; every
-number in this README is produced by `run_project.py` and stored in `results/`.
+redistributed here. The code uses NumPy and SciPy (BSD licences) and Matplotlib
+(its own PSF-based licence).
 
 Licence: MIT (see `LICENSE`).
