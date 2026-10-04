@@ -231,7 +231,9 @@ the learned correction. The 9 MPa build-up limit is a modelling assumption.
 `numerics.py` re-simulates a stratified sample of the *dataset* cases with
 the grid, the well block and the time step refined, one at a time and
 together, and reports how much each target and each pressure-limit label
-changes. `rz.py` is a separate 2-D radial–vertical model with buoyancy and
+changes. `startup_peak_screen` checks *every* case for a peak build-up set by
+a transient of the brine-filled well block (`scripts/run_experiments.py
+--only peak_screen`, which also refines the flagged cases). `rz.py` is a separate 2-D radial–vertical model with buoyancy and
 vertical crossflow that reduces to the layered model when both are switched
 off; `scripts/run_model_form.py` uses it to measure how much the layered,
 no-gravity assumption changes the targets.
@@ -251,6 +253,7 @@ it.
 |---|---|
 | Did the simulator pass? | `results/study/metrics/validation.json` |
 | How large is the discretisation error of the training data? | `results/study/metrics/numerics_summary.json` |
+| Is any peak build-up a well-block transient? | `results/study/experiments/peak_screen.json` |
 | How good are the surrogates on fresh reservoirs, and under shift? | `results/study/reports/RESULTS.md`, `summary.json → ml.targets` |
 | Which change helped, by how much? | `results/study/experiments/ablation_summary.json` |
 | Do the intervals cover? | `summary.json → ml.targets.<t>.designs.revised.evaluation.<set>.intervals` |

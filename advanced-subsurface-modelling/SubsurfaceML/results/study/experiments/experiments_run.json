@@ -37,5 +37,23 @@
       "git_commit": "e16362e"
     },
     "code_note": "environment.git_commit is the HEAD at the start of the run (e16362e, the published version); the code that ran was the uncommitted working tree of this revision, committed on 2026-10-04 as a376b9b..6472584 with the decision-rule code added afterwards."
+  },
+  "peak_screen": {
+    "command": "scripts/run_experiments.py --config config/study.yaml --only peak_screen",
+    "environment": {
+      "python": "3.11.15",
+      "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "numpy": "2.4.4",
+      "scipy": "1.17.1",
+      "pandas": "3.0.2",
+      "scikit_learn": "1.8.0",
+      "xgboost": "3.2.0",
+      "git_commit": "a419a30"
+    },
+    "started": "Sun Oct  4 08:27:44 2026",
+    "peak_screen_seconds": 439.60916153299877,
+    "finished": "Sun Oct  4 08:35:04 2026",
+    "code_note": "environment.git_commit is the HEAD at the start of the run; the screen code (numerics.startup_peak_screen, run_experiments.run_peak_screen) ran from the working tree and was committed unchanged as f0f1068"
   }
 }

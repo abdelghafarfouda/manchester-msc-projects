@@ -35,11 +35,11 @@ were found and fixed are listed in `docs/CHANGELOG.md`.
 
 | # | Choice | Quantified where |
 |---|---|---|
-| B1 | Near-well block `[r_w, r_near]`; pressure drop to the wellbore carried by the well equation | exact for steady single phase (V2); two-phase sensitivity in V7 (`r_near` sweep) |
+| B1 | Near-well block `[r_w, r_near]`; pressure drop to the wellbore carried by the well equation | exact for steady single phase (V2); two-phase sensitivity in V7 (`r_near` sweep). Since 2026-10: where the peak build-up is a start-up transient (well block still brine-filled) its height depends on `r_near`; every case was screened (`experiments/peak_screen.json`): 0 of 400 test, 4 of 880 development and 32 of 240 shift cases, 2–14 % too high (conservative) |
 | B2 | Strict local CFL limit + reject/retry on saturation change and on a two-sided discrete maximum principle | V6 counts turning points of the saturation profile (odd–even oscillation detector); V8 compares with the relaxed controller the earlier version used |
 | B3 | No silent clipping; clipping would be counted | `n_clipped = 0` in every validation case and every dataset scenario (data-quality report) |
 | B4 | Pressure solved in increment form | removes a round-off drift of ~10 Pa/yr seen when solving for absolute pressure with small storage |
-| B5 | Discretisation error is reported, not assumed small | V7 on the verification case; since 2026-10 measured on a stratified sample of the dataset cases themselves (`numerics.py`, `metrics/numerics_summary.json`) and carried into the error-source table |
+| B5 | Discretisation error is reported, not assumed small | V7 on the verification case; since 2026-10 measured on a stratified sample of the dataset cases themselves (`numerics.py`, `metrics/numerics_summary.json`: 41 cases; peak build-up median 0.06 %, no pressure-limit label changes; plume radius about 4 % and swept fraction about 17 % too large at production resolution) and carried into the error-source table |
 
 ## C. Statistics and machine learning
 
