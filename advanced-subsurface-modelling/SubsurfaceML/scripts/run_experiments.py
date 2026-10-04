@@ -54,18 +54,6 @@ def _jdump(obj, path):
     Path(path).write_text(json.dumps(obj, indent=2, default=_json_default))
 
 
-def load_dev_table(cfg):
-    from subsurfaceml.experiments import rebuild_inputs
-    from subsurfaceml.features import FEATURES
-    from subsurfaceml.pipeline import deduplicate
-    f = Path(cfg.paths.data) / "scenarios_features.csv"
-    df = pd.read_csv(f) if f.exists() else None
-    if df is None or any(c not in df.columns for c in FEATURES):
-        df = rebuild_inputs(cfg, pd.read_csv(Path(cfg.paths.data) / "scenarios.csv"))
-    df, _ = deduplicate(df)
-    return df.reset_index(drop=True)
-
-
 def feature_set(name):
     from subsurfaceml.features import FEATURES, FEATURES_BASELINE, ROCK_FEATURES
     return {"baseline": FEATURES_BASELINE, "rock": FEATURES_BASELINE + ROCK_FEATURES,
@@ -288,12 +276,74 @@ def run_peak_screen(cfg, out_dir, tol=0.01):
     return rep
 
 
+def run_calibration_check(cfg, out_dir):
+    """Protocol addendum: re-calibrate the fixed, saved design's intervals on
+    fresh reservoirs from the development prior and score them once on the
+    final-test and shift sets, next to the original calibration.  Nothing is
+    refitted or re-selected."""
+    from subsurfaceml.artifacts import load_bundle
+    from subsurfaceml.evaluation import limit_decisions
+    from subsurfaceml.final_eval import check_disjoint, load_or_generate
+    from subsurfaceml.intervals import METHODS, IntervalModel
+    d = Path(cfg.paths.data)
+    sets = {"final_test": pd.read_csv(d / "final_test_scenarios.csv"),
+            "shift": pd.read_csv(d / "shift_scenarios.csv")}
+    dev = pd.read_csv(d / "scenarios.csv")
+    cal, prov = load_or_generate(cfg, "calibration_check")
+    disj = check_disjoint(dev, *sets.values(), cal)
+    assert disj["overlapping_ids"] == 0 and disj["overlapping_descriptions"] == 0, disj
+    summary = json.loads((Path(cfg.paths.metrics) / "summary.json").read_text())
+    dp_lim = cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa
+    b = load_bundle(cfg)
+    rep = {"addendum": "docs/EVALUATION_PROTOCOL.md, 'Addendum ... independence of the interval calibration'",
+           "calibration_check_set": prov, "disjoint": disj,
+           "calibration_check_realisation_ids": sorted(cal["realisation_id"].unique().tolist()),
+           "original_calibration_realisation_ids": b["manifest"].get("calib_realisation_ids"),
+           "targets": {}}
+
+    def score(im, df_set, t):
+        y = df_set[t].to_numpy(float)
+        ev = im.evaluate(df_set, y, df_set["realisation_id"].to_numpy())
+        if t == "dp_bh_max_MPa":
+            ev["limit_upper"] = limit_decisions(y, im.predict_interval(df_set)[2], dp_lim)
+        return ev
+
+    for t in cfg.ml.targets:
+        band = b[f"band_{t}.joblib"]
+        rt = {"selected_method": band.method, "original": {}, "fresh": {}}
+        for name, df_set in sets.items():
+            ev = score(band, df_set, t)
+            rep_ = summary["ml"]["targets"][t]["designs"]["revised"]["evaluation"][
+                "test" if name == "final_test" else name]
+            ref = rep_["intervals"][band.method]
+            ev["matches_pipeline_record"] = bool(
+                abs(ev["case_coverage"] - ref["case_coverage"]) < 1e-12
+                and abs(ev["reservoir_all_covered"] - ref["reservoir_all_covered"]) < 1e-12
+                and abs(ev["mean_width"] - ref["mean_width"]) < 1e-9 * max(1.0, ref["mean_width"]))
+            rt["original"][name] = ev
+        for meth in METHODS:
+            im = IntervalModel(band.s, meth, band.alpha, log_space=band.log_space,
+                               difficulty=band.difficulty if meth == "adaptive_conformal" else None)
+            im.calibrate(cal, cal[t].to_numpy(float), cal["realisation_id"].to_numpy())
+            rt["fresh"][meth] = {name: score(im, df_set, t) for name, df_set in sets.items()}
+            rt["fresh"][meth]["calibrated_quantile"] = im.q_
+        rt["original_calibrated_quantile"] = band.q_
+        rep["targets"][t] = rt
+        f, o = rt["fresh"][band.method], rt["original"]
+        print(f"  [{t}] {band.method}: test cases/reservoirs covered "
+              f"original {o['final_test']['case_coverage']:.3f}/{o['final_test']['reservoir_all_covered']:.3f}, "
+              f"fresh {f['final_test']['case_coverage']:.3f}/{f['final_test']['reservoir_all_covered']:.3f}; "
+              f"shift original {o['shift']['reservoir_all_covered']:.3f}, fresh {f['shift']['reservoir_all_covered']:.3f}")
+    _jdump(rep, Path(out_dir) / "calibration_check.json")
+    return rep
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default=str(ROOT / "config" / "study.yaml"))
-    ap.add_argument("--only", choices=["ablation", "numerics", "decide", "peak_screen"],
-                    default=None)
+    ap.add_argument("--only", choices=["ablation", "numerics", "decide", "peak_screen",
+                                       "calibration_check"], default=None)
     ap.add_argument("--n-iter", type=int, default=20)
     ap.add_argument("--outer", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
@@ -306,9 +356,14 @@ def main() -> int:
     cfg = load_config(a.config)
     out = Path(cfg.paths.results) / "experiments"
     out.mkdir(parents=True, exist_ok=True)
+    from subsurfaceml.experiments import input_table_sha256, load_dev_table
+    from subsurfaceml.features import FEATURES
     df = load_dev_table(cfg)
     meta = {"command": " ".join(sys.argv), "environment": provenance(),
-            "started": time.ctime()}
+            "started": time.ctime(),
+            "input_table": "inputs rebuilt from data/scenarios.csv (experiments.load_dev_table)",
+            "input_table_sha256": input_table_sha256(
+                df, FEATURES + list(a.targets) + ["realisation_id"])}
     if a.only in (None, "ablation"):
         print("=== ablation (nested grouped CV, development reservoirs) ===")
         t0 = time.perf_counter()
@@ -331,6 +386,11 @@ def main() -> int:
         t0 = time.perf_counter()
         run_numerics(cfg, df, out, a.numerics_per_cell, a.numerics_finer, a.seed)
         meta["numerics_seconds"] = time.perf_counter() - t0
+    if a.only == "calibration_check":
+        print("=== calibration check: fixed design re-calibrated on fresh reservoirs ===")
+        t0 = time.perf_counter()
+        run_calibration_check(cfg, out)
+        meta["calibration_check_seconds"] = time.perf_counter() - t0
     if a.only == "peak_screen":
         print("=== screen for transient peaks (all sets) ===")
         t0 = time.perf_counter()

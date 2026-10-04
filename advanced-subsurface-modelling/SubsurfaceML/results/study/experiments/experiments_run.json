@@ -55,5 +55,24 @@
     "peak_screen_seconds": 439.60916153299877,
     "finished": "Sun Oct  4 08:35:04 2026",
     "code_note": "environment.git_commit is the HEAD at the start of the run; the screen code (numerics.startup_peak_screen, run_experiments.run_peak_screen) ran from the working tree and was committed unchanged as f0f1068"
+  },
+  "calibration_check": {
+    "command": "scripts/run_experiments.py --config config/study.yaml --only calibration_check",
+    "environment": {
+      "python": "3.11.15",
+      "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "numpy": "2.4.4",
+      "scipy": "1.17.1",
+      "pandas": "3.0.2",
+      "scikit_learn": "1.8.0",
+      "xgboost": "3.2.0",
+      "git_commit": "4717b96"
+    },
+    "started": "Sun Oct  4 11:36:54 2026",
+    "input_table": "inputs rebuilt from data/scenarios.csv (experiments.load_dev_table)",
+    "input_table_sha256": "94a4d4574fefc4763024942cdd0e05fc0bed241bdba45b4df6ef29a5276d579d",
+    "calibration_check_seconds": 1.0737178759999324,
+    "finished": "Sun Oct  4 11:36:55 2026"
   }
 }

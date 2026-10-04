@@ -1,0 +1,13 @@
+{
+  "set": "calibration_check",
+  "seed": 20261106,
+  "n_realisations": 41,
+  "n_requested": 164,
+  "n_success": 164,
+  "n_failed": 0,
+  "k_median_mD_range": [
+    30.0,
+    1000.0
+  ],
+  "wall_time_s": 116.32591734900001
+}

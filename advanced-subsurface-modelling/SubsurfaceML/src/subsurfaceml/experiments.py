@@ -176,3 +176,31 @@ def rebuild_inputs(cfg, scenarios: pd.DataFrame, realisations=None) -> pd.DataFr
     raw = pd.DataFrame(rows, index=scenarios.index)
     keep = scenarios.drop(columns=[c for c in raw.columns if c in scenarios.columns])
     return engineer(pd.concat([keep, raw], axis=1))
+
+
+#: pandas' default ("high") float parser is not round-trip exact (about one
+#: unit in the last place); it is named explicitly so the experiment inputs
+#: are always parsed the same way
+CSV_FLOAT_PRECISION = "high"
+
+
+def load_dev_table(cfg) -> pd.DataFrame:
+    """The development table every experiment uses: the inputs are always
+    rebuilt from ``scenarios.csv`` (the simulator outputs) through the one
+    feature path, never read from ``scenarios_features.csv``.  The two
+    sources agree only to about 2e-13 relative, which is enough to tip a
+    near-tied model choice (``docs/TECHNICAL_REPORT.md`` §8)."""
+    from pathlib import Path
+    from .pipeline import deduplicate
+    sc = pd.read_csv(Path(cfg.paths.data) / "scenarios.csv",
+                     float_precision=CSV_FLOAT_PRECISION)
+    df, _ = deduplicate(rebuild_inputs(cfg, sc))
+    return df.reset_index(drop=True)
+
+
+def input_table_sha256(df: pd.DataFrame, columns) -> str:
+    """Hash of the exact numbers an experiment trains on (inputs, targets,
+    groups), so a re-run can show it used identical inputs."""
+    import hashlib
+    a = np.ascontiguousarray(df[list(columns)].to_numpy(float))
+    return hashlib.sha256(a.tobytes()).hexdigest()
