@@ -28,13 +28,16 @@ The reference findings were recalculated from that rerun, not copied:
 
 `results/original_2026-09-27/` records the following:
 * the starting commit and environments;
-* SHA-256 hashes of the unmodified LAS file and of all 22 original result files
-  (`MANIFEST_original.sha256`);
+* SHA-256 hashes of 22 files as committed at `3236c15` (`MANIFEST_original.sha256`): the
+  unmodified LAS file and 21 original result files (12 tables, `summary.json`,
+  `environment.txt`, 6 figures and the notebook);
 * the comparisons, in `baseline_reproduction.json`;
 * the logs.
 
-The original tables, figures and in-sample refit are kept where they were. The revision writes
-its own outputs to `results/depth_blocks/` only.
+The original tables, figures and in-sample refit are kept where they were, and the revision
+writes its own outputs to `results/depth_blocks/` only. The notebook is the exception: it was
+extended (§4.8) and re-executed, so its manifest line no longer matches. The original is
+`git show 3236c15:subsurface-mechanics-and-geoengineering/SeisGeoMech/notebooks/SeisGeoMech.ipynb`.
 
 ## 2. The clean-install defect
 
@@ -69,7 +72,7 @@ is kept unchanged.
 
 | environment | tests | `run_all.py` | against the recorded results |
 |---|---|---|---|
-| Python 3.13.14, fresh, `requirements.txt` (setuptools 80.10.2, NumPy 2.5.3) | 126 passed | ok | 9 of 12 tables byte-identical; the rest within 2.2e−15 absolute (8.7e−16 relative); 59 of 65 summary values identical, the rest last-bit |
+| Python 3.13.14, fresh, `requirements.txt` (setuptools 80.10.2, NumPy 2.5.3) | 126 passed | ok | 9 of 12 tables byte-identical; the other three within 9.1e−13 absolute (a Merivale velocity of ~6,750 m/s) and 8.7e−16 relative; 59 of 65 summary values identical, the other six within 1.7e−12 relative (the largest on the near-zero refit bias) |
 | Python 3.13.14, fresh, `requirements-lock.txt` (setuptools 79.0.1) | 126 passed | ok | 12 of 12 byte-identical, 65 of 65 identical |
 
 The differences in the first row come from newer NumPy and SciPy releases, not from setuptools:
@@ -100,8 +103,8 @@ booleans must match exactly. Floats must agree within `1e-12 + 1e-9 × |recorded
 |---|---|---|
 | this container, locked environment | 0 (byte-identical) | 0 |
 | this container, fresh environment | 9.1e−13 (a Merivale velocity, ~6,750 m/s) | 1.7e−12 (the in-sample refit bias, ~−9e−4) |
-| GitHub, locked job | 5.6e−9 (a Gardner impedance, ~1.2e7) | 7.1e−12 (a small reflection coefficient) |
-| GitHub, fresh job | 5.6e−9 (the same impedance) | 7.1e−12 (tables); 6.8e−12 (depth-block outputs) |
+| GitHub, locked job (largest over runs 37242795223, 37243041054, 37243230211) | 5.6e−9 (a Gardner impedance, ~1.2e7) | 7.1e−12 (a small reflection coefficient) |
+| GitHub, fresh job (largest over the same runs) | 5.6e−9 (the same impedance) | 7.1e−12 (tables); between 1.7e−12 and 6.8e−12 for the depth-block outputs, depending on the runner |
 
 On GitHub's runners even the locked environment is not bit-identical: 7 of 13 original files
 match byte for byte. The differences are last-bit rounding, which the runner's processor changes.
@@ -120,5 +123,6 @@ python scripts/compare_results.py results/depth_blocks check/depth_blocks --expe
 ```
 
 `run_all.py` without `--out-dir` writes into `results/` itself. All tables regenerate to the
-same values, but `summary.json` receives a new `generated_utc` timestamp. Executing the notebook
-does the same.
+same values, but `summary.json` receives a new `generated_utc` timestamp. The notebook
+recomputes its results in a temporary folder and leaves `results/` untouched. The CI's locked
+job checks this at the end, with `git diff --exit-code -- results`.

@@ -14,5 +14,6 @@ Seismic/
 # Superseded project work, kept locally only.
 _archive_superseded/
 
-# CI and scratch output (scripts/run_all.py --out-dir ci)
+# CI and local check output (scripts/run_all.py --out-dir ci | check)
 ci/
+check/

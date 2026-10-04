@@ -25,12 +25,18 @@ another. This file reports that test.
 | consequence | the mean ρg gradient over each evaluation block, with measured, supplied and block-fitted density |
 
 The design and the derived split were committed in `193eb36` (preceded by the
-work-in-progress commit `251ae90`). No held-out prediction existed before that. Scores were
-first computed afterwards and committed in `3bea7e9`. `depth_blocks.score` refuses to run
-unless the configuration is marked frozen and the split derived from the data matches the
-frozen identifiers. A test pins the configuration's hash. An independent pre-freeze review
-confirmed 29 issues in the draft design and code, among them a path that could have scored
-before the freeze. All were fixed before the freeze.
+work-in-progress commit `251ae90`). Scores were first computed after the freeze and committed
+in `3bea7e9`. No held-out score was computed or committed before `193eb36`: the pre-freeze
+reviewers were instructed not to score, and the tests score only synthetic data. The
+work-in-progress tree `251ae90` had no such protection. `run_all.py` could already have scored
+it, and its configuration was already labelled "frozen". Both gaps were found by the review and
+closed in `193eb36`. Since then, `depth_blocks.score` refuses to run unless the configuration is
+marked frozen and the split derived from the data matches the frozen identifiers, and a test pins
+the configuration's hash.
+
+Before the freeze, an AI-run review (Claude, at the author's direction) reported 29 issues in
+the draft design and code. All were fixed in `193eb36`, whose commit message summarises them.
+The review itself is not committed.
 
 **The split** (`results/depth_blocks/split.json`, `split_samples.csv`):
 
@@ -46,9 +52,10 @@ So the exact metre values put one edge sample in the gap and the other in B, giv
 excluded samples rather than 101. The per-sample assignment in `split_samples.csv`, with
 its SHA-256 identifiers, is the frozen split.
 
-**What the gap is and is not.** About 20 m follows an earlier review's estimate of how
-far the residuals stay correlated along the log. It is a design choice and does not make
-the blocks independent. It is measured along the logged coordinate, whose vertical
+**What the gap is and is not.** The ~20 m gap was specified in the task brief, which based
+it on an earlier review's estimate (not recorded here) of how far the residuals stay correlated
+along the log. No block fit or held-out score informed it. It is a design choice and does not
+make the blocks independent. It is measured along the logged coordinate, whose vertical
 convention the file does not establish. As context, computed after the gap was fixed, the
 residuals are still correlated at 20 m: 0.08 for the supplied relation and 0.10 for the
 in-sample refit. At 40 m the values are 0.14 and 0.12 (`residual_lag_correlation.csv`). The
@@ -87,9 +94,9 @@ blocks.
 * **Both relations share the functional form.** A *better* reading shows that fitted
   coefficients transfer better than the supplied ones over this interval. It is not
   evidence that the form is correct, and it says nothing about other depths or wells.
-* Velocity ranges overlap closely. Four of the 502 A samples lie outside B's velocity
-  range, and none of the B samples lies outside A's, so the test is not an extrapolation in
-  velocity.
+* Velocity ranges overlap closely, so the test involves almost no extrapolation in
+  velocity. Four of the 502 predictions in B → A lie outside B's velocity range, and none in
+  A → B lies outside A's.
 
 ## 3. What the density errors do to the ρg calculation
 
@@ -101,13 +108,15 @@ densities share one coordinate array, so they are unaffected by a uniform rescal
 | evaluation block | measured | supplied relation | block fit |
 |---|---|---|---|
 | B (fit on A) | 25.582 MPa/km | 24.832 (−0.750, −2.93 %) | 25.934 (+0.353, +1.38 %) |
-| A (fit on B) | 26.314 MPa/km | 25.144 (−1.170, −4.45 %) | 25.971 (−0.342, −1.30 %) |
+| A (fit on B) | 26.314 MPa/km | 25.144 (−1.170, −4.44 %) | 25.971 (−0.342, −1.30 %) |
 
 Over the whole overlap, the supplied relation's gradient is 0.914 MPa/km (3.53 %) below
 the measured one. Over each block it is 0.75 and 1.17 MPa/km low. A relation calibrated on
 the adjacent 100 m cuts that error to about 0.35 MPa/km, but not to zero, and its sign
 depends on the direction. Because the gradient is linear in density, the percentage
-gradient error equals the percentage density bias in every case.
+gradient error matches the percentage density bias to within 0.01 percentage points in every
+case. They differ slightly because the trapezoidal integration weights the end samples of
+each block by half, unlike a plain mean.
 
 ## 4. Limits
 
@@ -120,6 +129,6 @@ gradient error equals the percentage density bias in every case.
 * No hole-condition filtering, as in the original workflow. Part of the scatter may be
   borehole effect.
 * The test was pre-specified but not blind. The per-sample residuals of the whole overlap
-  had been published on 2026-09-27, before the design. The design was fixed from the task
-  brief, not from those residuals, and no block-fitted coefficient or held-out prediction
-  existed before the freeze commit.
+  had been published on 2026-09-27, before the design. The midpoint rule and the ~20 m gap
+  come from the task brief, and no block-fitted coefficient or held-out prediction existed
+  before the freeze commit.

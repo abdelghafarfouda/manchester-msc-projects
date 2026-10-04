@@ -5,8 +5,9 @@
     python scripts/compare_results.py results/depth_blocks ci/depth_blocks
 
 Every ``.csv`` and ``.json`` file in the recorded folder must exist in the new
-one, with the same columns, rows and keys.  Integers, strings and booleans must
-match exactly.  Floats must agree within
+one, and the new one may hold no others; columns, rows and keys must match.
+Types must match; integers, strings and booleans must be equal, and so must
+infinities and NaNs.  Floats must agree within
 
     |new - recorded| <= ATOL + RTOL * |recorded|,  RTOL = 1e-9, ATOL = 1e-12.
 
@@ -16,8 +17,9 @@ A fresh install of the newest compatible NumPy and SciPy changes the last bits
 only: at most 1.7e-12 relative (the in-sample refit bias, a value near -9e-4).
 On GitHub's runners even the locked environment differs in the last bits: at
 most 5.6e-9 absolute on an impedance of order 1e7, and 7.1e-12 relative on a
-small reflection coefficient (2026-10-04).  A verification residual recorded as
-0.0 came out as 3.1e-16, which ATOL covers.  RTOL is more than 100 times the
+small reflection coefficient (CI runs of 2026-10-04).  A verification residual
+recorded as 3.1e-16 (identity_E_roundtrip_rel_error) came out as 0.0 in a fresh
+install, which ATOL covers.  RTOL is more than 100 times the
 largest relative difference seen, and far below the four significant figures
 reported (docs/REPRODUCIBILITY.md).
 
@@ -57,17 +59,17 @@ class Report:
 
     def number(self, where, a, b):
         self.values += 1
-        if isinstance(a, bool) or isinstance(b, bool) or not isinstance(a, (int, float)) \
-                or not isinstance(b, (int, float)):
+        if type(a) is not type(b):
+            # bool vs int, int vs float, number vs string, None: never the same value
+            self.failures.append(f"{where}: type differs, recorded {a!r}, new {b!r}")
+            return
+        if not isinstance(a, float):
+            # integers, strings, booleans, None: exact
             if a != b:
                 self.failures.append(f"{where}: {a!r} != {b!r}")
             return
-        if isinstance(a, int) and isinstance(b, int):
-            if a != b:
-                self.failures.append(f"{where}: {a} != {b}")
-            return
-        if math.isnan(a) or math.isnan(b):
-            if not (math.isnan(a) and math.isnan(b)):
+        if math.isnan(a) or math.isnan(b) or math.isinf(a) or math.isinf(b):
+            if not ((math.isnan(a) and math.isnan(b)) or a == b):
                 self.failures.append(f"{where}: {a!r} != {b!r}")
             return
         diff = abs(a - b)
@@ -102,6 +104,9 @@ def _walk(rep, where, a, b):
 
 
 def _cell(text):
+    """A CSV cell as int, float or the original string."""
+    if text != text.strip() or "_" in text:
+        return text
     try:
         return int(text)
     except ValueError:
@@ -160,6 +165,11 @@ def main(argv=None) -> int:
             rep.failures.append(f"{rec}: no .csv or .json files")
         for n in names:
             compare_file(rep, rec / n, new / n)
+        if new.is_dir():
+            extra = sorted({p.name for p in new.iterdir() if p.suffix in (".csv", ".json")}
+                           - set(names))
+            if extra:
+                rep.failures.append(f"{new}: files not in the recorded results: {extra}")
     else:
         compare_file(rep, rec, new)
     if args.expect_files is not None and rep.files != args.expect_files:

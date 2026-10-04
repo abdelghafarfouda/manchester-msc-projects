@@ -1,6 +1,7 @@
 """The two-direction depth-block test: frozen split, fitting method, scoring."""
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -384,24 +385,41 @@ def test_config_hash_does_not_depend_on_formatting(config):
 
 
 # --------------------------------------------------------------------------
-# Wording guards for the new files
+# Wording guards: no claim of independence or of validation on another well
 # --------------------------------------------------------------------------
 
-NEW_FILES = (ROOT / "src" / "seisgeomech" / "depth_blocks.py",
-             ROOT / "scripts" / "depth_blocks.py",
-             ROOT / "configs" / "depth_blocks.json")
+GUARDED = (ROOT / "src" / "seisgeomech" / "depth_blocks.py",
+           ROOT / "scripts" / "depth_blocks.py",
+           ROOT / "configs" / "depth_blocks.json",
+           ROOT / "README.md",
+           ROOT / "SOURCE_MAP.md",
+           *sorted((ROOT / "docs").glob("*.md")),
+           ROOT / "notebooks" / "SeisGeoMech.ipynb")
+
+#: Sentences that use the words in another sense (both from the original notebook).
+ALLOWED = ("independent of any depth datum", "density change independent of velocity")
+NEGATION = re.compile(r"\b(not|no|nor|unavailable|cannot|never|without)\b")
 
 
-@pytest.mark.parametrize("path", NEW_FILES, ids=lambda p: p.name)
+def _prose(path):
+    if path.suffix == ".ipynb":
+        nb = json.loads(path.read_text())
+        return "\n".join("".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "markdown")
+    return path.read_text()
+
+
+@pytest.mark.parametrize("path", GUARDED, ids=lambda p: p.name)
 def test_no_claim_of_independence_or_of_validation_elsewhere(path):
-    text = " ".join(path.read_text().split()).lower()
-    for stem, allowed in (("independen", ("not", "no ", "unavailable")),
-                          ("validat", ("unavailable", "another well", "not "))):
-        start = 0
-        while (i := text.find(stem, start)) >= 0:
-            window = text[max(0, i - 160): i + 80]
-            assert any(a in window for a in allowed), f"{path.name}: ...{window}..."
-            start = i + 1
+    """Every sentence mentioning independence or validation must also negate it."""
+    text = " ".join(_prose(path).split()).lower()
+    for m in re.finditer(r"independen|validat", text):
+        i = m.start()
+        start = max(text.rfind(". ", 0, i), text.rfind("| ", 0, i), 0)
+        stop = min((j for j in (text.find(". ", i), text.find(" |", i)) if j >= 0), default=len(text))
+        sentence = text[start:stop]
+        if any(a in sentence for a in ALLOWED):
+            continue
+        assert NEGATION.search(sentence), f"{path.name}: ...{sentence}..."
 
 
 # --------------------------------------------------------------------------

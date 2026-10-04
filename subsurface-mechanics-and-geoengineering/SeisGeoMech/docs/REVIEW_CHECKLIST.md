@@ -26,7 +26,7 @@ out, with the reason.
 | Run the 126 tests and `run_all.py` in a clean, working environment | Completed | fresh Python 3.11.15 environment from `requirements-lock.txt`, on an untouched copy of `3236c15` | `results/original_2026-09-27/logs/1_baseline_*`; 126 passed |
 | Reproduce the 12 CSV tables and the numerical content of `summary.json` | Completed | byte comparison and value-by-value comparison | 12 of 12 byte-identical; 65 of 65 values identical (timestamp excluded); 6 of 6 figures identical |
 | Record starting commit, environment, hashes of the raw LAS and the original results | Completed | `results/original_2026-09-27/baseline_reproduction.json`, `MANIFEST_original.sha256` | 22 files hashed, LAS included; pip freeze of every environment |
-| Preserve the unmodified LAS, original calculations and in-sample refit | Completed | `analysis.py` unchanged; original tables and figures left in place; the depth-block test writes only to `results/depth_blocks/` | the manifest; CI compares the original tables on every change |
+| Preserve the unmodified LAS, original calculations and in-sample refit | Completed | `analysis.py` unchanged; original tables and figures left in place; the depth-block test writes only to `results/depth_blocks/` | the manifest; CI compares the original tables on every change. The notebook was extended, so its manifest line is expected to differ |
 | Verify the reference findings by recalculation | Completed | values read from the rerun's own `summary.json` | 1,105 samples over 220.8 m; bias −0.0932, RMSE 0.1179; refit RMSE 0.0690; 24.973 vs 25.887 MPa/km (`reference_findings_check`) |
 | Keep baseline and extension results identifiable | Completed | `results/tables/`, `results/figures/` (2026-09-27); `results/depth_blocks/` (2026); version 3.0.0 → 3.1.0 | README *Headline numbers* labels the 2026 rows |
 
@@ -39,7 +39,7 @@ out, with the reason.
 | An exact compatible setuptools version in `requirements-lock.txt` | Completed | `setuptools==79.0.1`, the version the recorded environment had | the lock reproduces every result byte for byte on Python 3.13 (`logs/4_*`) |
 | Explain the dependency briefly in the README | Completed | README *Reproducing the results*, "Why `setuptools<81` is listed" | — |
 | Keep the course-cited `bruges` wavelet | Completed | `seismic.ricker_wavelet` unchanged | — |
-| Verify the fix preserves the original numbers; record before and after | Completed | `docs/REPRODUCIBILITY.md` §2; `baseline_reproduction.json` runs 2–4 | after: 126 passed; tables equal within 2.2e−15 (newer NumPy), identical with the lock |
+| Verify the fix preserves the original numbers; record before and after | Completed | `docs/REPRODUCIBILITY.md` §2; `baseline_reproduction.json` runs 2–4 | after: 126 passed; tables within 9.1e−13 absolute and 8.7e−16 relative (newer NumPy), identical with the lock |
 | Both final CI jobs pass; no intentionally failing job | Completed | `locked` and `fresh` jobs; `fresh` first proves the new venv has no setuptools | both green on GitHub |
 | (beyond the listed files) | Completed | `setuptools<81` also in `pyproject.toml` | `pip install .` failed the same way before the fix |
 
@@ -47,7 +47,7 @@ out, with the reason.
 
 | requirement | status | implementation | evidence |
 |---|---|---|---|
-| Correct "no out-of-sample test is possible": within-well test possible, another well unavailable | Completed | README *Scope* and *Limitations*; `SOURCE_MAP.md` §7.8; notebook §4.1, §4.8, §7 | wording guard in `tests/test_depth_blocks.py` |
+| Correct "no out-of-sample test is possible": within-well test possible, another well unavailable | Completed | README *Scope* and *Limitations*; `SOURCE_MAP.md` §7.8; notebook §4.1, §4.8, §7 | wording guard in `tests/test_depth_blocks.py`, over the package module, script, configuration, README, SOURCE_MAP, `docs/` and the notebook's text |
 | Sort the valid paired samples by the logged coordinate | Completed | `depth_blocks.paired_samples` (same selection as `stage_load`) | `test_paired_samples_are_the_original_overlap` |
 | Two contiguous blocks, ~20 m exclusion gap near the midpoint | Completed | midpoint of the coordinate range; samples within 10 m excluded | A 502, excluded 100, B 503; last A to first B 20.2 m (`split.json`) |
 | Fit on A, evaluate on B; reverse | Completed | `score_direction` | `depth_block_results.json` |
@@ -63,7 +63,7 @@ out, with the reason.
 | Report the supplied relation on the same evaluation blocks | Completed | same table | A → B: −0.076, 0.113, 0.092; B → A: −0.119, 0.129, 0.120 g/cm³ |
 | *(inferred)* What the density errors imply for the qualified ρg calculation | Completed | mean ρg gradient over each evaluation block, all three densities, 1-D qualification kept | block fit +0.35 / −0.34 MPa/km; supplied −0.75 / −1.17 MPa/km (`docs/DEPTH_BLOCK_TEST.md` §3) |
 | *(inferred)* A reading rule fixed in advance; negative and mixed outcomes reported | Completed | `reading_rule` in the frozen configuration | both directions "block fit better"; the opposite-sign held-out biases and differing coefficients are reported as limits |
-| *(inferred)* Tests | Completed | `tests/test_depth_blocks.py` (34 tests) | 160 passed locally and in both CI jobs |
+| *(inferred)* Tests | Completed | `tests/test_depth_blocks.py` (40 tests), `tests/test_compare_results.py` (18) | 184 passed locally and in both CI jobs |
 
 ## 5–8. CI, presentation and publication *(inferred from the other projects)*
 

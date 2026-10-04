@@ -9,7 +9,8 @@ name: SeisGeoMech
 # Each regenerates every table into ci/ and compares it with the recorded
 # results (scripts/compare_results.py: rtol 1e-9, atol 1e-12, timestamps
 # skipped, figures not compared).  Nothing is fitted beyond what run_all.py
-# does in three seconds; no recorded result is overwritten.
+# does in about five seconds.  No recorded result is overwritten; the locked
+# job ends by checking that no tracked file under results/ has changed.
 
 on:
   push:
@@ -52,6 +53,8 @@ jobs:
         run: python scripts/compare_results.py results/depth_blocks ci/depth_blocks --expect-files 6
       - name: Execute the notebook
         run: python -m jupyter nbconvert --to notebook --execute notebooks/SeisGeoMech.ipynb --output-dir ci --output SeisGeoMech_executed.ipynb
+      - name: No recorded result was modified
+        run: git diff --exit-code --stat -- results
       - name: Keep the CI outputs
         if: always()
         uses: actions/upload-artifact@v4

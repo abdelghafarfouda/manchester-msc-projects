@@ -11,8 +11,9 @@ Design (``configs/depth_blocks.json``, frozen before any held-out score)
 ------------------------------------------------------------------------
 1. The paired samples, sorted by the logged coordinate ``DEPT_M``.
 2. Two contiguous blocks either side of a 20 m exclusion gap centred on the
-   midpoint of the overlap.  The gap follows an earlier review's estimate of
-   how far the Gardner residuals stay correlated along the log.  It is a design
+   midpoint of the overlap.  The gap was specified in the task brief, which
+   based it on an earlier review's estimate (not recorded in this repository)
+   of how far the residuals stay correlated along the log.  It is a design
    choice and does not make the blocks independent, and it is measured along
    the logged coordinate, whose vertical convention the file does not
    establish.
@@ -212,10 +213,18 @@ def derive_split(samples: pd.DataFrame, config: dict | None = None):
 
 
 def write_split(out_dir=None, log=None, config=None):
-    """Derive the split and write ``split.json`` and ``split_samples.csv``."""
+    """Derive the split and write ``split.json`` and ``split_samples.csv``.
+
+    Once the design is frozen, the split derived now must match the frozen
+    identifiers before anything is written, so the committed split cannot be
+    silently replaced.
+    """
     out = Path(out_dir) if out_dir is not None else DEFAULT_OUT
-    out.mkdir(parents=True, exist_ok=True)
+    config = config or load_config()
     record, labelled = derive_split(paired_samples(log), config)
+    if str(config.get("status", "")).startswith("frozen"):
+        check_frozen(record, config)
+    out.mkdir(parents=True, exist_ok=True)
     (out / "split.json").write_text(json.dumps(record, indent=2) + "\n")
     labelled[["las_row", "dept_ft", "dept_m", "block"]].to_csv(
         out / "split_samples.csv", index=False

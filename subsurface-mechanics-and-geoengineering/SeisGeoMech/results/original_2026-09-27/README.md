@@ -1,8 +1,10 @@
 # The published results of 2026-09-27, reproduced before the October 2026 revision
 
-The original results are kept where they were published: `results/tables/` (12 CSV
-tables and `summary.json`), `results/figures/` and `notebooks/SeisGeoMech.ipynb`. The
-revision changes none of them. Its own outputs are written to `results/depth_blocks/`.
+The original results are kept where they were published, in `results/tables/` (12 CSV
+tables and `summary.json`) and `results/figures/`. The revision changes none of them, and its
+own outputs are written to `results/depth_blocks/`. The notebook was extended (§4.8) and
+re-executed, so its manifest line no longer matches. The original is
+`git show 3236c15:subsurface-mechanics-and-geoengineering/SeisGeoMech/notebooks/SeisGeoMech.ipynb`.
 
 | file | what it records |
 |---|---|
@@ -16,7 +18,7 @@ revision changes none of them. Its own outputs are written to `results/depth_blo
 |---|---|---|---|---|
 | 1. baseline | Python 3.11.15, `requirements-lock.txt` as committed | 126 passed | ok | 12 of 12 CSV byte-identical, 65 of 65 `summary.json` values identical, 6 of 6 figures identical |
 | 2. defect | Python 3.13.14, fresh, `requirements.txt` as committed | 7 failed, 17 errors | exit 1 | — |
-| 3. fixed | Python 3.13.14, fresh, `requirements.txt` with `setuptools<81` | 126 passed | ok | 9 of 12 CSV byte-identical; the other three differ by at most 2.2e−15 absolute (8.7e−16 relative), from newer NumPy/SciPy releases |
+| 3. fixed | Python 3.13.14, fresh, `requirements.txt` with `setuptools<81` | 126 passed | ok | 9 of 12 CSV byte-identical; the other three differ by at most 9.1e−13 absolute (a Merivale velocity of ~6,750 m/s) and 8.7e−16 relative, from newer NumPy/SciPy releases |
 | 4. fixed lock | Python 3.13.14, fresh, `requirements-lock.txt` with `setuptools==79.0.1` | 126 passed | ok | 12 of 12 byte-identical, 65 of 65 identical |
 
 `generated_utc` in `summary.json` is a timestamp and is not compared.

@@ -50,7 +50,7 @@ def report(result) -> None:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--split-only", action="store_true",
-                    help="derive and write the frozen split without scoring")
+                    help="derive the split, check it against the frozen one, and write it without scoring")
     ap.add_argument("--out-dir", default=None, help="output folder (default results/depth_blocks)")
     ap.add_argument("--no-figure", action="store_true", help="skip the figure")
     args = ap.parse_args(argv)
