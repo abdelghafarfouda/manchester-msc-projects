@@ -217,8 +217,9 @@ def stage_numerics(cfg: Config, dev: pd.DataFrame) -> dict:
                          seed=cfg.ml.random_state, always=always)
     t0 = time.perf_counter()
     runs = refinement_study(cfg, cases, n_jobs=cfg.n_jobs)
-    sub = cases.sort_values("k_median_mD").iloc[
-        np.unique(np.linspace(0, len(cases) - 1, cfg.numerics.finer_cases).astype(int))]
+    elig = cases[cases["n_steps"] <= cfg.numerics.finer_max_production_steps]
+    sub = elig.sort_values("k_median_mD").iloc[
+        np.unique(np.linspace(0, len(elig) - 1, cfg.numerics.finer_cases).astype(int))]
     runs = pd.concat([runs, refinement_study(cfg, sub, levels=("finer",),
                                              n_jobs=cfg.n_jobs)], ignore_index=True)
     runs.to_csv(Path(cfg.paths.metrics) / "numerics_refinement_runs.csv", index=False)
@@ -230,7 +231,10 @@ def stage_numerics(cfg: Config, dev: pd.DataFrame) -> dict:
         (np.abs(prod["dp_bh_max_MPa"] - ref["dp_bh_max_MPa"]) / ref["dp_bh_max_MPa"]).max())
     rep["case_selection"] = {"strata": "k_median tercile x schedule-intensity quartile",
                              "cases_per_cell": cfg.numerics.cases_per_cell,
-                             "always_included": always, "finer_subset": int(len(sub))}
+                             "always_included": always, "finer_subset": int(len(sub)),
+                             "finer_subset_rule": (f"cases with at most "
+                                                   f"{cfg.numerics.finer_max_production_steps} "
+                                                   "production time steps, spread by permeability")}
     rep["seconds"] = time.perf_counter() - t0
     _jdump(rep, Path(cfg.paths.metrics) / "numerics_summary.json")
     F.numerics(runs, cases, cfg.paths.figures, dp_lim)

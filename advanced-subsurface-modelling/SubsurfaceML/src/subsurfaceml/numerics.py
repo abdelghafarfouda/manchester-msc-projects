@@ -36,10 +36,17 @@ from .units import MPA
 TARGETS = ("dp_bh_max_MPa", "r_plume_m95_m", "sweep_efficiency")
 
 
+#: Step-count guard per level: the refined levels need many more (smaller)
+#: steps than the production level, whose largest dataset case uses ~63 000.
+MAX_STEPS = {"production": 200_000, "n_r_x2": 1_000_000, "r_near_half": 1_000_000,
+             "time_fine": 1_000_000, "fine": 4_000_000, "finer": 16_000_000}
+
+
 def level_config(cfg, level: str):
     """A copy of ``cfg`` with the discretisation of ``level``."""
     c = copy.deepcopy(cfg)
     g, s = c.grid, c.solver
+    s.max_steps = MAX_STEPS.get(level, 200_000)
     if level == "production":
         pass
     elif level == "n_r_x2":

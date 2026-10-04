@@ -80,6 +80,8 @@ class SolverConfig:
     outer_bc: str = "constant_pressure"
     p_init_MPa: float = 15.0
     validation_full: bool = False  # finest grid / well-block levels in V7
+    max_steps: int = 200_000       # guard against a runaway simulation (never reached
+                                   # at production resolution; raised for refined levels)
 
 
 @dataclass
@@ -161,6 +163,9 @@ class NumericsConfig:
     run: bool = False
     cases_per_cell: int = 3        # per permeability tercile x intensity quartile
     finer_cases: int = 10          # subset also run at the 'finer' level
+    finer_max_production_steps: int = 12_000  # 'finer' costs ~100x a production run;
+                                              # it is a convergence check, so it uses
+                                              # cases below this production step count
 
 
 @dataclass
