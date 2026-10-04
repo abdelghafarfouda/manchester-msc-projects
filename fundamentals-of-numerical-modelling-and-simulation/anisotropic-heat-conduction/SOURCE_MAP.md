@@ -66,6 +66,9 @@ handouts with two slides per page, the PDF page is given too.
 | **Grid study**: Eq. 4 relative change between successive grids, 0.2 % criterion, nx = 13, 17, 33, 65, 73 with ny = 12 | `Assignment (3).docx`, Q5 |
 | Solution verification by sensitivity testing | `errors-verification-validation (1).ipynb` cells 24, 28 |
 | Halving dx while quartering dt for diffusion (what Eq. 3 does automatically) | `pdes1 (1).ipynb` cell 76, comment 2 |
+| **Revision (2026-10-04) studies**: refining the grid at a fixed time step and the time step on a fixed grid, reported as changes between successive levels and their ratios (no extrapolation) | sensitivity testing: `errors-verification-validation (1).ipynb` cells 24, 28; expected orders as for V2: `pdes1 (1).ipynb` cell 19, `ode-time-stepping-1 (1).ipynb` cell 31 |
+| **S1** heat accounting: stored-energy increase = boundary-flux heat input + half-cell energy of the prescribed nodes | the same trapezoidal weights and control volumes as V3: `interpolation-regression-quadrature (1).ipynb` cell 95; conservation: `Topic 6- stability_and_more.pdf`, slide 24 |
+| **S2**, **S3** matching nested-grid locations; adequacy of the fixed time step | design checks of this project; S3 uses the same sensitivity-testing idea as the row above |
 
 ## 4. Numerical settings chosen in this project (not physical inputs)
 
@@ -87,6 +90,25 @@ handouts with two slides per page, the PDF page is given too.
   T = 300 K on the whole top and bottom edges, Equation 3 time step (19 steps of
   189.47 s to 1 h). Tolerance 1e-9 K on the maximum difference from the analytic
   discrete solution, with the alpha_x / alpha_y exchange required to exceed it.
+* Revision studies (`run_studies.py`, 2026-10-04), with the same plate, boundary
+  conditions and solver:
+  * spatial study: the five nested grids above at a fixed dt = 5.2895 s (3403
+    steps), the 193 x 177 grid's Eq. 3 step, so the original 193 x 177 run is its
+    finest member; repeated at dt = 1285.71 s (14 steps), the 13 x 12 grid's Eq. 3
+    step;
+  * temporal study: 14, 28, 56, 112, 224, 448, 896, 1792, 3403 and 6806 steps to
+    5 h (dt = 1285.71 s halved seven times, then 5.29 and 2.64 s), on the 193 x 177
+    grid and on the 13 x 12 grid;
+  * segment ends: every grid compared with the 193 x 177 grid (and with the next
+    finer grid) at its own nodes, which the finer grids share exactly; "near an
+    end" = within 0.1 m of one of the four segment ends; boundary heat input
+    summed over seven intervals per segment, one around each 13 x 12 segment node;
+  * study-check tolerances, fixed before the recorded run: S1 <= 1e-10 relative
+    (as V3); S2 <= 1e-12 m and <= 1e-12 relative; S3: halving the fixed step must
+    change the 193 x 177 mean temperature by < 1 % of the smallest grid-to-grid
+    change.
+* Comparison with the recorded results (`compare_results.py`, CI): relative
+  tolerance 1e-9 and absolute tolerance 1e-9 in each value's unit; text exact.
 * Tolerances, fixed before the recorded run: V1 <= 5e-5 C (half the last digit
   of the tabulated solution); V2 orders within 0.1 of 2 and 1; V3 <= 1e-10
   relative; V4 <= 1e-8 K and <= 1e-10 relative; V5 <= 1e-9 K, with the

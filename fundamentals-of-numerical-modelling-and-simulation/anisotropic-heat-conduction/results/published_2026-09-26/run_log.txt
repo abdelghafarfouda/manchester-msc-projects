@@ -1,6 +1,6 @@
 Transient 2-D anisotropic heat conduction (course Assignment (3))
-started 2026-10-04T18:55:44+00:00 on Linux-6.18.44-fc-v64-x86_64-with-glibc2.39
-Python 3.11.15, numpy 2.2.6, scipy 1.15.3, matplotlib 3.10.9
+started 2026-09-26T00:06:35+00:00 on Linux-6.8.0-138-generic-x86_64-with-glibc2.35
+Python 3.10.12, numpy 2.2.6, scipy 1.15.3, matplotlib 3.10.9
 
 1. PROBLEM (all inputs from Assignment (3))
    plate 1.0 m x 1.0 m, kx = 16.0, ky = 20.0 W/(m K), rho = 7800.0 kg/m^3, cp = 500.0 J/(kg K)
@@ -38,9 +38,9 @@ Python 3.11.15, numpy 2.2.6, scipy 1.15.3, matplotlib 3.10.9
    (b) nx and ny refined together (dx, dy halved; dt from Equation 3)
        13 x  12: dt = 1285.714 s, steps =    14, T_avg = 444.9474 K, change = nan %, heat in = 507.33 MJ/m, energy closure = -8.0e-15, 0.0 s
        25 x  23: dt =  333.333 s, steps =    54, T_avg = 441.7450 K, change = 0.7249 %, heat in = 525.67 MJ/m, energy closure = 3.6e-14, 0.0 s
-       49 x  45: dt =   84.507 s, steps =   213, T_avg = 439.9595 K, change = 0.4058 %, heat in = 532.74 MJ/m, energy closure = -1.5e-13, 0.2 s
-       97 x  89: dt =   21.152 s, steps =   851, T_avg = 439.0228 K, change = 0.2133 %, heat in = 535.75 MJ/m, energy closure = -1.1e-12, 1.4 s
-      193 x 177: dt =    5.289 s, steps =  3403, T_avg = 438.5441 K, change = 0.1092 %, heat in = 537.13 MJ/m, energy closure = -5.2e-12, 19.3 s
+       49 x  45: dt =   84.507 s, steps =   213, T_avg = 439.9595 K, change = 0.4058 %, heat in = 532.74 MJ/m, energy closure = -1.5e-13, 0.1 s
+       97 x  89: dt =   21.152 s, steps =   851, T_avg = 439.0228 K, change = 0.2133 %, heat in = 535.75 MJ/m, energy closure = -1.1e-12, 1.1 s
+      193 x 177: dt =    5.289 s, steps =  3403, T_avg = 438.5441 K, change = 0.1092 %, heat in = 537.13 MJ/m, energy closure = -5.2e-12, 18.5 s
    assignment study first meets 0.2 % at nx = 17 (ny fixed at 12)
    joint refinement first meets 0.2 % at 193 x 177
    ratios of successive changes (joint): 1.79, 1.91, 1.96  (2 = first order, 4 = second order)
@@ -55,4 +55,4 @@ Python 3.11.15, numpy 2.2.6, scipy 1.15.3, matplotlib 3.10.9
 
 5. RESULTS written to results/
    finest grid 193 x 177: T_avg(5 h) = 438.544 K, heat in = 537.1 MJ/m (top 190.9, bottom 346.3)
-   checks: 6 of 6 passed; wall time 65.3 s
+   checks: 6 of 6 passed; wall time 51.5 s

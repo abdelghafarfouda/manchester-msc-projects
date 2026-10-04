@@ -1,0 +1,50 @@
+# Reproduces the anisotropic heat-conduction project
+# (fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction)
+# with the pinned environment in requirements-lock.txt, and checks the numerical
+# outputs against the approved results recorded in results/.
+name: Anisotropic heat conduction
+
+on:
+  push:
+    paths:
+      - "fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction/**"
+      - ".github/workflows/heat-conduction.yml"
+  pull_request:
+    paths:
+      - "fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction/**"
+      - ".github/workflows/heat-conduction.yml"
+  workflow_dispatch:
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction/requirements-lock.txt
+      - name: Install the pinned environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-lock.txt
+      - name: Original study and the six verification checks (exits 1 if a check fails)
+        run: python run_project.py --out ci_results
+      - name: Revision studies and study checks S1-S3 (exits 1 if a check fails)
+        run: python run_studies.py --out ci_results
+      - name: Numerical outputs match the approved results (rtol 1e-9, atol 1e-9)
+        run: python compare_results.py results ci_results
+      - name: Original 2026-09-26 outputs are still reproduced
+        run: python compare_results.py results/published_2026-09-26 ci_results --subset
+      - name: Keep the CI outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: heat-conduction-ci-results
+          path: fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction/ci_results
+          retention-days: 14

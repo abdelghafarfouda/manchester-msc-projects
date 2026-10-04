@@ -6,7 +6,8 @@ benchmark.  Run the whole study with
 
     python run_project.py
 
-The script works top to bottom and writes everything to results/:
+The script works top to bottom and writes everything to results/ (or to the
+folder given with --out):
 
   1. Problem definition  - inputs exactly as given in the assignment
   2. Verification        - V1 course worked solution, V2 exact solution (smooth,
@@ -17,11 +18,14 @@ The script works top to bottom and writes everything to results/:
                            refined together
   5. Results             - CSV tables, four figures, summary.json, run log
 
-It exits with status 1 if any verification check fails.
+It exits with status 1 if any verification check fails.  The studies added in
+the October 2026 revision (heat-input accounting, separate space and time
+studies, segment ends) are in run_studies.py.
 """
 
 from __future__ import annotations
 
+import argparse
 import csv
 import datetime as dt_
 import json
@@ -126,20 +130,28 @@ def centreline(field: np.ndarray) -> np.ndarray:
 
 
 def solve_plate(nx: int, ny: int, p: dict = PLATE, keep_history: bool = False,
-                full_edges: bool = False) -> dict:
-    """Run the plate problem with the Equation 3 time step on an nx x ny grid."""
+                full_edges: bool = False, n_steps: int | None = None) -> dict:
+    """Run the plate problem on an nx x ny grid with the Equation 3 time step or,
+    if n_steps is given, with n_steps equal steps to t_end (the fixed-step studies
+    of run_studies.py)."""
     grid = h.Grid(nx, ny, p["Lx"], p["Ly"])
     rho_cp = p["rho"] * p["cp"]
     ax, ay = p["kx"] / rho_cp, p["ky"] / rho_cp
     op = h.assemble(grid, ax, ay, plate_boundary(grid, p, full_edges))
     dt_eq3 = h.time_step_eq3(grid, p["kx"], p["ky"], p["rho"], p["cp"])
-    n_steps, dt = h.steps_to_reach(p["t_end"], dt_eq3)
+    if n_steps is None:
+        n_steps, dt = h.steps_to_reach(p["t_end"], dt_eq3)
+    else:
+        dt = p["t_end"] / n_steps
     on_top = (op.fixed // nx) == ny - 1          # prescribed nodes on the top edge
 
     energy, q_top, q_bottom, t_avg = [], [], [], []
+    q_nodes = np.zeros(op.fixed.size)            # running sum of each prescribed node's heat flow
 
     def observe(n, T_free):
         q = h.heat_from_fixed_nodes(op, T_free, rho_cp)
+        if n:
+            np.add(q_nodes, q, out=q_nodes)
         q_top.append(q[on_top].sum())
         q_bottom.append(q[~on_top].sum())
         energy.append(h.stored_energy(op, T_free, rho_cp))
@@ -155,6 +167,10 @@ def solve_plate(nx: int, ny: int, p: dict = PLATE, keep_history: bool = False,
     q_top, q_bottom = np.array(q_top), np.array(q_bottom)
     H_top, H_bottom = dt * q_top[1:].sum(), dt * q_bottom[1:].sum()   # backward Euler
     change_in_storage = energy[-1] - energy[0]
+    # Energy given to the prescribed nodes' own control volumes (half-cells on the
+    # edge), which take the boundary temperature at t = 0.  It is part of the
+    # area-averaged temperature but not of the boundary heat flow H_top + H_bottom.
+    E_seg = h.fixed_node_energy(op, rho_cp, p["T_initial"])
     result = dict(
         grid=grid, T=T, dt_eq3=dt_eq3, dt=dt, n_steps=n_steps,
         r_x=ax * dt / grid.dx ** 2, r_y=ay * dt / grid.dy ** 2,
@@ -163,6 +179,8 @@ def solve_plate(nx: int, ny: int, p: dict = PLATE, keep_history: bool = False,
         corners=dict(bottom_left=T[0, 0], bottom_right=T[0, -1],
                      top_left=T[-1, 0], top_right=T[-1, -1]),
         centreline=centreline(T), wall_s=wall,
+        fixed_x=grid.x[op.fixed % nx], fixed_on_top=on_top, H_nodes=dt * q_nodes, E_nodes=E_seg,
+        E_seg_top=float(E_seg[on_top].sum()), E_seg_bottom=float(E_seg[~on_top].sum()),
     )
     if keep_history:
         result["history"] = dict(
@@ -510,9 +528,14 @@ def figure_verification(rod: dict, exact: dict, path: Path) -> None:
 # --------------------------------------------------------------------------
 # main
 # --------------------------------------------------------------------------
-def main() -> int:
-    OUT.mkdir(exist_ok=True)
-    log = Log(OUT / "run_log.txt")
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description="Assignment (3) study: verification V1-V5, "
+                                     "base case and grid sensitivity.")
+    parser.add_argument("--out", type=Path, default=OUT,
+                        help="folder for the results (default: results/ beside this script)")
+    out = parser.parse_args(argv).out
+    out.mkdir(parents=True, exist_ok=True)
+    log = Log(out / "run_log.txt")
     started = dt_.datetime.now(dt_.timezone.utc)
     clock = time.perf_counter()
     env = dict(
@@ -548,7 +571,7 @@ def main() -> int:
     # 2. verification ---------------------------------------------------------
     log("\n2. VERIFICATION")
     rod = verify_rod()
-    write_csv(OUT / "verification_rod.csv",
+    write_csv(out / "verification_rod.csv",
               ("t_s", "node", "x_cm", "T_this_code_C", "T_tutorial_C", "difference_C"), rod["rows"])
     check("V1 course worked solution (rod, 4 steps)", f"max |dT| = {rod['max_abs_diff']:.2e} C",
           "<= 5e-5 C (half the last tabulated digit)", rod["max_abs_diff"] <= 5e-5,
@@ -558,10 +581,10 @@ def main() -> int:
     exact = verify_exact()
     rows = [(k, *r) for k in ("central", "one_sided") for r in exact["space"][k]["rows"]]
     rows += [("central", *r) for r in exact["space_fine_dt"]["rows"]]
-    write_csv(OUT / "verification_exact_space.csv",
+    write_csv(out / "verification_exact_space.csv",
               ("insulated_boundary_treatment", "nodes_per_side", "dx_m", "dt_s", "rms_error_K",
                "max_error_K"), rows)
-    write_csv(OUT / "verification_exact_time.csv",
+    write_csv(out / "verification_exact_time.csv",
               ("nodes_per_side", "dx_m", "dt_s", "rms_error_K", "max_error_K"), exact["time"]["rows"])
     c, o, t, cf = (exact["space"]["central"], exact["space"]["one_sided"], exact["time"],
                    exact["space_fine_dt"])
@@ -579,7 +602,7 @@ def main() -> int:
         f"error falls from {c['rows'][-1][3]:.3e} to {cf['rows'][-1][3]:.3e} K)")
 
     aniso = verify_anisotropy()
-    write_csv(OUT / "verification_anisotropy.csv",
+    write_csv(out / "verification_anisotropy.csv",
               ("case", "nx", "ny", "dx_m", "dy_m", "dt_s", "steps", "lambda_h_per_s",
                "rms_error_K", "max_error_K"), aniso["rows"])
     check("V5 anisotropy orientation (exact discrete solution, dx != dy)",
@@ -685,35 +708,35 @@ def main() -> int:
                               f"{r['T_avg']:.6f}", f"{r['change_percent']:.6f}",
                               f"{r['H_top'] / 1e6:.6f}", f"{r['H_bottom'] / 1e6:.6f}",
                               f"{r['energy_closure']:.3e}"))
-    write_csv(OUT / "grid_sensitivity.csv",
+    write_csv(out / "grid_sensitivity.csv",
               ("study", "nx", "ny", "dx_m", "dy_m", "dt_eq3_s", "dt_used_s", "steps", "r_x", "r_y",
                "T_avg_5h_K", "change_eq4_percent", "heat_in_top_MJ_per_m",
                "heat_in_bottom_MJ_per_m", "energy_closure_relative"), grid_rows)
-    write_csv(OUT / "corner_temperatures_5h.csv", ("grid", "corner", "T_K"),
+    write_csv(out / "corner_temperatures_5h.csv", ("grid", "corner", "T_K"),
               [(f"{r['grid'].nx}x{r['grid'].ny}", k, f"{v:.4f}") for r in (base, fine)
                for k, v in r["corners"].items()])
-    write_csv(OUT / "centreline_5h.csv", ("grid", "y_m", "T_K"),
+    write_csv(out / "centreline_5h.csv", ("grid", "y_m", "T_K"),
               [(f"{r['grid'].nx}x{r['grid'].ny}", f"{y:.6f}", f"{T:.4f}") for r in joint
                for y, T in zip(r["grid"].y, r["centreline"])])
     hist = fine["history"]
-    write_csv(OUT / f"history_{fine['grid'].nx}x{fine['grid'].ny}.csv",
+    write_csv(out / f"history_{fine['grid'].nx}x{fine['grid'].ny}.csv",
               ("t_s", "T_avg_K", "Q_top_W_per_m", "Q_bottom_W_per_m", "H_top_J_per_m", "H_bottom_J_per_m"),
               [(f"{a:.3f}", f"{b:.6f}", f"{c_:.6e}", f"{d:.6e}", f"{e:.6e}", f"{f:.6e}")
                for a, b, c_, d, e, f in zip(hist["t"], hist["T_avg"], hist["Q_top"], hist["Q_bottom"],
                                             hist["H_top"], hist["H_bottom"])])
-    np.savetxt(OUT / "field_5h_13x12.csv", base["T"], delimiter=",", fmt="%.6f",
+    np.savetxt(out / "field_5h_13x12.csv", base["T"], delimiter=",", fmt="%.6f",
                header="T (K) after 5 h; rows j = 0..11 (y = 0 to 1 m), columns i = 0..12 (x = 0 to 1 m)")
-    np.savez_compressed(OUT / f"field_5h_{fine['grid'].nx}x{fine['grid'].ny}.npz",
+    np.savez_compressed(out / f"field_5h_{fine['grid'].nx}x{fine['grid'].ny}.npz",
                         x=fine["grid"].x, y=fine["grid"].y, T=fine["T"])
     checks.sort(key=lambda c_: c_["check"])          # V1 .. V4 in label order
-    write_csv(OUT / "checks.csv", ("check", "value", "tolerance", "passed", "establishes"),
+    write_csv(out / "checks.csv", ("check", "value", "tolerance", "passed", "establishes"),
               [(c_["check"], c_["value"], c_["tolerance"], c_["passed"], c_["establishes"])
                for c_ in checks])
 
-    figure_fields(base, fine, OUT / "fig1_temperature_5h.png")
-    figure_history(fine, joint, OUT / "fig2_history_and_centreline.png")
-    figure_grid(course, joint, diagnostic, OUT / "fig3_grid_sensitivity.png")
-    figure_verification(rod, exact, OUT / "fig4_verification.png")
+    figure_fields(base, fine, out / "fig1_temperature_5h.png")
+    figure_history(fine, joint, out / "fig2_history_and_centreline.png")
+    figure_grid(course, joint, diagnostic, out / "fig3_grid_sensitivity.png")
+    figure_verification(rod, exact, out / "fig4_verification.png")
 
     def run_summary(r):
         g = r["grid"]
@@ -751,14 +774,14 @@ def main() -> int:
                             max_abs_error_K=aniso["max_abs_error"],
                             max_abs_error_exchanged_K=aniso["max_abs_error_exchanged"])),
         checks=checks, environment=env)
-    with open(OUT / "summary.json", "w", encoding="utf-8") as f:
+    with open(out / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, default=float)
-    with open(OUT / "environment.txt", "w", encoding="utf-8") as f:
+    with open(out / "environment.txt", "w", encoding="utf-8") as f:
         for k, v in env.items():
             f.write(f"{k}: {v}\n")
 
     n_fail = sum(not c_["passed"] for c_ in checks)
-    log(f"\n5. RESULTS written to {OUT.name}/")
+    log(f"\n5. RESULTS written to {out.name}/")
     log(f"   finest grid {fine['grid'].nx} x {fine['grid'].ny}: T_avg(5 h) = {fine['T_avg']:.3f} K, "
         f"heat in = {(fine['H_top'] + fine['H_bottom']) / 1e6:.1f} MJ/m "
         f"(top {fine['H_top'] / 1e6:.1f}, bottom {fine['H_bottom'] / 1e6:.1f})")

@@ -1,4 +1,4 @@
-started_utc: 2026-10-04T18:55:44+00:00
+started_utc: 2026-10-04T18:41:53+00:00
 command: python run_project.py
 python: 3.11.15
 implementation: CPython
@@ -7,5 +7,5 @@ machine: x86_64
 numpy: 2.2.6
 scipy: 1.15.3
 matplotlib: 3.10.9
-finished_utc: 2026-10-04T18:56:49+00:00
-wall_time_s: 65.3
+finished_utc: 2026-10-04T18:42:57+00:00
+wall_time_s: 63.9

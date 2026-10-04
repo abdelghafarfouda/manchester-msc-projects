@@ -10,7 +10,7 @@ its own.
 
 | Module | Project | What it does |
 |---|---|---|
-| [Fundamentals of Numerical Modelling and Simulation](fundamentals-of-numerical-modelling-and-simulation) | [anisotropic-heat-conduction](fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction) | Transient 2-D heat conduction in a plate whose thermal conductivity differs in x and y, solved in Python with an implicit finite-difference scheme: five-point central differences in space, backward Euler in time, and one sparse LU factorisation per run. Verified by five checks — a worked benchmark, an exact solution, an energy balance, a unit conversion and an anisotropy-orientation test — and used for a grid-refinement study of the mean plate temperature. |
+| [Fundamentals of Numerical Modelling and Simulation](fundamentals-of-numerical-modelling-and-simulation) | [anisotropic-heat-conduction](fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction) | Transient 2-D heat conduction in a plate whose thermal conductivity differs in x and y, solved in Python with an implicit finite-difference scheme: five-point central differences in space, backward Euler in time, and one sparse LU factorisation per run. Verified by five checks — a worked benchmark, an exact solution, an energy balance, a unit conversion and an anisotropy-orientation test — and used for a grid-refinement study of the mean plate temperature. The October 2026 revision separates the grid and time-step effects (on the assignment grid, +8.2 K and −1.8 K in the mean temperature), distinguishes the boundary-flux heat input (−5.5 % on the coarse grid) from the stored-energy increase (+4.6 %), locates the largest grid differences at the heated-segment ends, and adds a CI check of the recorded results. |
 | [Advanced Subsurface Modelling](advanced-subsurface-modelling) | [SubsurfaceML](advanced-subsurface-modelling/SubsurfaceML) | Surrogate-assisted screening of CO₂ injection schedules for a sealed, layered saline aquifer, with every recommendation verified by the simulator. A radial IMPES simulator (21 verification checks) generates synthetic data; a hybrid surrogate — an analytical reduced-order model times a learned correction — predicts peak bottom-hole pressure build-up on 100 fresh test reservoirs, generated after the design was fixed, with an RMSE of 0.31 MPa, against 0.70 MPa for the previously published approach trained on the same reservoirs; reservoir-calibrated intervals, a distribution-shift test, and a separate radial–vertical model that measures the error of omitting gravity and crossflow (peak build-up −4 %, plume radius +88 %). Extended and re-verified in October 2026. |
 | [Properties of Subsurface Fluids](properties-of-subsurface-fluids) | [Subsurface_DL_Project](properties-of-subsurface-fluids/Subsurface_DL_Project) | A neural surrogate for the module's two-phase flash calculation (Wilson K-values with Rachford-Rice), built as a synthetic benchmark from the course notes. PyTorch networks trained on 1,800 of 3,000 generated mixtures (60,000 two-phase states) predict the vapour fraction of 600 mixtures held out by mixture with a mean test RMSE of 0.00636; adding the Rachford-Rice residual to the loss reduced it to 0.00535, but did not improve a higher-pressure extrapolation set. |
 | [Subsurface Mechanics and Geoengineering](subsurface-mechanics-and-geoengineering) | [SeisGeoMech](subsurface-mechanics-and-geoengineering/SeisGeoMech) | Does the Gardner velocity-density relation hold at a real well, and what does its error cost? Over the 221 m of UK well 48/10b-9 where the sonic and density logs overlap (1,105 paired samples), Gardner under-predicts bulk density by 0.093 g/cm³ (3.5 %, RMSE 0.118). Because the module's overburden model integrates that same density, the error carries straight through to a one-dimensional ρg gradient of 24.97 against 25.89 MPa/km. On the seismic side the same substitution makes impedance a function of velocity alone, raising reflection-coefficient RMS by 20 % before convolution while the synthetic-trace RMS ratio stays below one after it. Every equation, dataset and constant is traced to a specific page or notebook cell in SOURCE_MAP.md; 126 tests. |
@@ -28,12 +28,13 @@ git clone https://github.com/abdelghafarfouda/manchester-msc-projects.git
 cd manchester-msc-projects/fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction
 python -m pip install -r requirements.txt
 python run_project.py
+python run_studies.py
 ```
 
 On Windows, open a terminal (for example an Anaconda Prompt) in that same folder
-and run the last two commands. The script needs Python 3.10 or later with NumPy,
-SciPy and Matplotlib, writes every output to `results/`, and exits with status 1
-if any verification check fails.
+and run the last three commands. The scripts need Python 3.10 or later with NumPy,
+SciPy and Matplotlib, write every output to `results/`, and exit with status 1
+if any check fails.
 
 The project's own
 [README](fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction/README.md)
