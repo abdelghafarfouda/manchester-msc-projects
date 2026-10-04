@@ -295,23 +295,28 @@ EXCLUDED_INK = "#a8a7a2"
 
 
 def fig_depth_blocks(result, root):
-    """Split, fits and held-out residuals of the two-direction depth-block test."""
+    """Split, fits and held-out residuals of the two-direction depth-block test.
+
+    Draws the stored predictions (``result["predictions"]``); nothing is fitted
+    or predicted here.  Colour identifies the depth block throughout.
+    """
     from . import depth_blocks as db
     from . import seismic as sx
 
     lab = result["labelled"]
     split = result["split"]
     dirs = result["scores"]["directions"]
+    pred = result["predictions"]
     fig, axes = plt.subplots(1, 3, figsize=(15, 7))
+    lo, hi = split["excluded_interval_m"]
 
     ax = axes[0]
-    lo, hi = split["excluded_interval_m"]
     ax.axhspan(lo, hi, color=EXCLUDED_INK, alpha=0.25, lw=0)
     for name in ("A", "B", "excluded"):
         part = lab[lab["block"] == name]
         colour = BLOCK_COLOURS.get(name, EXCLUDED_INK)
-        label = f"block {name} (n = {len(part)})" if name in BLOCK_COLOURS else \
-            f"excluded gap, {split['exclusion_gap_m']:.0f} m (n = {len(part)})"
+        label = (f"block {name} (n = {len(part)})" if name in BLOCK_COLOURS else
+                 f"excluded gap, {split['exclusion_gap_m']:.0f} m (n = {len(part)})")
         ax.plot(part["rhob_gcc"], part["dept_m"], lw=0.6, color=colour, label=label)
     ax.invert_yaxis()
     ax.set_xlabel("measured RHOB (g/cm3)")
@@ -327,11 +332,11 @@ def fig_depth_blocks(result, root):
                    color=BLOCK_COLOURS[name], linewidths=0)
     v = np.linspace(lab["vp_m_s"].min(), lab["vp_m_s"].max(), 200)
     for d in dirs.values():
-        ax.plot(v, db.predict_gardner_form(v, d["fitted_coefficient_a"], d["fitted_exponent_b"]),
-                lw=2, color=BLOCK_COLOURS[d["fit_on"]],
-                label=f"fitted on {d['fit_on']}: {d['fitted_coefficient_a']:.3f} Vp^{d['fitted_exponent_b']:.3f}")
+        a, b = d["fitted_coefficient_a"], d["fitted_exponent_b"]
+        ax.plot(v, db.predict_gardner_form(v, a, b), lw=2, color=BLOCK_COLOURS[d["fit_on"]],
+                label=f"fitted on {d['fit_on']}: {a:.3f} Vp^{b:.3f}")
     ax.plot(v, sx.gardner_density_gcc(v), lw=2, ls="--", color=REFERENCE_INK,
-            label="supplied: 0.31 Vp^0.25")
+            label=f"supplied: {sx.GARDNER_COEFFICIENT:g} Vp^{sx.GARDNER_EXPONENT:g}")
     ax.set_xlabel("Vp (m/s)")
     ax.set_ylabel("bulk density (g/cm3)")
     ax.legend(fontsize=8, loc="lower right")
@@ -340,14 +345,13 @@ def fig_depth_blocks(result, root):
 
     ax = axes[2]
     for d in dirs.values():
-        test = lab[lab["block"] == d["evaluate_on"]]
-        vp, rho = test["vp_m_s"].to_numpy(), test["rhob_gcc"].to_numpy()
-        fit = db.predict_gardner_form(vp, d["fitted_coefficient_a"], d["fitted_exponent_b"])
+        p = pred[pred["evaluate_on"] == d["evaluate_on"]]
         h, s = d["held_out_block_fit"], d["held_out_supplied_gardner"]
-        ax.plot(sx.gardner_density_gcc(vp) - rho, test["dept_m"], lw=0.5, color=REFERENCE_INK,
-                label=f"supplied on {d['evaluate_on']}: RMSE {s['rmse_gcc']:.3f}")
-        ax.plot(fit - rho, test["dept_m"], lw=0.6, color=BLOCK_COLOURS[d["fit_on"]],
-                label=f"fitted on {d['fit_on']}, predicting {d['evaluate_on']}: RMSE {h['rmse_gcc']:.3f}")
+        colour = BLOCK_COLOURS[d["evaluate_on"]]
+        ax.plot(p["residual_supplied_gardner_gcc"], p["dept_m"], lw=0.6, ls=":",
+                color=colour, label=f"block {d['evaluate_on']}, supplied: RMSE {s['rmse_gcc']:.3f}")
+        ax.plot(p["residual_block_fit_gcc"], p["dept_m"], lw=0.6, color=colour,
+                label=f"block {d['evaluate_on']}, fitted on {d['fit_on']}: RMSE {h['rmse_gcc']:.3f}")
     ax.axvline(0.0, color="black", lw=0.8)
     ax.axhspan(lo, hi, color=EXCLUDED_INK, alpha=0.25, lw=0)
     ax.invert_yaxis()
@@ -355,7 +359,7 @@ def fig_depth_blocks(result, root):
     ax.set_ylabel("logged depth coordinate (m)")
     ax.legend(fontsize=8, loc="lower left")
     ax.grid(alpha=0.3)
-    ax.set_title("held-out residuals (each block predicted by the other)", fontsize=10)
+    ax.set_title("held-out residuals: each block predicted from the other", fontsize=10)
 
     fig.suptitle(
         "Depth-block test of the Gardner form at 48/10b-9: fit on one block, predict the other, "
@@ -363,4 +367,3 @@ def fig_depth_blocks(result, root):
     )
     fig.tight_layout()
     return _save(fig, Path(root), "fig07_depth_blocks.png")
-

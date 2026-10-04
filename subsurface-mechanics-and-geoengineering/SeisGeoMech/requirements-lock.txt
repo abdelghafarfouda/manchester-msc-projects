@@ -1,3 +1,6 @@
+# Exact environment of the published results: Python 3.11.15, Linux x86_64.
+# Needs Python >= 3.11 (numpy 2.4.6); on Python 3.10 install requirements.txt instead.
+# setuptools is listed because bruges 0.5.4 imports pkg_resources (see requirements.txt).
 anyio==4.15.1
 argon2-cffi==25.1.0
 argon2-cffi-bindings==26.1.0

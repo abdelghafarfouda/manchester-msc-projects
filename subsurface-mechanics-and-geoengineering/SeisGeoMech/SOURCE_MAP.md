@@ -80,6 +80,10 @@ notebook, and none introduces a rock property, a correlation or a physical param
 | Merivale fit window | above the first loading step, below half the peak stress | The half-peak criterion is E13, taken from the supplied notes rather than chosen by eye. Sensitivity to the window is reported in `results/tables/merivale_window_sensitivity.csv`. |
 | Poisson's ratio sweep | 0.05–0.45 | A plain sweep of the admissible range for an isotropic solid. **No value is claimed for this well.** |
 | Gardner refit | least squares on `log rho` vs `log Vp` over the 1105 measured points | Fits the *supplied functional form* to the *supplied data*, changing no equation, and is not used anywhere else in the workflow. It is an **in-sample calibration**: no samples were held out; the coefficients were fitted and evaluated on the same 1,105 paired samples, so its 41.5 % RMSE reduction describes those points. It is not a prediction test and not evidence that the functional form is correct. |
+| Gardner refit, as used in the depth-block test (October 2026) | the same least squares, on one depth block only | The original method, units and functional form, fitted on block A and evaluated on block B, then the reverse (`configs/depth_blocks.json`, `src/seisgeomech/depth_blocks.py`). No other density–velocity relation is introduced. The original in-sample refit is unchanged. |
+| Depth-block split | midpoint of the overlap's logged-coordinate range; samples within 10 m of it (a 20 m gap) excluded; A above, B below | A design choice, frozen and committed before any held-out score (`configs/depth_blocks.json`, `results/depth_blocks/split.json`). The ~20 m gap follows an earlier review's estimate of residual correlation along the log, which is implementation history, not a source; it does **not** make the blocks independent. It is measured along the logged coordinate, whose vertical convention is unresolved (§5). |
+| Held-out metrics and reading rule | bias, RMSE, MAE; reductions `100 (supplied − block fit)/supplied`; better/worse only if RMSE and MAE agree, each direction read separately | Summary statistics of residuals, fixed with the split before scoring. They are not physical parameters. |
+| Residual lag correlation | Pearson correlation of the residual series with itself shifted by 0.2–40 m | Context for the gap only. It is not a test of independence and not a decorrelation length. It was computed after the gap was fixed and played no part in choosing it. |
 
 ---
 
@@ -207,6 +211,10 @@ Genuine gaps, stated rather than filled.
    cannot separate the two.
 7. **The depth convention is unresolved.** Section 5.1 sets out the evidence. A deviation survey
    would settle it; none is available from the permitted sources, and none is assumed.
-8. **The Gardner refit is in-sample.** No samples were held out; the coefficients were fitted and
-   evaluated on the same 1,105 paired samples. Paired sonic and density data exist only over the
-   221 m overlap, so no out-of-sample test of the functional form is possible with this dataset.
+8. **The original Gardner refit is in-sample.** Its coefficients were fitted and evaluated on the
+   same 1,105 paired samples. The October 2026 revision adds a within-well, two-direction
+   depth-block test (`configs/depth_blocks.json`, `results/depth_blocks/`): coefficients fitted on
+   one block predict the other. The two blocks are adjacent parts of one 221 m interval of one
+   log, either side of a 20 m gap, so they are not independent data. Validation on another well
+   is unavailable: the supplied material contains paired sonic and density data for this one
+   well only.

@@ -1,33 +1,41 @@
-"""A two-direction depth-block test of the Gardner functional form.
+"""A two-direction depth-block test of the Gardner form with locally fitted coefficients.
 
 The original refit (``analysis.stage_gardner``) fits ``rho = a Vp^b`` to all
 1,105 paired samples and evaluates it on the same samples, so it describes
-those samples and predicts nothing.  Paired sonic and density data exist only
-in this one well, so independent validation on another well is not possible.
-A within-well test is: fit on one contiguous depth block, predict the other.
+those samples and predicts nothing.  The supplied material contains paired
+sonic and density data for this one well only, so validation on another well
+is unavailable.  A within-well test is not: fit on one contiguous depth block,
+predict the other.
 
-Design (``configs/depth_blocks.json``, committed before any held-out score)
---------------------------------------------------------------------------
+Design (``configs/depth_blocks.json``, frozen before any held-out score)
+------------------------------------------------------------------------
 1. The paired samples, sorted by the logged coordinate ``DEPT_M``.
 2. Two contiguous blocks either side of a 20 m exclusion gap centred on the
-   midpoint of the overlap.  The gap follows an earlier estimate of how far the
-   Gardner residuals stay correlated along the log.  It is a design choice,
-   not a guarantee that the blocks are independent, and it is measured along
+   midpoint of the overlap.  The gap follows an earlier review's estimate of
+   how far the Gardner residuals stay correlated along the log.  It is a design
+   choice and does not make the blocks independent, and it is measured along
    the logged coordinate, whose vertical convention the file does not
    establish.
 3. Fit the Gardner form on block A only, with the method of the original
    refit, and predict block B.
 4. The reverse: fit on B, predict A.
 5. Score the supplied relation, ``rho = 0.31 Vp^0.25``, on exactly the same
-   evaluation samples.
+   evaluation samples, and read the comparison by the rule frozen in the
+   configuration.
 
-Nothing here is tuned: one midpoint, one gap, two directions.  The fitting
-method, units and functional form are those of the original refit, and no
-other correlation is introduced.
+Nothing is tuned on a held-out score: one midpoint, one gap, two directions.
+The fitting method, units and functional form are those of the original
+refit, and no other density-velocity relation is introduced.  Both relations
+share the functional form, so a lower held-out error shows that coefficients
+fitted on one block transfer to the adjacent block better than the supplied
+coefficients do; it is not evidence that the form is right.
 
-The geomechanical consequence is reported with the same qualification as the
-original gradients: the mean ``rho g`` gradient over each evaluation block is
-an explicitly one-dimensional application of ``d(sigma_zz)/dz = rho g`` to the
+``score`` refuses to run unless the configuration is marked frozen and the
+split derived from the data matches the identifiers frozen in it.
+
+The geomechanical consequence carries the qualification of the original
+gradients: the mean ``rho g`` gradient over each evaluation block is an
+explicitly one-dimensional application of ``d(sigma_zz)/dz = rho g`` to the
 logged coordinate, not a verified vertical stress gradient.
 """
 
@@ -51,10 +59,24 @@ DEFAULT_OUT = PROJECT_ROOT / "results" / "depth_blocks"
 
 BLOCKS = ("A", "B")
 
+#: Lags (m along the logged coordinate) at which the residual lag correlation
+#: is reported as context for the gap.  Declared in the frozen configuration.
+LAG_CONTEXT_M = (0.2, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0)
+
+
+class NotFrozenError(RuntimeError):
+    """Raised when scoring is attempted on a design that is not the frozen one."""
+
 
 def load_config(path=None) -> dict:
-    """The frozen design."""
+    """The design."""
     return json.loads(Path(path or DEFAULT_CONFIG).read_text())
+
+
+def config_sha256(config: dict) -> str:
+    """SHA-256 of the configuration's canonical JSON, unaffected by formatting or line endings."""
+    text = json.dumps(config, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(text.encode()).hexdigest()
 
 
 # --------------------------------------------------------------------------
@@ -73,8 +95,11 @@ def paired_samples(log=None) -> pd.DataFrame:
     ov = log.overlap(("DT", "RHOB"))
     ov = ov[np.isfinite(ov["VP"]) & (ov["VP"] > 0)].reset_index(drop=True)
 
-    rows = np.searchsorted(frame["DEPT"].to_numpy(), ov["DEPT"].to_numpy())
-    if not np.array_equal(frame["DEPT"].to_numpy()[rows], ov["DEPT"].to_numpy()):
+    dept = frame["DEPT"].to_numpy()
+    if np.any(np.diff(dept) <= 0):
+        raise ValueError("the LAS depth curve is not strictly increasing")
+    rows = np.searchsorted(dept, ov["DEPT"].to_numpy())
+    if np.any(rows >= dept.size) or not np.array_equal(dept[rows], ov["DEPT"].to_numpy()):
         raise ValueError("could not locate every paired sample in the LAS file")
     out = pd.DataFrame(
         {
@@ -111,8 +136,12 @@ def assign_blocks(depth_m, gap_m):
     return labels, float(midpoint)
 
 
-def _ids_sha256(frame: pd.DataFrame) -> str:
-    """SHA-256 of ``las_row:dept_ft`` lines, one per sample, in depth order."""
+def ids_sha256(frame: pd.DataFrame) -> str:
+    """SHA-256 of ``las_row:dept_ft`` lines, one per sample, in depth order.
+
+    ``dept_ft`` is written with ``repr(float)``, the shortest exact decimal, so
+    the hash does not depend on platform or line endings.
+    """
     text = "".join(f"{int(r)}:{repr(float(f))}\n"
                    for r, f in zip(frame["las_row"], frame["dept_ft"]))
     return hashlib.sha256(text.encode()).hexdigest()
@@ -128,16 +157,22 @@ def _describe(frame: pd.DataFrame) -> dict:
         "dept_ft_last": float(frame["dept_ft"].iloc[-1]),
         "depth_m_first": float(frame["dept_m"].iloc[0]),
         "depth_m_last": float(frame["dept_m"].iloc[-1]),
-        "thickness_m": float(frame["dept_m"].iloc[-1] - frame["dept_m"].iloc[0]),
+        "length_along_log_m": float(frame["dept_m"].iloc[-1] - frame["dept_m"].iloc[0]),
         "vp_min_m_s": float(frame["vp_m_s"].min()),
         "vp_max_m_s": float(frame["vp_m_s"].max()),
         "vp_mean_m_s": float(frame["vp_m_s"].mean()),
-        "ids_sha256": _ids_sha256(frame),
+        "ids_sha256": ids_sha256(frame),
     }
 
 
+def _edge(sample, edge_m) -> dict:
+    return {"las_row": int(sample["las_row"]), "dept_ft": float(sample["dept_ft"]),
+            "depth_m": float(sample["dept_m"]), "block": str(sample["block"]),
+            "signed_distance_from_edge_m": float(sample["dept_m"] - edge_m)}
+
+
 def derive_split(samples: pd.DataFrame, config: dict | None = None):
-    """Apply the frozen design.  Returns ``(record, labelled_samples)``.
+    """Apply the design.  Returns ``(record, labelled_samples)``.
 
     Only depths, identifiers and velocity ranges are described; no density is
     fitted or compared here.
@@ -151,18 +186,26 @@ def derive_split(samples: pd.DataFrame, config: dict | None = None):
     labelled = samples.assign(block=labels)
 
     parts = {name: labelled[labelled["block"] == name] for name in (*BLOCKS, "excluded")}
+    if any(frame.empty for frame in parts.values()):
+        raise ValueError("the gap leaves an empty block")
+    lower, upper = midpoint - 0.5 * gap, midpoint + 0.5 * gap
     record = {
         "config": "configs/depth_blocks.json",
         "n_paired_samples": int(len(samples)),
-        "all_ids_sha256": _ids_sha256(samples),
+        "all_ids_sha256": ids_sha256(samples),
+        "ids_hash_recipe": "sha256 of one 'las_row:repr(dept_ft)' line per sample, in depth order",
         "overlap_top_m": float(samples["dept_m"].iloc[0]),
         "overlap_base_m": float(samples["dept_m"].iloc[-1]),
         "midpoint_m": midpoint,
         "exclusion_gap_m": gap,
-        "excluded_interval_m": [midpoint - 0.5 * gap, midpoint + 0.5 * gap],
+        "excluded_interval_m": [lower, upper],
         "separation_last_A_to_first_B_m": float(
             parts["B"]["dept_m"].iloc[0] - parts["A"]["dept_m"].iloc[-1]
         ),
+        "gap_edges": {
+            "lower": [_edge(parts["A"].iloc[-1], lower), _edge(parts["excluded"].iloc[0], lower)],
+            "upper": [_edge(parts["excluded"].iloc[-1], upper), _edge(parts["B"].iloc[0], upper)],
+        },
         "blocks": {name: _describe(frame) for name, frame in parts.items()},
     }
     return record, labelled
@@ -178,6 +221,27 @@ def write_split(out_dir=None, log=None, config=None):
         out / "split_samples.csv", index=False
     )
     return record, labelled
+
+
+def check_frozen(record: dict, config: dict) -> None:
+    """Refuse to score anything but the frozen design.
+
+    The configuration must be marked frozen and carry the identifiers of the
+    split it froze; the split derived now must reproduce them exactly.
+    """
+    if not str(config.get("status", "")).startswith("frozen"):
+        raise NotFrozenError("configs/depth_blocks.json is not marked frozen; "
+                             "held-out scoring is refused")
+    frozen = config.get("frozen_split")
+    if not frozen:
+        raise NotFrozenError("the configuration carries no frozen split identifiers")
+    if record["all_ids_sha256"] != frozen["all_ids_sha256"]:
+        raise NotFrozenError("the paired samples differ from the frozen ones")
+    for name in (*BLOCKS, "excluded"):
+        got = record["blocks"][name]
+        want = frozen["blocks"][name]
+        if got["n"] != want["n"] or got["ids_sha256"] != want["ids_sha256"]:
+            raise NotFrozenError(f"block {name} differs from the frozen split")
 
 
 # --------------------------------------------------------------------------
@@ -219,8 +283,36 @@ def error_stats(predicted, measured) -> dict:
     }
 
 
+def reading(held: dict, ref: dict) -> str:
+    """The frozen reading rule for one direction.
+
+    ``better`` only if both held-out RMSE and MAE of the block fit are lower
+    than the supplied relation's on the same samples; ``worse`` only if both
+    are higher; otherwise ``mixed``.  Bias is reported, not used here.
+    """
+    lower = (held["rmse_gcc"] < ref["rmse_gcc"], held["mae_gcc"] < ref["mae_gcc"])
+    higher = (held["rmse_gcc"] > ref["rmse_gcc"], held["mae_gcc"] > ref["mae_gcc"])
+    if all(lower):
+        return "block fit better"
+    if all(higher):
+        return "block fit worse"
+    return "mixed"
+
+
+def overall_reading(readings) -> str:
+    """Directions are never pooled: one shared reading, or direction-dependent."""
+    readings = list(readings)
+    return readings[0] if len(set(readings)) == 1 else "direction-dependent"
+
+
 def _gradients(depth_m, measured, supplied, fitted) -> dict:
-    """Mean rho g gradient over one block with each density, in MPa/km."""
+    """Mean rho g gradient over one block with each density, in MPa/km.
+
+    Along the logged coordinate: a one-dimensional application of
+    ``d(sigma_zz)/dz = rho g``; vertical depth is not established.  The three
+    share one coordinate array, so their differences are invariant under a
+    uniform scaling of it, as for the original gradients.
+    """
     g_m = st.mean_rho_g_gradient(depth_m, gcc_to_kg_m3(measured)) / 1e3
     g_s = st.mean_rho_g_gradient(depth_m, gcc_to_kg_m3(supplied)) / 1e3
     g_f = st.mean_rho_g_gradient(depth_m, gcc_to_kg_m3(fitted)) / 1e3
@@ -235,8 +327,14 @@ def _gradients(depth_m, measured, supplied, fitted) -> dict:
     }
 
 
-def score_direction(labelled: pd.DataFrame, fit_on: str, evaluate_on: str) -> dict:
-    """Fit on one block, evaluate on the other, against the supplied relation."""
+def score_direction(labelled: pd.DataFrame, fit_on: str, evaluate_on: str):
+    """Fit on one block, evaluate on the other, against the supplied relation.
+
+    Returns ``(summary, predictions)``; ``predictions`` holds one row per
+    evaluation sample.  Reductions are ``100 (supplied - block fit) / supplied``:
+    positive means the block fit has the lower error, the sign convention of the
+    original in-sample ``gardner_refit_rmse_reduction_pct_in_sample``.
+    """
     train = labelled[labelled["block"] == fit_on]
     test = labelled[labelled["block"] == evaluate_on]
     if train.empty or test.empty or fit_on == evaluate_on:
@@ -250,7 +348,7 @@ def score_direction(labelled: pd.DataFrame, fit_on: str, evaluate_on: str) -> di
     held = error_stats(fitted, rho_t)
     ref = error_stats(supplied, rho_t)
     outside = (vp_t < train["vp_m_s"].min()) | (vp_t > train["vp_m_s"].max())
-    return {
+    summary = {
         "fit_on": fit_on,
         "evaluate_on": evaluate_on,
         "training": _describe(train),
@@ -263,23 +361,40 @@ def score_direction(labelled: pd.DataFrame, fit_on: str, evaluate_on: str) -> di
         ),
         "held_out_block_fit": held,
         "held_out_supplied_gardner": ref,
-        "rmse_change_block_fit_vs_supplied_pct": float(
-            100.0 * (held["rmse_gcc"] - ref["rmse_gcc"]) / ref["rmse_gcc"]
+        "rmse_reduction_block_fit_vs_supplied_pct": float(
+            100.0 * (ref["rmse_gcc"] - held["rmse_gcc"]) / ref["rmse_gcc"]
         ),
-        "mae_change_block_fit_vs_supplied_pct": float(
-            100.0 * (held["mae_gcc"] - ref["mae_gcc"]) / ref["mae_gcc"]
+        "mae_reduction_block_fit_vs_supplied_pct": float(
+            100.0 * (ref["mae_gcc"] - held["mae_gcc"]) / ref["mae_gcc"]
         ),
+        "reading": reading(held, ref),
         "rho_g_gradient_over_evaluation_block": _gradients(
             test["dept_m"].to_numpy(), rho_t, supplied, fitted
         ),
     }
+    predictions = pd.DataFrame(
+        {
+            "direction": f"{fit_on}_to_{evaluate_on}",
+            "las_row": test["las_row"].to_numpy(),
+            "dept_m": test["dept_m"].to_numpy(),
+            "evaluate_on": evaluate_on,
+            "vp_m_s": vp_t,
+            "rhob_measured_gcc": rho_t,
+            "rho_block_fit_gcc": fitted,
+            "rho_supplied_gardner_gcc": supplied,
+            "residual_block_fit_gcc": fitted - rho_t,
+            "residual_supplied_gardner_gcc": supplied - rho_t,
+        }
+    )
+    return summary, predictions
 
 
 def residual_lag_correlation(depth_m, residual, lags_m) -> pd.DataFrame:
     """Pearson correlation of a residual series with itself shifted along the log.
 
-    Context for the 20 m gap only; the gap was fixed before this was computed
-    and is not chosen from it.  Assumes regular sampling, which the overlap has
+    A descriptive statistic that gives context for the 20 m gap.  It is not a
+    test of independence and not a decorrelation length, and the gap was fixed
+    before it was computed.  Assumes regular sampling, which the overlap has
     (0.2 m); the lag in samples is rounded from the median spacing.
     """
     d = np.asarray(depth_m, dtype=float)
@@ -296,59 +411,66 @@ def residual_lag_correlation(depth_m, residual, lags_m) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-LAG_CONTEXT_M = (0.2, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0)
+def score(labelled: pd.DataFrame, record: dict, config: dict | None = None):
+    """Score both frozen directions; add the declared residual-correlation context.
 
-
-def score(labelled: pd.DataFrame, config: dict | None = None) -> dict:
-    """Score both frozen directions and add the residual-correlation context."""
+    Returns ``(scores, predictions)``.  Raises :class:`NotFrozenError` unless
+    ``record`` (the split derived now) matches the frozen configuration.
+    """
     config = config or load_config()
-    directions = {
-        d["name"]: score_direction(labelled, d["fit_on"], d["evaluate_on"])
-        for d in config["directions"]
-    }
+    check_frozen(record, config)
+    directions, frames = {}, []
+    for d in config["directions"]:
+        summary, pred = score_direction(labelled, d["fit_on"], d["evaluate_on"])
+        frozen = record["blocks"]
+        if summary["training"]["ids_sha256"] != frozen[d["fit_on"]]["ids_sha256"] or \
+                summary["evaluation"]["ids_sha256"] != frozen[d["evaluate_on"]]["ids_sha256"]:
+            raise NotFrozenError(f"direction {d['name']} is not scored on the frozen blocks")
+        directions[d["name"]] = summary
+        frames.append(pred)
+
     vp = labelled["vp_m_s"].to_numpy()
     rho = labelled["rhob_gcc"].to_numpy()
     a_all, b_all = fit_gardner_form(vp, rho)
-    lags = pd.DataFrame({"lag_m": [float(x) for x in LAG_CONTEXT_M]})
     lag_supplied = residual_lag_correlation(
         labelled["dept_m"], sx.gardner_density_gcc(vp) - rho, LAG_CONTEXT_M
     )
     lag_refit = residual_lag_correlation(
         labelled["dept_m"], predict_gardner_form(vp, a_all, b_all) - rho, LAG_CONTEXT_M
     )
-    lags = lags.merge(
-        lag_supplied.rename(columns={"correlation": "supplied_gardner_residual"}),
-        on="lag_m",
-    ).merge(
+    lags = lag_supplied.rename(columns={"correlation": "supplied_gardner_residual"}).merge(
         lag_refit[["lag_m", "correlation"]].rename(
             columns={"correlation": "in_sample_refit_residual"}
         ),
         on="lag_m",
     )
-    return {
+    scores = {
         "directions": directions,
+        "overall_reading": overall_reading(v["reading"] for v in directions.values()),
         "in_sample_refit_all_samples": {"coefficient_a": a_all, "exponent_b": b_all},
         "residual_lag_correlation": lags.to_dict(orient="records"),
     }
+    return scores, pd.concat(frames, ignore_index=True)
 
 
 def results_table(scores: dict) -> pd.DataFrame:
     """One row per direction and relation, on the evaluation block."""
     rows = []
     for name, d in scores["directions"].items():
-        for relation, key, a, b in (
-            ("block fit", "held_out_block_fit",
-             d["fitted_coefficient_a"], d["fitted_exponent_b"]),
-            ("supplied Gardner", "held_out_supplied_gardner",
-             sx.GARDNER_COEFFICIENT, sx.GARDNER_EXPONENT),
+        g = d["rho_g_gradient_over_evaluation_block"]
+        for relation, key, a, b, trained_on, dg in (
+            ("block fit", "held_out_block_fit", d["fitted_coefficient_a"],
+             d["fitted_exponent_b"], d["fit_on"], g["block_fit_minus_measured_MPa_per_km"]),
+            ("supplied Gardner", "held_out_supplied_gardner", sx.GARDNER_COEFFICIENT,
+             sx.GARDNER_EXPONENT, "none (fixed coefficients)",
+             g["supplied_minus_measured_MPa_per_km"]),
         ):
             s = d[key]
-            g = d["rho_g_gradient_over_evaluation_block"]
             rows.append({
                 "direction": name,
-                "fit_on": d["fit_on"],
                 "evaluate_on": d["evaluate_on"],
                 "relation": relation,
+                "coefficients_fitted_on": trained_on,
                 "coefficient_a": a,
                 "exponent_b": b,
                 "evaluation_depth_m_first": d["evaluation"]["depth_m_first"],
@@ -357,24 +479,51 @@ def results_table(scores: dict) -> pd.DataFrame:
                 "bias_gcc": s["bias_gcc"],
                 "rmse_gcc": s["rmse_gcc"],
                 "mae_gcc": s["mae_gcc"],
-                "rho_g_gradient_minus_measured_MPa_per_km": (
-                    g["block_fit_minus_measured_MPa_per_km"] if relation == "block fit"
-                    else g["supplied_minus_measured_MPa_per_km"]
-                ),
+                "rho_g_gradient_1d_minus_measured_MPa_per_km": dg,
             })
     return pd.DataFrame(rows)
 
 
+def qualifications(log) -> dict:
+    """The caveats every depth-block number carries, taken from the data."""
+    evidence = log.depth_convention_evidence()
+    return {
+        "coordinate": "logged DEPT (ft) * 0.3048; lengths and the gap are measured along it",
+        "vertical_depth_established": bool((evidence["value"] == "present").any()),
+        "rho_g": "one-dimensional application of d(sigma_zz)/dz = rho g along the logged "
+                 "coordinate; not a verified vertical stress gradient",
+        "rho_g_differences_invariant_under_uniform_scaling": True,
+        "gap_guarantees_independence": False,
+        "independent_well_validation": "unavailable: the supplied material has paired DT and "
+                                       "RHOB for this one well only",
+    }
+
+
 def run(out_dir=None, log=None, config=None) -> dict:
-    """Derive the frozen split, score it and write every output."""
+    """Derive the split, check it is the frozen one, score it, write every output."""
     out = Path(out_dir) if out_dir is not None else DEFAULT_OUT
     config = config or load_config()
-    split, labelled = write_split(out, log, config)
-    scores = score(labelled, config)
-    payload = {"config": "configs/depth_blocks.json", "split": "split.json", **scores}
+    log = log if log is not None else read_las()
+    record, labelled = derive_split(paired_samples(log), config)
+    scores, predictions = score(labelled, record, config)   # refuses unless frozen
+
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "split.json").write_text(json.dumps(record, indent=2) + "\n")
+    labelled[["las_row", "dept_ft", "dept_m", "block"]].to_csv(
+        out / "split_samples.csv", index=False
+    )
+    payload = {
+        "config": "configs/depth_blocks.json",
+        "config_sha256": config_sha256(config),
+        "split": "split.json",
+        "qualifications": qualifications(log),
+        **scores,
+    }
     (out / "depth_block_results.json").write_text(json.dumps(payload, indent=2) + "\n")
     results_table(scores).to_csv(out / "depth_block_table.csv", index=False)
+    predictions.to_csv(out / "depth_block_predictions.csv", index=False)
     pd.DataFrame(scores["residual_lag_correlation"]).to_csv(
         out / "residual_lag_correlation.csv", index=False
     )
-    return {"split": split, "scores": scores, "labelled": labelled, "out_dir": out}
+    return {"split": record, "scores": scores, "predictions": predictions,
+            "labelled": labelled, "out_dir": out}
