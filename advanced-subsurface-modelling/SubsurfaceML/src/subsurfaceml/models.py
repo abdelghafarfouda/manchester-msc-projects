@@ -155,7 +155,14 @@ class FittedSurrogate:
         return self.estimator.predict(X[self.features])
 
 
-def _wrap(pipe, dist, log_target):
+def _wrap(pipe, dist, log_target, hybrid=False,
+          offset_feature="log10_rom_dp_MPa"):
+    if hybrid:
+        # learn ln(y) - ln(ROM): the analytical ROM times a learned
+        # correction factor (hybrid.py)
+        from .hybrid import ROMOffsetRegressor
+        est = ROMOffsetRegressor(regressor=pipe, offset_feature=offset_feature)
+        return est, {f"regressor__{k}": v for k, v in dist.items()}
     if not log_target:
         return pipe, dist
     # log transform of a strictly positive, multiplicative target -- the log
@@ -167,15 +174,20 @@ def _wrap(pipe, dist, log_target):
 
 def fit_and_select(X, y, groups, features, target, unit="", *, n_splits=4,
                    n_iter=16, random_state=0, log_target=False,
-                   families=None, verbose=True):
+                   hybrid=False, offset_feature="log10_rom_dp_MPa",
+                   families=None, verbose=True, n_jobs=-1):
     """Tune every family with a bounded randomised search inside grouped
-    K-fold CV and select the lowest CV RMSE.  Returns ``(best, results)``
-    where ``results[name]`` holds the CV RMSE, parameters and fit time."""
+    K-fold CV and select the lowest CV RMSE.  Returns ``(best, results,
+    fitted)`` where ``results[name]`` holds the CV RMSE, parameters and fit
+    time.  ``hybrid=True`` fits every family as the multiplicative
+    correction of the analytical ROM (:mod:`hybrid`); only the training data
+    passed in are used for tuning and selection."""
     cv = grouped_cv(n_splits)
     results, fitted = {}, {}
     best = None
+    X = X[list(features)]
     for name, (pipe, dist) in build_models(random_state, families).items():
-        est, dist = _wrap(pipe, dist, log_target)
+        est, dist = _wrap(pipe, dist, log_target, hybrid, offset_feature)
         t0 = time.perf_counter()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -183,7 +195,7 @@ def fit_and_select(X, y, groups, features, target, unit="", *, n_splits=4,
                 search = RandomizedSearchCV(
                     est, dist, n_iter=n_iter, cv=cv,
                     scoring="neg_root_mean_squared_error",
-                    random_state=random_state, n_jobs=-1, refit=True)
+                    random_state=random_state, n_jobs=n_jobs, refit=True)
                 search.fit(X, y, groups=groups)
                 model, score, params = (search.best_estimator_,
                                         -search.best_score_,
@@ -191,7 +203,7 @@ def fit_and_select(X, y, groups, features, target, unit="", *, n_splits=4,
             else:
                 sc = cross_val_score(est, X, y, groups=groups, cv=cv,
                                      scoring="neg_root_mean_squared_error",
-                                     n_jobs=-1)
+                                     n_jobs=n_jobs)
                 model, score, params = est.fit(X, y), float(-sc.mean()), {}
         dt = time.perf_counter() - t0
         results[name] = {"cv_rmse": float(score), "best_params":
@@ -203,7 +215,9 @@ def fit_and_select(X, y, groups, features, target, unit="", *, n_splits=4,
                                estimator=model, features=list(features),
                                cv_score_rmse=float(score),
                                best_params=results[name]["best_params"],
-                               fit_seconds=dt, log_target=log_target)
+                               fit_seconds=dt, log_target=log_target or hybrid,
+                               meta={"kind": "hybrid" if hybrid else
+                                     ("log" if log_target else "linear")})
         fitted[name] = cand
         if best is None or cand.cv_score_rmse < best.cv_score_rmse:
             best = cand

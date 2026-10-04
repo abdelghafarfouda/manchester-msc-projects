@@ -111,6 +111,8 @@ class LayeredRock:
             "k_geom_mean_m2": float(np.exp(np.mean(np.log(self.k)))),
             "k_arith_mean_m2": float(np.mean(self.k)),
             "k_harm_mean_m2": float(1.0 / np.mean(1.0 / self.k)),
+            "k_min_layer_m2": float(np.min(kl)),
+            "k_max_layer_m2": float(np.max(kl)),
             "V_DP_layers": dykstra_parsons(kl),
             "CV_k_layers": coefficient_of_variation(kl),
             "phi_mean": float(np.mean(self.phi)),

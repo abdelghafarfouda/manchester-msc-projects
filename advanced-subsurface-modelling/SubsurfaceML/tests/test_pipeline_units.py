@@ -151,13 +151,20 @@ def _fake_scenarios(n=30, seed=0):
 
 
 def test_engineered_features_work_without_simulator_outputs():
-    """The optimiser builds features for schedules that have NOT been
-    simulated, so this must not require any output column."""
+    """The screening builds features for schedules that have NOT been
+    simulated, so this must not require any output column.  The published
+    inputs engineer from the minimal raw table; the full revised inputs
+    (realised layers + analytical ROM) come from the pre-simulation route."""
+    from subsurfaceml.features import FEATURES_BASELINE, features_for_schedules
     out = add_engineered_features(_fake_scenarios())
-    for f in FEATURES:
+    for f in FEATURES_BASELINE:
         assert f in out.columns, f
-    assert out[FEATURES].notna().all().all()
+    assert out[FEATURES_BASELINE].notna().all().all()
     assert "dp_bh_max_MPa" not in out.columns
+    cfg = load_config(project_root() / "config" / "demo.yaml")
+    r = sample_realisations(cfg)[0]
+    X = features_for_schedules(cfg, r, np.array([[5.0, 6.0, 7.0, 8.0]]))
+    assert list(X.columns) == FEATURES and X.notna().all().all()
 
 
 def test_engineered_features_add_targets_when_outputs_are_present():
