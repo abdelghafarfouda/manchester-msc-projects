@@ -353,6 +353,16 @@ For the plume radius the realised-layer and ROM inputs lower the out-of-fold
 RMSE from 9.57 to 6.51 m (ΔRMSE −3.06 m, CI [−4.15, −2.04]); for the swept
 fraction they do not help (0.00109 → 0.00112) and were not adopted.
 
+**Reproduction** (`experiments/ablation_reproduction.json`). Re-running the
+ablation with the documented command reproduced every decision. The plume,
+swept-fraction and ROM-only results agree to 1e-9; the learned pressure
+variants agree within 0.014 MPa RMSE (V3 0.266 both times; V0 1.138 →
+1.124, where one outer fold's inner search chose ridge instead of SVR). The
+cause is the input table. The original run rebuilt it from `scenarios.csv`;
+the reproduction read the stored `scenarios_features.csv`. The two agree to
+2e-13 relative, which is enough to tip near-tied choices in the randomised
+searches.
+
 ## 9. Results on the untouched test reservoirs and under distribution shift
 
 Three models are scored on the same reservoirs: the **revised** design, the
@@ -555,7 +565,7 @@ All times were measured on one 4-core virtual machine (Intel Xeon 2.1 GHz,
 | Method studies, interpretation, classifier, speed, open boundary | — | 4 min |
 | Screening (§11) | 30 reservoirs × 5 methods × at most 4 simulations; 4000 candidates per reservoir | 6 min |
 | **Full pipeline** (`run_pipeline.py --config config/study.yaml`) | | **66 min** |
-| Development experiments (§8) | nested CV, 5 outer × 4 inner folds, 20 settings per family (V5: 60), 10 variant–target pairs; 200 calibration resamples | 83 min (measured while other jobs shared the machine) |
+| Development experiments (§8) | nested CV, 5 outer × 4 inner folds, 20 settings per family (V5: 60), 10 variant–target pairs; 200 calibration resamples | 71 min (83 min in the original run, which shared the machine with other jobs) |
 | Model-form study (§5) | 26 cases × 2 r–z variants + 8 cases at double vertical resolution (60 r–z simulations) | 16 min |
 | Screen for transient peaks (§4) | all 1,520 cases screened; 640 re-simulated with series; 36 flagged cases × 4 levels | 7 min |
 

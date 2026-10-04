@@ -319,7 +319,7 @@ machine (Intel Xeon 2.1 GHz, 15 GB RAM) using all cores.
 
 | Step | Command | Runtime |
 |---|---|---|
-| 1. Development experiments: ablation, interval selection, decisions | `python scripts/run_experiments.py --config config/study.yaml --only ablation` | 83 min (measured while other jobs shared the machine) |
+| 1. Development experiments: ablation, interval selection, decisions | `python scripts/run_experiments.py --config config/study.yaml --only ablation` | 71 min |
 | 2. Full pipeline: verification → development data → fresh test sets → discretisation study → surrogates → evaluation → screening → report | `python scripts/run_pipeline.py --config config/study.yaml` | 66 min |
 | 3. Model-form error (r–z model) | `python scripts/run_model_form.py --config config/study.yaml` | 16 min |
 | 4. Screen of all 1,520 cases for transient peaks | `python scripts/run_experiments.py --config config/study.yaml --only peak_screen` | 7 min |
@@ -331,7 +331,12 @@ Step 1 needs the development data (`results/study/data/scenarios.csv`), which
 step 2 writes; the published copy is what the pipeline regenerates (identical
 in every simulated value), so the order shown is the order used. Running the
 pipeline twice from clean data gave identical machine-learning, interval and
-screening results. A pipeline run overwrites its configuration's folder in
+screening results. Re-running step 1 reproduced every design decision, with
+out-of-fold RMSEs within 0.014 MPa of the recorded ones
+(`results/study/experiments/ablation_reproduction.json`): its inputs, read
+from `scenarios_features.csv` rather than rebuilt from `scenarios.csv`, differ
+in the last digits (≤ 2e-13 relative), which tips near-tied model choices in
+the hyper-parameter searches. A pipeline run overwrites its configuration's folder in
 `results/` except `experiments/`. Other entry points:
 `subsurfaceml predict --config config/study.yaml --input examples/worked_example_input.json`,
 `subsurfaceml simulate`, `subsurfaceml validate`, and

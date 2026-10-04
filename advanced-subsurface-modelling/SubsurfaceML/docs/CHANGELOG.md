@@ -91,6 +91,9 @@ fraction about 17 % too large. A screen of all 1,520 cases found peaks set
 by a start-up transient of the well block in 4 development, 0 test and 32
 shift cases (2–14 % too high; one shift label changes). Omitting gravity and crossflow: peak build-up
 −4 %, plume radius +88 % (medians). Details: `docs/TECHNICAL_REPORT.md` §4–5.
+The full pipeline was run twice from clean data with identical machine-learning,
+interval and screening results; re-running the development ablation reproduced
+every design decision (`results/study/experiments/ablation_reproduction.json`).
 
 ## 2026-09-27 — publication review (no results changed)
 
