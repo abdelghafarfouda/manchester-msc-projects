@@ -1,0 +1,15 @@
+SeisGeoMech - running workflow
+
+--- headline results ---
+overlap interval          3614.2-3835.0 m (1105 samples)
+Gardner bias              -0.0932 g/cm3 (-3.53 %)
+Gardner RMSE              0.1179 g/cm3
+rho g gradient            25.887 MPa/km measured, 24.973 MPa/km Gardner (-3.53 %)
+RC RMS ratio (pre-conv.)  1.202 (correlation 0.935)
+synthetic RMS ratio       0.884 - 0.991 across the tested frequencies
+olivine VRH Vp            8340.9 m/s
+Merivale E, nu            99.95 GPa, 0.253
+
+12 tables -> results/tables
+6 figures -> results/figures
+done in 3.2 s

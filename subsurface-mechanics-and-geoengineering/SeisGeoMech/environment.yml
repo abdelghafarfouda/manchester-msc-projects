@@ -9,6 +9,7 @@ dependencies:
   - matplotlib>=3.7
   - pytest>=7.4
   - jupyterlab>=4.0
+  - setuptools<81   # bruges imports pkg_resources; see requirements.txt
   - pip
   - pip:
       - lasio>=0.31

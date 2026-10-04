@@ -1,0 +1,1083 @@
+.........................FFF.....FF..F.................................. [ 57%]
+..................EEEEEEEEEEEEEEEEEF..................                   [100%]
+==================================== ERRORS ====================================
+________ ERROR at setup of test_workflow_produces_every_expected_table _________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_____ ERROR at setup of test_overlap_interval_is_the_one_the_log_supports ______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+______________ ERROR at setup of test_gardner_bias_is_reproduced _______________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_ ERROR at setup of test_gardner_bias_carries_into_the_gradient_proportionally _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_________ ERROR at setup of test_gradient_equals_mean_density_times_g __________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+__ ERROR at setup of test_gardner_reflectivity_has_a_closed_form_in_velocity ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_ ERROR at setup of test_gardner_raises_reflection_coefficient_rms_before_convolution _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_ ERROR at setup of test_synthetic_trace_rms_ratio_is_not_the_reflection_coefficient_ratio _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+________ ERROR at setup of test_gardner_refit_is_recorded_as_in_sample _________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_ ERROR at setup of test_depth_convention_is_not_established_by_the_supplied_file _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_ ERROR at setup of test_gradient_difference_is_flagged_invariant_under_uniform_scaling _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+______________ ERROR at setup of test_spike_convolution_is_exact _______________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_____ ERROR at setup of test_elastic_identities_hold_to_machine_precision ______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+____________ ERROR at setup of test_voigt_reuss_bounds_are_ordered _____________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+____ ERROR at setup of test_resolution_correlation_increases_with_frequency ____
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+_ ERROR at setup of test_every_sweep_frequency_is_supportable_by_the_interval __
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+___ ERROR at setup of test_p_wave_modulus_is_in_a_physically_sensible_range ____
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x7f704e103950>, _basetemp=PosixPath('/tmp/pytest-of-root/pytest-6'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def res(tmp_path_factory):
+>       return analysis.run(results_root=tmp_path_factory.mktemp("results"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+=================================== FAILURES ===================================
+___________________ test_ricker_is_zero_phase_with_unit_peak ___________________
+
+    def test_ricker_is_zero_phase_with_unit_peak():
+>       w, t = sx.ricker_wavelet(duration=0.07, dt=0.002, frequency=100.0)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_seismic.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+___________________________ test_ricker_is_symmetric ___________________________
+
+    def test_ricker_is_symmetric():
+>       w, _ = sx.ricker_wavelet(duration=0.08, dt=0.001, frequency=50.0)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_seismic.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+______________ test_ricker_has_zero_mean_to_a_good_approximation _______________
+
+    def test_ricker_has_zero_mean_to_a_good_approximation():
+        """A Ricker wavelet has no DC component."""
+>       w, _ = sx.ricker_wavelet(duration=0.5, dt=0.0005, frequency=40.0)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_seismic.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+___________________ test_similarity_increases_with_frequency ___________________
+
+    def test_similarity_increases_with_frequency():
+        """Monotonic within this experiment; not an information-recovery claim."""
+        rng = np.random.default_rng(1)
+        r = rng.normal(size=4001) * 0.01
+>       sweep = sx.resolution_sweep(r, 1e-4, (25.0, 50.0, 100.0, 200.0))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_seismic.py:136: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+______ test_resolution_sweep_returns_four_fields_including_synthetic_rms _______
+
+    def test_resolution_sweep_returns_four_fields_including_synthetic_rms():
+        rng = np.random.default_rng(2)
+        r = rng.normal(size=2001) * 0.01
+>       (f, corr, n, rms), = sx.resolution_sweep(r, 1e-4, (100.0,))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_seismic.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+________ test_resolution_sweep_refuses_a_wavelet_longer_than_the_trace _________
+
+    def test_resolution_sweep_refuses_a_wavelet_longer_than_the_trace():
+        r = np.zeros(100)
+        with pytest.raises(ValueError, match="too short"):
+>           sx.resolution_sweep(r, 1e-4, (10.0,))
+
+tests/test_seismic.py:172: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+________________________ test_results_are_deterministic ________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-6/test_results_are_deterministic0')
+
+    def test_results_are_deterministic(tmp_path):
+>       a = analysis.run(results_root=tmp_path / "a")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_workflow.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/seisgeomech/analysis.py:536: in run
+    stage_resolution(res)
+src/seisgeomech/analysis.py:362: in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:191: in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/seisgeomech/seismic.py:92: in ricker_wavelet
+    import bruges as bg
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """
+    Initialize the library.
+    
+    :copyright: 2015 Agile Geoscience
+    :license: Apache 2.0
+    """
+    from . import attribute
+    from . import filters
+    from . import models
+    from . import petrophysics
+    from . import rockphysics
+    from . import reflection
+    from . import noise
+    from . import transform
+    from . import unit
+    from . import util
+    from .get_bruges import get_bruges
+    from .bruges import BrugesError
+    
+>   from pkg_resources import get_distribution, DistributionNotFound
+E   ModuleNotFoundError: No module named 'pkg_resources'
+
+../venv_defect313/lib/python3.13/site-packages/bruges/__init__.py:20: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_seismic.py::test_ricker_is_zero_phase_with_unit_peak - Modu...
+FAILED tests/test_seismic.py::test_ricker_is_symmetric - ModuleNotFoundError:...
+FAILED tests/test_seismic.py::test_ricker_has_zero_mean_to_a_good_approximation
+FAILED tests/test_seismic.py::test_similarity_increases_with_frequency - Modu...
+FAILED tests/test_seismic.py::test_resolution_sweep_returns_four_fields_including_synthetic_rms
+FAILED tests/test_seismic.py::test_resolution_sweep_refuses_a_wavelet_longer_than_the_trace
+FAILED tests/test_workflow.py::test_results_are_deterministic - ModuleNotFoun...
+ERROR tests/test_workflow.py::test_workflow_produces_every_expected_table - M...
+ERROR tests/test_workflow.py::test_overlap_interval_is_the_one_the_log_supports
+ERROR tests/test_workflow.py::test_gardner_bias_is_reproduced - ModuleNotFoun...
+ERROR tests/test_workflow.py::test_gardner_bias_carries_into_the_gradient_proportionally
+ERROR tests/test_workflow.py::test_gradient_equals_mean_density_times_g - Mod...
+ERROR tests/test_workflow.py::test_gardner_reflectivity_has_a_closed_form_in_velocity
+ERROR tests/test_workflow.py::test_gardner_raises_reflection_coefficient_rms_before_convolution
+ERROR tests/test_workflow.py::test_synthetic_trace_rms_ratio_is_not_the_reflection_coefficient_ratio
+ERROR tests/test_workflow.py::test_gardner_refit_is_recorded_as_in_sample - M...
+ERROR tests/test_workflow.py::test_depth_convention_is_not_established_by_the_supplied_file
+ERROR tests/test_workflow.py::test_gradient_difference_is_flagged_invariant_under_uniform_scaling
+ERROR tests/test_workflow.py::test_spike_convolution_is_exact - ModuleNotFoun...
+ERROR tests/test_workflow.py::test_elastic_identities_hold_to_machine_precision
+ERROR tests/test_workflow.py::test_voigt_reuss_bounds_are_ordered - ModuleNot...
+ERROR tests/test_workflow.py::test_resolution_correlation_increases_with_frequency
+ERROR tests/test_workflow.py::test_every_sweep_frequency_is_supportable_by_the_interval
+ERROR tests/test_workflow.py::test_p_wave_modulus_is_in_a_physically_sensible_range
+7 failed, 102 passed, 17 errors in 2.66s
