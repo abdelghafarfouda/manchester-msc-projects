@@ -1,0 +1,169 @@
+{
+  "n_cases": 13,
+  "n_failed_runs": 0,
+  "reference_level": "fine",
+  "targets": {
+    "dp_bh_max_MPa": {
+      "production_minus_fine": {
+        "median_rel": 0.0007141002498991651,
+        "p90_rel": 0.0027029233444558227,
+        "max_rel": 0.006098633249989196,
+        "mean_signed": 0.012326904304052264,
+        "max_abs": 0.07122957941047936,
+        "n": 13
+      },
+      "production_minus_finer": {
+        "median_rel": 0.00016502355207144852,
+        "p90_rel": 0.006933038278059491,
+        "max_rel": 0.00980320236242438,
+        "mean_signed": 0.029520365071765142,
+        "max_abs": 0.11407740825128876,
+        "n": 4
+      },
+      "production_minus_n_r_x2": {
+        "median_rel": 0.0011558085744783897,
+        "p90_rel": 0.003522703327820697,
+        "max_rel": 0.006781800210951707,
+        "mean_signed": 0.014160393935292132,
+        "max_abs": 0.07915494603478557,
+        "n": 13
+      },
+      "production_minus_r_near_half": {
+        "median_rel": 0.00018007634561690675,
+        "p90_rel": 0.0010123634023319528,
+        "max_rel": 0.0022528498115978136,
+        "mean_signed": -0.002514766810692113,
+        "max_abs": 0.011414927031941247,
+        "n": 13
+      },
+      "production_minus_time_fine": {
+        "median_rel": 1.3546715963544013e-05,
+        "p90_rel": 3.229191669621564e-05,
+        "max_rel": 0.00015413303631096214,
+        "mean_signed": -6.200954164160298e-05,
+        "max_abs": 0.0005002303894645621,
+        "n": 13
+      },
+      "fine_minus_finer": {
+        "median_rel": 7.046371774783353e-05,
+        "max_rel": 0.0036821132541134216,
+        "max_abs": 0.0428478288408094,
+        "n": 4
+      }
+    },
+    "r_plume_m95_m": {
+      "production_minus_fine": {
+        "median_rel": 0.031830557534235936,
+        "p90_rel": 0.04454838953795979,
+        "max_rel": 0.053009274085868544,
+        "mean_signed": 8.047474410289617,
+        "max_abs": 21.82163107690701,
+        "n": 13
+      },
+      "production_minus_finer": {
+        "median_rel": 0.05736158532838391,
+        "p90_rel": 0.07249511292386107,
+        "max_rel": 0.07603371033262231,
+        "mean_signed": 13.21572873955273,
+        "max_abs": 30.63006052623001,
+        "n": 4
+      },
+      "production_minus_n_r_x2": {
+        "median_rel": 0.03880226545109273,
+        "p90_rel": 0.05373830171126573,
+        "max_rel": 0.06081832248915187,
+        "mean_signed": 9.12105116648236,
+        "max_abs": 24.851978725665674,
+        "n": 13
+      },
+      "production_minus_r_near_half": {
+        "median_rel": 0.02034830813923281,
+        "p90_rel": 0.03402369919579685,
+        "max_rel": 0.04252601892338219,
+        "mean_signed": -5.116568897295641,
+        "max_abs": 22.54912743595338,
+        "n": 13
+      },
+      "production_minus_time_fine": {
+        "median_rel": 0.00016164846533643596,
+        "p90_rel": 0.0009315638790147787,
+        "max_rel": 0.0027282014385154887,
+        "mean_signed": -0.04893550949180154,
+        "max_abs": 0.25012548601209517,
+        "n": 13
+      },
+      "fine_minus_finer": {
+        "median_rel": 0.01949670575878291,
+        "max_rel": 0.022209104211401105,
+        "max_abs": 8.808429449323,
+        "n": 4
+      }
+    },
+    "sweep_efficiency": {
+      "production_minus_fine": {
+        "median_rel": 0.08067987278119608,
+        "p90_rel": 0.18929717129046336,
+        "max_rel": 0.21694845803465942,
+        "mean_signed": 0.0008878968172636446,
+        "max_abs": 0.0036847534320694694,
+        "n": 13
+      },
+      "production_minus_finer": {
+        "median_rel": 0.12650205705396972,
+        "p90_rel": 0.23138186832333862,
+        "max_rel": 0.2668475688653927,
+        "mean_signed": 0.0019470188907353995,
+        "max_abs": 0.006386500754225727,
+        "n": 4
+      },
+      "production_minus_n_r_x2": {
+        "median_rel": 0.08728337625271669,
+        "p90_rel": 0.19751447828667368,
+        "max_rel": 0.22333007307179145,
+        "mean_signed": 0.0011650983161251669,
+        "max_abs": 0.004560116205163563,
+        "n": 13
+      },
+      "production_minus_r_near_half": {
+        "median_rel": 0.08539325484846216,
+        "p90_rel": 0.12226521477398238,
+        "max_rel": 0.12552910324313882,
+        "mean_signed": -0.00024297712127286403,
+        "max_abs": 0.0038830835883580453,
+        "n": 13
+      },
+      "production_minus_time_fine": {
+        "median_rel": 0.0,
+        "p90_rel": 0.0,
+        "max_rel": 0.0,
+        "mean_signed": 0.0,
+        "max_abs": 0.0,
+        "n": 13
+      },
+      "fine_minus_finer": {
+        "median_rel": 0.040425926379470546,
+        "max_rel": 0.06287587655581994,
+        "max_abs": 0.0027017473221562574,
+        "n": 4
+      }
+    }
+  },
+  "pressure_limit_label_flips": {
+    "dp_limit_MPa": 9.0,
+    "n_compared": 13,
+    "n_flipped": 0,
+    "flipped_cases": [],
+    "n_within_5pct_of_limit": 0
+  },
+  "production_level_reproduces_dataset_max_rel": 0.0,
+  "case_selection": {
+    "strata": "k_median tercile x schedule-intensity quartile",
+    "cases_per_cell": 1,
+    "always_included": [
+      "R0036_S+02"
+    ],
+    "finer_subset": 4,
+    "finer_subset_rule": "cases with at most 12000 production time steps, spread by permeability"
+  },
+  "seconds": 118.7795652549994
+}

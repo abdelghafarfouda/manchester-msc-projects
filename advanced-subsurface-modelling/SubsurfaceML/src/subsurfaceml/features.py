@@ -34,8 +34,11 @@ import pandas as pd
 
 from .units import YEAR
 
-#: Surrogate inputs: strictly quantities known before running the simulator.
-FEATURES = [
+#: The 29 inputs of the published (2026-09-20) surrogates.  They describe
+#: the reservoir through the parameters of its sampling prior (``k_median_mD``,
+#: ``V_DP``) plus ``V_DP_layers``; kept unchanged so that the published
+#: approach can be re-run and compared like for like.
+FEATURES_BASELINE = [
     "log10_k_mD", "V_DP", "phi_mean", "h_total_m", "r_e_m",
     "n_g", "n_a", "krg0", "S_ar", "mu_g_cP", "rho_g",
     "log10_kh", "log10_pv", "q_mean_kg_s", "q_max_kg_s", "q_cv",
@@ -45,12 +48,29 @@ FEATURES = [
     "r_fill_est_m", "r_fill_over_re",
 ]
 
-#: Raw columns :func:`engineer` needs.
+#: Summaries of the *realised* layers the simulator actually uses (the rock
+#: is generated deterministically from the realisation's seed before any
+#: simulation).  With only four layers per realisation the realised layers
+#: can differ several-fold from what ``(k_median, V_DP)`` implies -- the cause
+#: of the largest pressure errors of the published surrogate
+#: (``docs/TECHNICAL_REPORT.md``).
+ROCK_FEATURES = ["log10_k_arith_mD", "log10_k_harm_mD", "log10_k_min_layer_mD",
+                 "log10_k_max_layer_mD", "log10_kh_realised"]
+
+#: Outputs of the analytical reduced-order model (:mod:`rom`), a closed-form
+#: function of the inputs above and the schedule -- no simulator output.
+ROM_FEATURES = ["log10_rom_dp_MPa", "rom_r_fill_max_m", "rom_max_layer_share"]
+
+#: Surrogate inputs: strictly quantities known before running the simulator.
+FEATURES = FEATURES_BASELINE + ROCK_FEATURES + ROM_FEATURES
+
+#: Raw columns :func:`engineer` needs (the realised-rock and ROM columns are
+#: optional, so that tables written by the published version still engineer
+#: the baseline features).
 RAW_REQUIRED = ["k_median_mD", "V_DP", "phi_mean", "h_total_m", "r_e_m",
                 "n_g", "n_a", "krg0", "S_ar", "mu_g_cP", "rho_g",
                 "V_DP_layers", "q_ref_kg_s", "planned_mass_kg",
                 "endpoint_mobility_ratio"]
-
 
 class FeatureError(ValueError):
     """Raised with an informative message when inputs are unusable."""
@@ -82,7 +102,17 @@ def raw_inputs(cfg, realisation, rates_kg_s) -> dict:
     row["q_ref_kg_s"] = reference_rate(cfg, r)
     row["endpoint_mobility_ratio"] = rp.endpoint_mobility_ratio(fl)
     row.update(_rate_fields(cfg, rates))
+    row.update(_rom_fields(cfg, r, rates[None, :], 0))
     return row
+
+
+def _rom_fields(cfg, realisation, rates_matrix, i=None) -> dict:
+    """ROM outputs for one schedule (``i``) or a batch (arrays)."""
+    from .rom import physics_features
+    ph = physics_features(cfg, realisation, rates_matrix)
+    if i is None:
+        return ph
+    return {k: float(v[i]) for k, v in ph.items()}
 
 
 def _rate_fields(cfg, rates) -> dict:
@@ -142,6 +172,19 @@ def engineer(df: pd.DataFrame) -> pd.DataFrame:
         * np.maximum(1.0 - df["S_ar"], 1e-6)))
     df["r_fill_over_re"] = df["r_fill_est_m"] / df["r_e_m"]
 
+    # realised layers (present in every table written since 2026-10)
+    md = 9.869233e-16
+    for src, dst in (("k_arith_mean_m2", "log10_k_arith_mD"),
+                     ("k_harm_mean_m2", "log10_k_harm_mD"),
+                     ("k_min_layer_m2", "log10_k_min_layer_mD"),
+                     ("k_max_layer_m2", "log10_k_max_layer_mD")):
+        if src in df.columns:
+            df[dst] = np.log10(df[src] / md)
+    if "kh_total" in df.columns:
+        df["log10_kh_realised"] = np.log10(df["kh_total"] / md)
+    if "rom_dp_bh_max_Pa" in df.columns:
+        df["log10_rom_dp_MPa"] = np.log10(np.maximum(df["rom_dp_bh_max_Pa"], 1.0) / 1e6)
+
     for src, dst, scale in (("dp_bh_max_Pa", "dp_bh_max_MPa", 1e6),
                             ("p_bh_max_Pa", "p_bh_max_MPa", 1e6),
                             ("mass_retained_kg", "mass_retained_Mt", 1e9),
@@ -173,11 +216,13 @@ def features_for_schedules(cfg, realisation, rates_matrix, features=None
     interface."""
     R = np.atleast_2d(np.asarray(rates_matrix, float))
     base = raw_inputs(cfg, realisation, R[0])       # validates, builds rock once
+    if not np.all(np.isfinite(R)) or np.any(R < 0):
+        raise FeatureError("candidate rates must be finite and non-negative")
+    ph = _rom_fields(cfg, realisation, R)           # one vectorised ROM call
     rows = []
-    for q in R:
-        if not np.all(np.isfinite(q)) or np.any(q < 0) or q.size != R.shape[1]:
-            raise FeatureError("candidate rates must be finite and non-negative")
+    for i, q in enumerate(R):
         row = dict(base)
         row.update(_rate_fields(cfg, q))
+        row.update({k: float(v[i]) for k, v in ph.items()})
         rows.append(row)
     return feature_matrix(pd.DataFrame(rows), features)

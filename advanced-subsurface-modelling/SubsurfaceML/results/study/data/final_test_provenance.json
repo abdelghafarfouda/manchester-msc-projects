@@ -1,0 +1,13 @@
+{
+  "set": "final_test",
+  "seed": 20261104,
+  "n_realisations": 100,
+  "n_requested": 400,
+  "n_success": 400,
+  "n_failed": 0,
+  "k_median_mD_range": [
+    30.0,
+    1000.0
+  ],
+  "wall_time_s": 275.67884250799943
+}

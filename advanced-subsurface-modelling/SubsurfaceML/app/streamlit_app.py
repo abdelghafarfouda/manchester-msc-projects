@@ -115,16 +115,22 @@ with tab[1]:
             if t in out:
                 o = out[t]
                 rows.append({"quantity": t, "prediction": float(o["pred"][0]),
-                             "P5-P95 band low": float(o["band_low"][0]),
-                             "band high": float(o["band_high"][0]), "unit": o["unit"]})
+                             "90 % interval low": float(o["band_low"][0]),
+                             "interval high": float(o["band_high"][0]), "unit": o["unit"]})
         st.table(pd.DataFrame(rows))
+        if "in_training_domain" in out and not out["in_training_domain"][0]:
+            st.warning("This reservoir is outside the training population "
+                       f"({out['domain_reasons'][0]}); the prediction and its interval "
+                       "have no support from the experiments - simulate instead.")
         if "exceeds_pressure_limit" in out:
             e = out["exceeds_pressure_limit"]
             st.write(f"Pressure-limit screen: **{'EXCEEDS' if e['flag'][0] else 'below'}** "
                      f"the {e['dp_limit_MPa']:.1f} MPa buildup limit "
                      f"(score {e['score'][0]:.3f}, threshold {e['threshold']:.3f}).")
-        st.caption(f"{dt*1e3:.1f} ms including feature building. Bands are empirical "
-                   "(measured coverage in RESULTS.md), not guarantees.")
+        st.caption(f"{dt*1e3:.1f} ms including feature building and the analytical ROM. "
+                   "These are UNVERIFIED surrogate predictions; intervals are calibrated on "
+                   "held-out reservoirs (coverage measured in RESULTS.md) and say nothing "
+                   "for reservoirs unlike the training population.")
 
 # ---------------------------------------------------------------- simulate
 with tab[2]:
@@ -157,38 +163,47 @@ with tab[2]:
 
 # ---------------------------------------------------------------- screening
 with tab[3]:
-    st.subheader("Monte Carlo schedule screening on an unseen test reservoir")
-    if S["predictor"] is None or S["summary"] is None:
-        st.info("Needs the trained models and summary.json.")
+    st.subheader("Verification-gated schedule screening on an independent test reservoir")
+    st.caption("The surrogate proposes; the simulator decides. No schedule is "
+               "recommended unless it has been simulated and met both stated limits "
+               "(the 9 MPa build-up limit is a modelling assumption).")
+    if S["predictor"] is None:
+        st.info("Needs the trained models.")
     else:
-        from subsurfaceml.optimise import SurrogateBundle, optimise_schedule, resimulate
+        from subsurfaceml import screening as SC
+        from subsurfaceml.features import features_for_schedules
+        from subsurfaceml.final_eval import realisation_lookup
+        from subsurfaceml.optimise import sample_candidates
         P = S["predictor"]
-        ids = P.manifest.get("test_realisation_ids", [])
-        rid = st.selectbox("test realisation", ids)
+        look = realisation_lookup(cfg)
+        ids = [k for k in sorted(look) if k >= cfg.evaluation.final_test_id_offset]
+        rid = st.selectbox("independent reservoir (final test 10000+, shift 20000+)", ids)
         n = st.slider("candidates", 200, 5000, 1000, step=200)
-        if st.button("Screen and re-simulate the best candidate"):
-            import copy
-            c2 = copy.deepcopy(cfg); c2.optim.n_candidates = n
-            r = {x.realisation_id: x for x in sample_realisations(cfg)}[int(rid)]
-            b = SurrogateBundle(features=P.surrogates["dp_bh_max_MPa"].features,
-                                pressure=P.surrogates["dp_bh_max_MPa"],
-                                plume=P.surrogates["r_plume_m95_m"],
-                                band_pressure=P.bands.get("dp_bh_max_MPa"),
-                                band_plume=P.bands.get("r_plume_m95_m"))
-            s = optimise_schedule(c2, r, b)
-            st.write(f"{s['n_feasible']} of {n} candidates predicted feasible "
-                     "(upper edge of the error band below both limits).")
-            rows = []
-            for lab, e in [("constant-rate baseline", s["baseline"])] + \
-                          ([("best screened", s["shortlist"][0])] if s["shortlist"] else []):
-                if e is None:
-                    continue
-                sim = resimulate(c2, r, e["rates_kg_s"], lab)
-                rows.append({"schedule": lab, "rates [kg/s]": np.round(e["rates_kg_s"], 1),
-                             "mass [Mt]": e["pred_mass_Mt"],
-                             "predicted dp [MPa]": e["pred_dp_MPa"],
-                             "simulated dp [MPa]": sim.get("sim_dp_bh_max_MPa"),
-                             "simulated r_plume [m]": sim.get("sim_r_plume_m95_m"),
-                             "violates a limit": sim.get("violates_pressure", False)
-                             or sim.get("violates_plume", False)})
-            st.table(pd.DataFrame(rows))
+        budget = st.slider("simulator budget", 1, 6, cfg.evaluation.screening_budget)
+        if st.button("Screen, then verify with the simulator"):
+            c, r = look[int(rid)]
+
+            def predictor(R):
+                X = features_for_schedules(c, r, R)
+                _, p, hi = P.bands["dp_bh_max_MPa"].predict_interval(X)
+                _, p2, hi2 = P.bands["r_plume_m95_m"].predict_interval(X)
+                return {"dp": p, "dp_hi": hi, "r95": p2, "r95_hi": hi2}
+            X0 = features_for_schedules(c, r, np.ones((1, c.schedule.n_periods)))
+            in_dom = bool(P.domain.check(X0)["in_domain"].iloc[0]) if P.domain else True
+            cands = sample_candidates(c, r, n, np.random.default_rng(int(rid)))
+            rec = SC.recommend_surrogate(c, r, SC.make_simulator(c, r), budget, predictor,
+                                         cands, in_domain=in_dom)
+            st.write(f"**Status: {rec.status}**" + (f"  (flags: {', '.join(rec.flags)})"
+                                                    if rec.flags else ""))
+            if rec.recommended_rates_kg_s is not None:
+                v = rec.verified
+                st.success(f"Verified schedule {np.round(rec.recommended_rates_kg_s, 2)} kg/s: "
+                           f"{v.mass_Mt:.3f} Mt, simulated build-up {v.dp_MPa:.2f} MPa, "
+                           f"plume radius {v.r95_m:.0f} m.")
+            else:
+                st.error("No recommendation: " + (rec.notes or ""))
+            st.table(pd.DataFrame([{"run": ch.label, "rates [kg/s]": np.round(ch.rates_kg_s, 2),
+                                    "simulated build-up [MPa]": ch.dp_MPa,
+                                    "simulated plume radius [m]": ch.r95_m,
+                                    "mass [Mt]": ch.mass_Mt, "meets limits": ch.feasible}
+                                   for ch in rec.checks]))

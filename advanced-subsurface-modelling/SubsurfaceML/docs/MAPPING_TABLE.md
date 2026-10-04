@@ -1,7 +1,10 @@
 # Mapping table — course concept → project use → implementation → evidence
 
-"V*n*" = checks in `results/<config>/metrics/validation.json`; ML rows are in
-`docs/COVERAGE_MATRIX.md` (generated from the executed run).
+"V*n*" = checks in `results/<config>/metrics/validation.json`. The ML rows of
+the 2026-09-20 version are in
+`docs/archive/2026-09-20_course_coverage/COVERAGE_MATRIX.md`; components
+added in the 2026-10 revision (some from outside the course material) are
+listed with their sources in `docs/SOURCE_MAP.md` §4.
 
 ## Advanced Subsurface Modelling
 
@@ -27,5 +30,5 @@
 | Flow-based upscaling | `2-Upscaling.pdf` p.15–16 | `K*` from a pressure solve with sealed sides | `upscaling.upscale_flow_based`, `lecture_2x2_case` | V9 (exact limits, bounds) |
 | Does single-phase upscaling preserve two-phase answers? | `2-Upscaling.pdf` p.3–4 | 4-layer vs upscaled 1-layer | `validation.v10_upscaling_two_phase` | V10 |
 | Variance, CV, Dykstra–Parsons | `5-Uncertainty.pdf` p.19–23 | sampled heterogeneity + ML input | `petrophysics.py` | `test_dykstra_parsons_recovers_the_target` |
-| PDFs, Monte Carlo, P10/P50/P90 | `5-Uncertainty.pdf` p.42–46 | scenario sampling; prior propagation through the surrogate; schedule screening | `scenarios.sample_realisations`, `uncertainty.monte_carlo_propagate`, `optimise` | `summary.json → uncertainty`, `optimisation` |
-| Sources of uncertainty (input, model bias, numerical) | `5-Uncertainty.pdf` p.8–9, 27–32 | error-source table per target | `uncertainty.error_source_table` | `09_uncertainty_sources.png` |
+| PDFs, Monte Carlo, P10/P50/P90 | `5-Uncertainty.pdf` p.42–46 | scenario sampling; prior propagation through the surrogate; candidate schedules for the screening | `scenarios.sample_realisations`, `uncertainty.monte_carlo_propagate`, `optimise.sample_candidates`, `screening` | `summary.json → uncertainty`, `screening` |
+| Sources of uncertainty (input, model bias, numerical) | `5-Uncertainty.pdf` p.8–9, 27–32 | error-source table per target; numerical error now measured on dataset cases; model bias of the no-gravity assumption measured with the r–z model | `uncertainty.error_source_table`, `numerics`, `rz` | `09_uncertainty_sources.png`, `17_numerics_dataset_cases.png`, `19_model_form_error.png` |

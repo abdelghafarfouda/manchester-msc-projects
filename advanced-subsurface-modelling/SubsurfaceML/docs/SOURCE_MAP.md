@@ -1,7 +1,13 @@
 # Source map — what came from which supplied file
 
-**Scope rule (since 2026-09-20).** The project uses only the methods,
-equations and algorithms supplied or demonstrated in two folders:
+**Scope.** The version published on 2026-09-20 followed a strict rule: only
+methods, equations and algorithms supplied or demonstrated in the two
+course folders below.  The October 2026 revision keeps every component of
+that version and adds a small number of components **from outside the course
+material**; they are listed, with their primary sources, in §4, so nothing
+taken from elsewhere is presented as course content.
+
+The course folders are:
 
 * **`Models`** — six PDF lecture handouts and `3-Advanced BL.pptx`
   (listed in §1);
@@ -63,8 +69,8 @@ folders. Their attributions have been removed or replaced:
 | Layered heterogeneity, Dykstra–Parsons, CV | `5-Uncertainty.pdf` p.19–23, lognormal p.43 | layers homogeneous in r; porosity–permeability trend (idea from `Lecture03/08.ipynb` poro-perm examples; that data file is not supplied) |
 | Scenario sampling | `5-Uncertainty.pdf` p.42–45 (distributions, Monte Carlo) | prior ranges are assumed generic values (`ASSUMPTIONS.md` A11, C2) |
 | Uncertainty sources / P10-P50-P90 / error table | `5-Uncertainty.pdf` p.8–9, 27–32, 46 | empirical residual-percentile band with *measured* coverage |
-| All ML components | notebooks listed in `docs/COVERAGE_MATRIX.md` | see §3 |
-| Schedule screening | Monte Carlo (`5-Uncertainty.pdf` p.44–45) + surrogates | limits are stated assumptions |
+| All ML components (2026-09-20) | notebooks listed in `docs/archive/2026-09-20_course_coverage/COVERAGE_MATRIX.md` | see §3 |
+| Schedule screening | Monte Carlo (`5-Uncertainty.pdf` p.44–45) + surrogates | limits are stated assumptions; verification gate and simulator search added in 2026-10 (§4) |
 
 ## 3. Data Science and machine learning folder
 
@@ -77,12 +83,27 @@ are the executed versions of unexecuted originals. The data files the
 notebooks load (`../Excercise_data/...`, `../Lecture_data/...`) are **not**
 supplied, so no notebook can be re-run as is and no course dataset is used.
 
-The frozen, deduplicated topic inventory (42 topics, file-by-file
-traceability including duplicates, exclusions) is
-`docs/coverage/ml_topics.yaml`; the executed coverage is
-`docs/COVERAGE_MATRIX.md`.
+The frozen, deduplicated topic inventory of the 2026-09-20 version (42
+topics, file-by-file traceability including duplicates, exclusions) and its
+executed coverage are archived in `docs/archive/2026-09-20_course_coverage/`
+(not regenerated for the 2026-10 revision).
 
 *Small language models / transformers:* not present in the material
 (`Extra_transformer.ipynb` is scikit-learn `SimpleImputer` preprocessing).
 The earlier TF-IDF "retrieval assistant" had no basis in the material and has
 been removed from the project (it remains only in the author's archive of the original version).
+
+
+## 4. Components added in the October 2026 revision — beyond the course material
+
+| Component | What it uses | Source |
+|---|---|---|
+| Two-phase bottom-hole pressure checked against the bounded-reservoir pseudo-steady-state (PSS) solution (V12, V13) | `p_w − p_i = Q t/(c_t V_p) + Q μ [ln(r_e/r_w) − 3/4]/(2π k h)` and its commingled-layer limit | standard well-test theory, e.g. Dake, L.P. (1978), *Fundamentals of Reservoir Engineering*, Elsevier, ch. 6; the closed-tank balance and the radial well equation are course material (`1-Transmissibility.pdf` p.6, 15–16; `3-IMPES.pdf` p.16) |
+| Analytical reduced-order model (`rom.py`) | one sealed PSS tank per realised layer, a common bottom-hole pressure and injector-only completions | the same PSS theory; analytical pressure build-up in closed aquifers is established, e.g. Zhou, Birkholzer, Tsang & Rutqvist (2008), *Int. J. Greenhouse Gas Control* 2, 626–639; Mathias, González Martínez de Miguel, Thatcher & Zimmerman (2011), *Transport in Porous Media* 89, 383–397. **No novelty is claimed for the ROM.** |
+| Hybrid surrogate (`hybrid.py`) | ROM × learned multiplicative correction (residual learning) | a standard way of combining physics-based models with machine learning; see the survey of Willard, Jia, Xu, Steinbach & Kumar (2022), *ACM Computing Surveys* 55(4), doi:10.1145/3514228 |
+| Realised-layer inputs (`features.ROCK_FEATURES`) | arithmetic, harmonic, minimum and maximum layer permeability of the generated rock | course averages (`2-Upscaling.pdf` p.5–9) applied to the realised layers; using them as inputs is a project choice motivated by the error analysis |
+| Prediction intervals (`intervals.py`) | split-conformal prediction, case-level and with one score per reservoir; a locally adaptive variant | Vovk, Gammerman & Shafer (2005), *Algorithmic Learning in a Random World*, Springer; Lei, G'Sell, Rinaldo, Tibshirani & Wasserman (2018), *JASA* 113(523), 1094–1111; grouped/hierarchical data: Dunn, Wasserman & Ramdas (2023), *JASA* 118(544), 2491–2502. The per-reservoir maximum score is a simple conservative construction, not one of Dunn et al.'s estimators. Split-conformal intervals had been removed from the 2026-09-20 version under the course-only rule; they return here with this attribution. |
+| Applicability-domain check (`domain.py`) | training-range and nearest-neighbour distance tests on the reservoir descriptors | project choice (standard practice; no specific source) |
+| Verification-gated screening (`screening.py`) | proposals become recommendations only after simulation; proportional search along a schedule shape | project choice, using the near-linearity of the build-up in the rate verified by V12 |
+| Nested reservoir-grouped cross-validation, paired reservoir bootstrap (`experiments.py`, `evaluation.py`) | outer/inner `GroupKFold`; bootstrap over reservoirs | grouped K-fold is course material (`Lecture05`, `Lecture08`, `E03_geographicalspliting`); nesting it and the cluster bootstrap are standard statistical practice |
+| r–z reference model with gravity and vertical crossflow (`rz.py`) | phase-potential upwinding, gravity in the fractional-flow terms, vertical transmissibility | the gravity and capillary terms of the fractional-flow derivation are in `4-CO2 BL.pdf` p.4–10 and `3-Advanced BL.pptx` slides 4–5; their 2-D finite-volume implementation is a project extension. Verified against hydrostatic equilibrium, the analytical end state of gravity segregation, and the layered model in the no-gravity, no-crossflow limit (`tests/test_rz.py`). |

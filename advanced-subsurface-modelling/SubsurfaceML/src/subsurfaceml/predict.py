@@ -5,8 +5,12 @@ worked example all call :class:`Predictor`, which
 
 1. loads and verifies the saved artifacts (:mod:`artifacts`),
 2. builds inputs through the one feature path (:mod:`features`),
-3. returns point predictions, the empirical error band and the classifier
-   decision, with units.
+3. returns point predictions, the calibrated interval and the classifier
+   decision, with units, plus the applicability-domain check.
+
+Predictions are **not** verified results: any schedule that matters must be
+run through the simulator (``subsurfaceml simulate``; the screening in
+:mod:`screening` does this automatically).
 """
 from __future__ import annotations
 
@@ -49,6 +53,7 @@ class Predictor:
         self.bands = {k[len("band_"):-len(".joblib")]: v
                       for k, v in b.items() if k.startswith("band_")}
         self.classifier = b.get("pressure_classifier.joblib")
+        self.domain = b.get("domain_check.joblib")
 
     def features(self, realisation, rates_matrix):
         return features_for_schedules(self.cfg, realisation, rates_matrix, FEATURES)
@@ -56,6 +61,10 @@ class Predictor:
     def predict(self, realisation, rates_matrix) -> dict:
         X = self.features(realisation, rates_matrix)
         out = {"inputs": X}
+        if self.domain is not None:
+            chk = self.domain.check(X)
+            out["in_training_domain"] = chk["in_domain"].to_numpy()
+            out["domain_reasons"] = chk["reasons"].tolist()
         for t, s in self.surrogates.items():
             band = self.bands.get(t)
             if band is not None:
@@ -66,8 +75,9 @@ class Predictor:
                       "band_high": np.asarray(hi), "unit": UNITS.get(t, "")}
         if self.classifier is not None:
             c = self.classifier
-            score = (c["model"].decision_function(X) if c.get("uses_decision_function")
-                     else c["model"].predict_proba(X)[:, 1])
+            Xc = X[c.get("features", list(X.columns))]
+            score = (c["model"].decision_function(Xc) if c.get("uses_decision_function")
+                     else c["model"].predict_proba(Xc)[:, 1])
             out["exceeds_pressure_limit"] = {
                 "score": np.asarray(score), "threshold": c["threshold"],
                 "flag": np.asarray(score) >= c["threshold"],

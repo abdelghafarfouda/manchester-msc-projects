@@ -1,0 +1,173 @@
+{
+  "n_cases": 41,
+  "n_failed_runs": 0,
+  "reference_level": "fine",
+  "targets": {
+    "dp_bh_max_MPa": {
+      "production_minus_fine": {
+        "median_rel": 0.0006238375868132533,
+        "p90_rel": 0.0048395218608028815,
+        "max_rel": 0.005426056183255288,
+        "mean_signed": 0.01561935760511317,
+        "max_abs": 0.1669924205537754,
+        "n": 41
+      },
+      "production_minus_finer": {
+        "median_rel": 0.0007082187634421152,
+        "p90_rel": 0.002733736790146493,
+        "max_rel": 0.009088845432453335,
+        "mean_signed": 0.015351907414479737,
+        "max_abs": 0.13279018452377578,
+        "n": 10
+      },
+      "production_minus_n_r_x2": {
+        "median_rel": 0.0006994930462751925,
+        "p90_rel": 0.005188659318042682,
+        "max_rel": 0.005875625734762555,
+        "mean_signed": 0.017085563630389888,
+        "max_abs": 0.181365599119502,
+        "n": 41
+      },
+      "production_minus_r_near_half": {
+        "median_rel": 0.00018152415682331477,
+        "p90_rel": 0.0008504447573124272,
+        "max_rel": 0.0015480768325463556,
+        "mean_signed": -0.0029475756111255694,
+        "max_abs": 0.03761124289128048,
+        "n": 41
+      },
+      "production_minus_time_fine": {
+        "median_rel": 1.5984463891110632e-06,
+        "p90_rel": 1.3472066044227559e-05,
+        "max_rel": 0.0002050412557901966,
+        "mean_signed": -1.8289700123440855e-05,
+        "max_abs": 0.00015319382658229852,
+        "n": 41
+      },
+      "fine_minus_finer": {
+        "median_rel": 0.0003486891955980968,
+        "max_rel": 0.0036430220071106286,
+        "max_abs": 0.05322541439873696,
+        "n": 10
+      }
+    },
+    "r_plume_m95_m": {
+      "production_minus_fine": {
+        "median_rel": 0.026833292345575348,
+        "p90_rel": 0.03454323229164252,
+        "max_rel": 0.04100316345473517,
+        "mean_signed": 7.124641470680313,
+        "max_abs": 19.874049348480185,
+        "n": 41
+      },
+      "production_minus_finer": {
+        "median_rel": 0.0427622884040756,
+        "p90_rel": 0.04876428796442565,
+        "max_rel": 0.05340232989874669,
+        "mean_signed": 9.272993958877434,
+        "max_abs": 17.9855421156538,
+        "n": 10
+      },
+      "production_minus_n_r_x2": {
+        "median_rel": 0.029826948170775823,
+        "p90_rel": 0.03912170141448859,
+        "max_rel": 0.04501961637384523,
+        "mean_signed": 8.039711612181081,
+        "max_abs": 23.412546511621827,
+        "n": 41
+      },
+      "production_minus_r_near_half": {
+        "median_rel": 0.008247722037047073,
+        "p90_rel": 0.016364984397601222,
+        "max_rel": 0.020834126509371588,
+        "mean_signed": -2.2075800320638095,
+        "max_abs": 8.404516193541554,
+        "n": 41
+      },
+      "production_minus_time_fine": {
+        "median_rel": 3.2995593946015964e-05,
+        "p90_rel": 0.0003544423901196368,
+        "max_rel": 0.0012858372476921617,
+        "mean_signed": -0.014916053493388542,
+        "max_abs": 0.08187079592890711,
+        "n": 41
+      },
+      "fine_minus_finer": {
+        "median_rel": 0.015507633498806904,
+        "max_rel": 0.018660177297199227,
+        "max_abs": 6.276142482033322,
+        "n": 10
+      }
+    },
+    "sweep_efficiency": {
+      "production_minus_fine": {
+        "median_rel": 0.08348663813445377,
+        "p90_rel": 0.15009013239869806,
+        "max_rel": 0.26839041053726614,
+        "mean_signed": 0.00097814331208125,
+        "max_abs": 0.005753146615758306,
+        "n": 41
+      },
+      "production_minus_finer": {
+        "median_rel": 0.1654063921462858,
+        "p90_rel": 0.24740356105440392,
+        "max_rel": 0.26073858914384024,
+        "mean_signed": 0.001683627296462538,
+        "max_abs": 0.007313343397111843,
+        "n": 10
+      },
+      "production_minus_n_r_x2": {
+        "median_rel": 0.08381660439474115,
+        "p90_rel": 0.16773658994755378,
+        "max_rel": 0.20740915360567796,
+        "mean_signed": 0.0009628553593627181,
+        "max_abs": 0.004525202262846077,
+        "n": 41
+      },
+      "production_minus_r_near_half": {
+        "median_rel": 0.039630506354014855,
+        "p90_rel": 0.10651677319838704,
+        "max_rel": 0.2169945158511134,
+        "mean_signed": -0.000156469293573324,
+        "max_abs": 0.004859375151198227,
+        "n": 41
+      },
+      "production_minus_time_fine": {
+        "median_rel": 0.0,
+        "p90_rel": 0.0,
+        "max_rel": 0.05507730886638616,
+        "mean_signed": -3.1542009572380135e-06,
+        "max_abs": 0.00012932223924675855,
+        "n": 41
+      },
+      "fine_minus_finer": {
+        "median_rel": 0.041611605994234586,
+        "max_rel": 0.06509195570374444,
+        "max_abs": 0.0015601967813535372,
+        "n": 10
+      }
+    }
+  },
+  "pressure_limit_label_flips": {
+    "dp_limit_MPa": 9.0,
+    "n_compared": 41,
+    "n_flipped": 0,
+    "flipped_cases": [],
+    "n_within_5pct_of_limit": 1
+  },
+  "production_level_reproduces_dataset_max_rel": 0.0,
+  "case_selection": {
+    "strata": "k_median tercile x schedule-intensity quartile",
+    "cases_per_cell": 3,
+    "always_included": [
+      "R0172_S+00",
+      "R0036_S+02",
+      "R0039_S+03",
+      "R0150_S+03",
+      "R0149_S+00"
+    ],
+    "finer_subset": 10,
+    "finer_subset_rule": "cases with at most 12000 production time steps, spread by permeability"
+  },
+  "seconds": 1029.6407878850005
+}

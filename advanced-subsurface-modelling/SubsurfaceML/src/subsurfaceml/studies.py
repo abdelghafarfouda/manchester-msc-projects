@@ -439,10 +439,11 @@ def ensemble_study(X, y, g, cv, fitted: dict, top=3):
 
 
 def _unwrap(est):
-    """Plain pipeline of a fitted surrogate (drops the log-target wrapper so
-    ensembles combine models on the same scale)."""
+    """Plain pipeline of a fitted surrogate (drops the log-target or hybrid
+    wrapper so ensembles combine models on the same scale)."""
     from sklearn.compose import TransformedTargetRegressor
-    if isinstance(est, TransformedTargetRegressor):
+    from .hybrid import ROMOffsetRegressor
+    if isinstance(est, (TransformedTargetRegressor, ROMOffsetRegressor)):
         return clone(est.regressor)
     return clone(est)
 
@@ -455,13 +456,20 @@ def run_all(df, feats, target, masks, fitted, best, n_splits=4, seed=0,
     X = df.loc[tr, feats].reset_index(drop=True)
     y = df.loc[tr, target].to_numpy(float)
     g = df.loc[tr, "realisation_id"].to_numpy()
-    ly = np.log(y) if best.log_target else y
+    hybrid = (getattr(best, "meta", {}) or {}).get("kind") == "hybrid"
+    if hybrid:
+        # the learned part of the hybrid surrogate: ln(y / ROM)
+        ly = np.log(y) - np.log(10.0) * X["log10_rom_dp_MPa"].to_numpy(float)
+    else:
+        ly = np.log(y) if best.log_target else y
     cv = grouped_cv(n_splits)
     gb = _p(("impute", SimpleImputer(strategy="median")), ("scale", StandardScaler()),
             ("model", GradientBoostingRegressor(n_estimators=300, max_depth=3,
                                                 learning_rate=0.05, random_state=seed)))
     out = {"target": target,
-           "units_of_all_rmse_values": "RMSE of log(target)" if best.log_target else "target units",
+           "units_of_all_rmse_values": ("RMSE of ln(target / ROM), the learned correction"
+                                        if hybrid else "RMSE of log(target)"
+                                        if best.log_target else "target units"),
            "n_train_rows": int(len(y)), "n_train_realisations": int(len(np.unique(g)))}
     steps = [
         ("learning_curve", lambda: learning_curve_study(X, ly, g, cv, gb)),

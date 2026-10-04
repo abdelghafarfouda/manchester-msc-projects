@@ -1,5 +1,5 @@
 {
-  "created": "2026-09-20 14:49:56",
+  "created": "2026-10-04 08:14:45",
   "config_name": "demo",
   "features": [
     "log10_k_mD",
@@ -30,18 +30,26 @@
     "log10_q_mult_mean",
     "q_mult_max",
     "r_fill_est_m",
-    "r_fill_over_re"
+    "r_fill_over_re",
+    "log10_k_arith_mD",
+    "log10_k_harm_mD",
+    "log10_k_min_layer_mD",
+    "log10_k_max_layer_mD",
+    "log10_kh_realised",
+    "log10_rom_dp_MPa",
+    "rom_r_fill_max_m",
+    "rom_max_layer_share"
   ],
   "environment": {
     "python": "3.11.15",
-    "platform": "Linux-6.18.44-fc-v37-x86_64-with-glibc2.39",
+    "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
     "machine": "x86_64",
     "numpy": "2.4.4",
     "scipy": "1.17.1",
     "pandas": "3.0.2",
     "scikit_learn": "1.8.0",
     "xgboost": "3.2.0",
-    "git_commit": "ee9c90c"
+    "git_commit": "a419a30"
   },
   "seeds": {
     "scenario_master_seed": 20260909,
@@ -50,65 +58,42 @@
   "rebuild_command": "python scripts/run_pipeline.py --config config/demo.yaml",
   "files": {
     "surrogate_dp_bh_max_MPa.joblib": {
-      "sha256": "ea5290cbab9be8e35cf639640a2baef05ac78cad9d2a6094eaad9d8abb7dcbc8",
-      "bytes": 4904
+      "sha256": "362f61de539abf46914a05c2bee7be569f1e2d728357b48a0eb715f68802bb56",
+      "bytes": 81026
     },
     "surrogate_r_plume_m95_m.joblib": {
-      "sha256": "34b873e6c893fd320ad9fb717c58fa2cb2f6b7d18682f693c584bdc00dacd260",
-      "bytes": 4981
+      "sha256": "bff659171af48dfaf4e2f81ad131226190f9bec45f73d035871bd34a6d98a8f7",
+      "bytes": 5779
     },
     "surrogate_sweep_efficiency.joblib": {
-      "sha256": "a5d6c53e6d3afa916ce72b91cdc105f3a1496f3473f41afc0708d561aa30f6f3",
-      "bytes": 3778
+      "sha256": "6ee530165aa49398f07f305add35109ce3b0ce5c8b836fd7dab328350acbd519",
+      "bytes": 3795
     },
     "band_dp_bh_max_MPa.joblib": {
-      "sha256": "0885960d3507308fa15d6d33834a0921f304e250ee7bbcb63b3843e5da5f4f9c",
-      "bytes": 5062
+      "sha256": "1c2315988c14d0182230bbb42517c56a7fcd643271114fffe02b917bff37c159",
+      "bytes": 437938
     },
     "band_r_plume_m95_m.joblib": {
-      "sha256": "2f4786d4726fe7b48d23d79341f582a549bc177fa31cbfa975483b72f872034a",
-      "bytes": 5123
+      "sha256": "1adecf1b2a4b65b2d10c6bf246b9cdb0a510331d0c6406b2533cb6c8ff122593",
+      "bytes": 357538
     },
     "band_sweep_efficiency.joblib": {
-      "sha256": "c8ba834cee2c055bf877b4b548f8932bbc9189c7fa9a0c55bd5199225e82646a",
-      "bytes": 3939
+      "sha256": "7a47f96c8d528d876de40967457cbf2404833d48d95f6137359a2093d89682d1",
+      "bytes": 341711
+    },
+    "domain_check.joblib": {
+      "sha256": "54a40f16de336ef039cfaf6111c13ecb99ed6ede94b66148fcd3ccb0ce716a8a",
+      "bytes": 15018
     },
     "pressure_classifier.joblib": {
-      "sha256": "2d0106c23ff4ed56520c01665611594c53f7f6b20e2d752cc0b4878458584f31",
-      "bytes": 424191
+      "sha256": "dddd26aad3dd4f71667ca2f64eb862c640907960c80d4260cfc346b4920b6db1",
+      "bytes": 419986
     }
   },
   "dataset": {
     "file": "scenarios.csv",
-    "sha256": "117bf2676c190d8940f02de3742a13aee0b2b1a03dbd76a426f2530ce86f0b42"
+    "sha256": "ac332140cb8973b4c8fecc7054d76b2894290afdd9dfb36cf6dd562820b80dc7"
   },
-  "test_realisation_ids": [
-    5,
-    8,
-    9,
-    10,
-    11,
-    13,
-    16,
-    19,
-    20,
-    22,
-    23,
-    27,
-    36,
-    37,
-    50,
-    52,
-    72,
-    75,
-    81,
-    82,
-    83,
-    90,
-    93,
-    94,
-    97
-  ],
   "calib_realisation_ids": [
     2,
     4,
@@ -131,8 +116,127 @@
     98
   ],
   "selected_models": {
-    "dp_bh_max_MPa": "lasso",
-    "r_plume_m95_m": "linear",
+    "dp_bh_max_MPa": "svr",
+    "r_plume_m95_m": "elasticnet",
     "sweep_efficiency": "elasticnet"
+  },
+  "design": {
+    "name": "revised",
+    "feature_set": "all",
+    "feature_set_plume": "all",
+    "feature_set_sweep": "baseline",
+    "pressure_model": "hybrid",
+    "interval_method": "adaptive_conformal"
+  },
+  "features_by_model": {
+    "dp_bh_max_MPa": [
+      "log10_k_mD",
+      "V_DP",
+      "phi_mean",
+      "h_total_m",
+      "r_e_m",
+      "n_g",
+      "n_a",
+      "krg0",
+      "S_ar",
+      "mu_g_cP",
+      "rho_g",
+      "log10_kh",
+      "log10_pv",
+      "q_mean_kg_s",
+      "q_max_kg_s",
+      "q_cv",
+      "q_front_load",
+      "q_ramp",
+      "log10_mobility_ratio",
+      "dimensionless_mass",
+      "log10_injectivity",
+      "aspect_ratio",
+      "V_DP_layers",
+      "planned_mass_kg",
+      "log10_q_ref",
+      "log10_q_mult_mean",
+      "q_mult_max",
+      "r_fill_est_m",
+      "r_fill_over_re",
+      "log10_k_arith_mD",
+      "log10_k_harm_mD",
+      "log10_k_min_layer_mD",
+      "log10_k_max_layer_mD",
+      "log10_kh_realised",
+      "log10_rom_dp_MPa",
+      "rom_r_fill_max_m",
+      "rom_max_layer_share"
+    ],
+    "r_plume_m95_m": [
+      "log10_k_mD",
+      "V_DP",
+      "phi_mean",
+      "h_total_m",
+      "r_e_m",
+      "n_g",
+      "n_a",
+      "krg0",
+      "S_ar",
+      "mu_g_cP",
+      "rho_g",
+      "log10_kh",
+      "log10_pv",
+      "q_mean_kg_s",
+      "q_max_kg_s",
+      "q_cv",
+      "q_front_load",
+      "q_ramp",
+      "log10_mobility_ratio",
+      "dimensionless_mass",
+      "log10_injectivity",
+      "aspect_ratio",
+      "V_DP_layers",
+      "planned_mass_kg",
+      "log10_q_ref",
+      "log10_q_mult_mean",
+      "q_mult_max",
+      "r_fill_est_m",
+      "r_fill_over_re",
+      "log10_k_arith_mD",
+      "log10_k_harm_mD",
+      "log10_k_min_layer_mD",
+      "log10_k_max_layer_mD",
+      "log10_kh_realised",
+      "log10_rom_dp_MPa",
+      "rom_r_fill_max_m",
+      "rom_max_layer_share"
+    ],
+    "sweep_efficiency": [
+      "log10_k_mD",
+      "V_DP",
+      "phi_mean",
+      "h_total_m",
+      "r_e_m",
+      "n_g",
+      "n_a",
+      "krg0",
+      "S_ar",
+      "mu_g_cP",
+      "rho_g",
+      "log10_kh",
+      "log10_pv",
+      "q_mean_kg_s",
+      "q_max_kg_s",
+      "q_cv",
+      "q_front_load",
+      "q_ramp",
+      "log10_mobility_ratio",
+      "dimensionless_mass",
+      "log10_injectivity",
+      "aspect_ratio",
+      "V_DP_layers",
+      "planned_mass_kg",
+      "log10_q_ref",
+      "log10_q_mult_mean",
+      "q_mult_max",
+      "r_fill_est_m",
+      "r_fill_over_re"
+    ]
   }
 }

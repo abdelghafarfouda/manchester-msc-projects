@@ -1,165 +1,270 @@
 ==========================================================================
-SubsurfaceML pipeline - config 'study'  ->  /home/claude/work/SubsurfaceML/results/study
+SubsurfaceML pipeline - config 'study'  ->  /home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study
 ==========================================================================
 
-=== STAGE 1  numerical verification & validation ===
-[validation] written to /home/claude/work/SubsurfaceML/results/study/metrics/validation.json
-  verdict: ALL PASS  (444 s)
+=== STAGE 1  numerical verification ===
+[validation] written to /home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/metrics/validation.json
+  verdict: ALL PASS (21/21 checks, 423 s)
 
-=== STAGE 2  scenario dataset (SYNTHETIC, from the simulator) ===
+=== STAGE 2  development dataset (SYNTHETIC, from the simulator) ===
 [dataset] 220 realisations x 4 schedules = 880 simulations
-[dataset] 880 ok, 0 failed, 1460.5 s wall, 2909.6 s CPU
+[dataset] 880 ok, 0 failed, 650.3 s wall, 2545.9 s CPU
   data quality: 0 duplicate ids, 0 missing, checks {'saturation_in_bounds': True, 'mass_balance_below_1e-9': True, 'no_clipping': True, 'positive_buildup': True, 'common_bhp_below_1Pa': True}
 
-=== STAGE 3  surrogates (grouped by reservoir realisation) ===
-  rows: {'train': 496, 'calib': 164, 'test': 220}  realisations: {'train': 124, 'calib': 41, 'test': 55}  overlaps: {'train_calib': 0, 'train_test': 0, 'calib_test': 0}
+=== STAGE 3  independent evaluation sets (generated after the design was fixed) ===
+  [final_test] 400 ok / 0 failed (100 reservoirs, 276 s)
+  final_test: 100 reservoirs, 400 cases
+  [shift] 240 ok / 0 failed (60 reservoirs, 90 s)
+  shift: 60 reservoirs, 240 cases
+  disjoint from development and from each other: {'overlapping_ids': 0, 'overlapping_descriptions': 0}
 
-  --- target: dp_bh_max_MPa [MPa] ---
-    mean               CV RMSE =       5.59  (  0.6 s)
-    linear             CV RMSE =      1.056  (  0.0 s)
-    ridge              CV RMSE =      1.042  (  0.8 s)
-    lasso              CV RMSE =      1.013  (  2.0 s)
-    elasticnet         CV RMSE =      1.017  (  2.7 s)
-    knn                CV RMSE =      2.095  (  0.8 s)
-    svr                CV RMSE =      1.007  (  4.2 s)
-    tree               CV RMSE =      1.269  (  1.0 s)
-    random_forest      CV RMSE =      1.133  ( 54.0 s)
-    gradient_boosting  CV RMSE =      1.081  ( 69.5 s)
-    adaboost           CV RMSE =      1.221  ( 45.4 s)
-    xgboost            CV RMSE =      1.044  ( 37.8 s)
-    selected: svr  (grouped-CV RMSE 1.007 MPa; fitted on log(target))
-    test MAE 0.4203 MPa | RMSE 1.237 | R2 0.9406 | mean-baseline RMSE 5.077
-    P5-P95 error band: measured test coverage 87.7%, mean width 1.55 MPa
+=== STAGE 4  discretisation error of the dataset targets ===
+  41 cases: build-up production vs fine median 0.06 %, max 0.54 %; label flips 0  (1030 s)
 
-  --- target: r_plume_m95_m [m] ---
-    mean               CV RMSE =      145.3  (  0.0 s)
+=== STAGE 5  surrogates: published approach vs revised design ===
+  reservoirs: {'train': 179, 'calib': 41, 'test': 100, 'shift': 60}  overlaps: {'train_calib': 0, 'train_test': 0, 'train_shift': 0, 'calib_test': 0, 'calib_shift': 0, 'test_shift': 0}
+
+  --- dp_bh_max_MPa [MPa] -- revised ---
+    mean               CV RMSE =     0.5917  (  0.5 s)
+    linear             CV RMSE =     0.4247  (  0.0 s)
+    ridge              CV RMSE =     0.4127  (  0.5 s)
+    lasso              CV RMSE =     0.4139  (  1.4 s)
+    elasticnet         CV RMSE =     0.4125  (  2.7 s)
+    knn                CV RMSE =     0.4409  (  0.5 s)
+    svr                CV RMSE =     0.2667  (  2.7 s)
+    tree               CV RMSE =     0.5705  (  0.6 s)
+    random_forest      CV RMSE =     0.4661  ( 42.8 s)
+    gradient_boosting  CV RMSE =     0.3533  ( 50.8 s)
+    adaboost           CV RMSE =     0.4535  ( 30.8 s)
+    xgboost            CV RMSE =     0.3751  ( 25.2 s)
+    selected: svr (grouped-CV RMSE 0.2667 MPa; hybrid target; 37 inputs)
+    test : RMSE 0.3057 | MAE 0.125 | R2 0.9962 | worst under 2.701 MPa | adaptive_conformal coverage 0.950 (reservoirs 0.860)
+    shift: RMSE 1.952 | MAE 0.6053 | R2 0.9066 | worst under 15.05 MPa | adaptive_conformal coverage 0.796 (reservoirs 0.700)
+
+  --- dp_bh_max_MPa [MPa] -- published_approach ---
+    mean               CV RMSE =      5.537  (  0.0 s)
+    linear             CV RMSE =      1.109  (  0.0 s)
+    ridge              CV RMSE =      1.103  (  0.5 s)
+    lasso              CV RMSE =      1.099  (  1.4 s)
+    elasticnet         CV RMSE =      1.101  (  2.3 s)
+    knn                CV RMSE =      2.011  (  0.6 s)
+    svr                CV RMSE =      1.074  (  5.9 s)
+    tree               CV RMSE =      1.273  (  0.6 s)
+    random_forest      CV RMSE =      1.232  ( 34.1 s)
+    gradient_boosting  CV RMSE =      1.147  ( 45.0 s)
+    adaboost           CV RMSE =      1.339  ( 26.4 s)
+    xgboost            CV RMSE =      1.135  ( 22.7 s)
+    selected: svr (grouped-CV RMSE 1.074 MPa; log target; 29 inputs)
+    test : RMSE 0.701 | MAE 0.2976 | R2 0.9802 | worst under 6.652 MPa | empirical coverage 0.905 (reservoirs 0.850)
+    shift: RMSE 3.814 | MAE 1.527 | R2 0.6433 | worst under 31.17 MPa | empirical coverage 0.467 (reservoirs 0.233)
+
+  --- r_plume_m95_m [m] -- revised ---
+    mean               CV RMSE =      145.7  (  0.0 s)
+    linear             CV RMSE =      7.145  (  0.0 s)
+    ridge              CV RMSE =      7.066  (  0.5 s)
+    lasso              CV RMSE =      6.935  (  0.6 s)
+    elasticnet         CV RMSE =      6.949  (  0.7 s)
+    knn                CV RMSE =       45.1  (  0.5 s)
+    svr                CV RMSE =      5.371  (  2.6 s)
+    tree               CV RMSE =      21.85  (  0.6 s)
+    random_forest      CV RMSE =      16.25  ( 40.6 s)
+    gradient_boosting  CV RMSE =      9.551  ( 54.4 s)
+    adaboost           CV RMSE =      20.35  ( 32.7 s)
+    xgboost            CV RMSE =      10.83  ( 25.1 s)
+    selected: svr (grouped-CV RMSE 5.371 m; log target; 37 inputs)
+    test : RMSE 6.357 | MAE 3.489 | R2 0.9980 | worst under 30.35 m | adaptive_conformal coverage 0.980 (reservoirs 0.970)
+    shift: RMSE 8.465 | MAE 4.892 | R2 0.9915 | worst under 12.04 m | adaptive_conformal coverage 0.854 (reservoirs 0.783)
+
+  --- r_plume_m95_m [m] -- published_approach ---
+    mean               CV RMSE =      145.7  (  0.0 s)
     linear             CV RMSE =      10.24  (  0.0 s)
-    ridge              CV RMSE =      10.11  (  0.8 s)
-    lasso              CV RMSE =      10.14  (  1.0 s)
-    elasticnet         CV RMSE =       10.1  (  1.3 s)
-    knn                CV RMSE =      51.31  (  0.8 s)
-    svr                CV RMSE =      10.26  (  2.9 s)
-    tree               CV RMSE =      27.71  (  1.0 s)
-    random_forest      CV RMSE =      22.68  ( 54.2 s)
-    gradient_boosting  CV RMSE =      15.54  ( 69.0 s)
-    adaboost           CV RMSE =      23.33  ( 46.6 s)
-    xgboost            CV RMSE =      16.28  ( 34.7 s)
-    selected: elasticnet  (grouped-CV RMSE 10.1 m; fitted on log(target))
-    test MAE 6.532 m | RMSE 10.51 | R2 0.9945 | mean-baseline RMSE 142.2
-    P5-P95 error band: measured test coverage 90.9%, mean width 29.41 m
+    ridge              CV RMSE =      10.05  (  0.5 s)
+    lasso              CV RMSE =      9.988  (  0.6 s)
+    elasticnet         CV RMSE =      9.995  (  0.8 s)
+    knn                CV RMSE =         47  (  0.4 s)
+    svr                CV RMSE =      9.827  (  3.2 s)
+    tree               CV RMSE =      24.98  (  0.6 s)
+    random_forest      CV RMSE =       20.9  ( 33.3 s)
+    gradient_boosting  CV RMSE =      13.34  ( 43.6 s)
+    adaboost           CV RMSE =      24.11  ( 27.9 s)
+    xgboost            CV RMSE =      14.57  ( 20.4 s)
+    selected: svr (grouped-CV RMSE 9.827 m; log target; 29 inputs)
+    test : RMSE 11.3 | MAE 5.912 | R2 0.9936 | worst under 98.25 m | empirical coverage 0.892 (reservoirs 0.820)
+    shift: RMSE 12.53 | MAE 6.874 | R2 0.9815 | worst under 96 m | empirical coverage 0.796 (reservoirs 0.667)
 
-  --- target: sweep_efficiency [-] ---
-    mean               CV RMSE =    0.01069  (  0.0 s)
-    linear             CV RMSE =   0.001808  (  0.0 s)
-    ridge              CV RMSE =   0.001803  (  0.7 s)
-    lasso              CV RMSE =   0.001762  (  0.6 s)
-    elasticnet         CV RMSE =   0.001764  (  0.7 s)
-    knn                CV RMSE =   0.003878  (  0.7 s)
-    svr                CV RMSE =   0.001195  (  1.2 s)
-    tree               CV RMSE =   0.002204  (  0.9 s)
-    random_forest      CV RMSE =   0.002118  ( 55.8 s)
-    gradient_boosting  CV RMSE =   0.001572  ( 69.1 s)
-    adaboost           CV RMSE =   0.002303  ( 43.5 s)
-    xgboost            CV RMSE =   0.001635  ( 16.6 s)
-    selected: svr  (grouped-CV RMSE 0.001195 -)
-    test MAE 0.0008082 - | RMSE 0.001158 | R2 0.9885 | mean-baseline RMSE 0.0108
-    P5-P95 error band: measured test coverage 83.2%, mean width 0.002659 -
+  --- sweep_efficiency [-] -- revised ---
+    mean               CV RMSE =    0.01071  (  0.0 s)
+    linear             CV RMSE =   0.001778  (  0.0 s)
+    ridge              CV RMSE =   0.001763  (  0.4 s)
+    lasso              CV RMSE =   0.001753  (  0.4 s)
+    elasticnet         CV RMSE =   0.001752  (  0.4 s)
+    knn                CV RMSE =   0.003872  (  0.4 s)
+    svr                CV RMSE =   0.001131  (  0.9 s)
+    tree               CV RMSE =    0.00214  (  0.6 s)
+    random_forest      CV RMSE =   0.001823  ( 34.2 s)
+    gradient_boosting  CV RMSE =   0.001319  ( 42.3 s)
+    adaboost           CV RMSE =   0.002164  ( 26.5 s)
+    xgboost            CV RMSE =   0.001409  ( 10.6 s)
+    selected: svr (grouped-CV RMSE 0.001131 -; linear target; 29 inputs)
+    test : RMSE 0.0009207 | MAE 0.0006125 | R2 0.9921 | worst under 0.00321 - | adaptive_conformal coverage 0.922 (reservoirs 0.780)
+    shift: RMSE 0.0006167 | MAE 0.0004646 | R2 0.9908 | worst under 0.00229 - | adaptive_conformal coverage 0.917 (reservoirs 0.800)
 
-=== STAGE 4  Monte Carlo propagation and error sources ===
-  dp_bh_max_MPa: P90(low) 0.9862 P50 3.784 P10(high) 13.67 | shares input/surrogate/numerical 94/5/0%
-  r_plume_m95_m: P90(low) 98.72 P50 209.1 P10(high) 452.3 | shares input/surrogate/numerical 99/1/0%
-  sweep_efficiency: P90(low) 0.002012 P50 0.008005 P10(high) 0.02774 | shares input/surrogate/numerical 98/1/1%
+  --- sweep_efficiency [-] -- published_approach ---
+    mean               CV RMSE =    0.01071  (  0.0 s)
+    linear             CV RMSE =   0.001778  (  0.0 s)
+    ridge              CV RMSE =   0.001763  (  0.4 s)
+    lasso              CV RMSE =   0.001753  (  0.4 s)
+    elasticnet         CV RMSE =   0.001752  (  0.4 s)
+    knn                CV RMSE =   0.003872  (  0.4 s)
+    svr                CV RMSE =   0.001131  (  0.9 s)
+    tree               CV RMSE =    0.00214  (  0.6 s)
+    random_forest      CV RMSE =   0.001823  ( 33.7 s)
+    gradient_boosting  CV RMSE =   0.001319  ( 42.1 s)
+    adaboost           CV RMSE =   0.002164  ( 26.0 s)
+    xgboost            CV RMSE =   0.001409  ( 10.3 s)
+    selected: svr (grouped-CV RMSE 0.001131 -; linear target; 29 inputs)
+    test : RMSE 0.0009207 | MAE 0.0006125 | R2 0.9921 | worst under 0.00321 - | empirical coverage 0.885 (reservoirs 0.660)
+    shift: RMSE 0.0006167 | MAE 0.0004646 | R2 0.9908 | worst under 0.00229 - | empirical coverage 0.954 (reservoirs 0.850)
 
-=== STAGE 5  pressure-limit screening (classification) ===
-  positives: train 25%, test 23% | selected random_forest
-  test ROC-AUC 0.995 | default threshold: recall 0.92 precision 0.96 | high-recall threshold: recall 0.94 precision 0.94
-  traffic light (random_forest): test macro-F1 0.793 | regression-surrogate banding 0.890
+=== STAGE 6  Monte Carlo propagation and error sources ===
+  dp_bh_max_MPa: shares input/surrogate/numerical 100/0/0.0 %
+  r_plume_m95_m: shares input/surrogate/numerical 100/0/0.2 %
+  sweep_efficiency: shares input/surrogate/numerical 99/1/0.4 %
 
-  saved 7 model files + manifest to /home/claude/work/SubsurfaceML/results/study/models
+=== STAGE 7  pressure-limit screening (classification) ===
+  positives: train 25%, test 22% | selected xgboost
+  test ROC-AUC 1.000 | high-recall threshold: recall 0.97 precision 0.99
+  traffic light (random_forest): test macro-F1 0.888 | regression-surrogate banding 0.952
 
-=== STAGE 6  inference cost vs simulation cost ===
-  simulator 5.45 s/case | surrogate batched 7.39e-05 s/case (73767x) | single call 5.24e-03 s (1039x) | end-to-end single 1.79e-02 s (305x)
+  saved 8 model files + manifest to /home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/models
 
-=== STAGE 7  interpretation (model behaviour, not causality) ===
-  plume shapes: 5 PCs for 95% variance; k-means k=2 (silhouette 0.41); DBSCAN noise 52
+=== STAGE 8  inference cost vs simulation cost ===
+  simulator 5.00 s/case | surrogate batched 9.10e-05 s/case | end-to-end single 4.87e-02 s (103x)
 
-=== STAGE 8  ML-method studies (training realisations only) ===
-    study learning_curve           done (  6.2 s)
-    study scaler_comparison        done (  0.4 s)
-    study missing_descriptors      done ( 43.4 s)
-    study outliers                 done (  0.1 s)
+=== STAGE 9  interpretation (model behaviour, not causality) ===
+
+=== STAGE 10  ML-method studies (development reservoirs only) ===
+    study learning_curve           done (  4.7 s)
+    study scaler_comparison        done (  0.3 s)
+    study missing_descriptors      done ( 63.4 s)
+    study outliers                 done (  0.7 s)
     study collinearity             done (  0.1 s)
-    study feature_selection        done (  6.8 s)
+    study feature_selection        done (  4.3 s)
     study polynomial               done (  0.1 s)
     study column_transformer       done (  0.1 s)
-    study tuning_strategies        done ( 89.6 s)
+    study tuning_strategies        done ( 99.7 s)
     study normal_equation          done (  0.2 s)
-    study split_comparison         done (  0.7 s)
-    study boosting_early_stopping  done (  0.2 s)
-    study ensembles                done (  8.5 s)
+    study split_comparison         done (  2.8 s)
+    study boosting_early_stopping  done (  0.4 s)
+    study ensembles                done ( 14.2 s)
 
-=== STAGE 9a  conservation identity check ===
-  |retained - planned| / planned <= 3.23e-13 over 880 scenarios
+=== STAGE 11a  conservation identity check ===
+  |retained - planned| / planned <= 3.23e-13 over 1520 scenarios
 
-=== STAGE 9b  open-boundary variant: injected vs retained ===
+=== STAGE 11b  open-boundary variant: injected vs retained ===
   6/10 runs lost CO2 across r_e; median retention 0.812
 
-=== STAGE 10  schedule screening on unseen reservoirs ===
-  8 test realisations: [0, 5, 6, 13, 17, 25, 36, 39]
-  re-simulated 24 screened schedules: 3 violated a stated limit; baselines violating: 1; failed runs: 0
-  median improvement over constant rate: 1.411664697140792
+=== STAGE 12  verification-gated schedule screening ===
+  30 reservoirs x 5 methods, budget 4 simulations per method
+  final_test rom_constant           verified 20/20 | first proposal violated 13 | median vs constant 0.07361738595607176
+  final_test rom_shaped             verified 20/20 | first proposal violated 5 | median vs constant 3.4196522953725017
+  final_test simulator_constant     verified 20/20 | first proposal violated 0 | median vs constant 0.0
+  final_test surrogate_published    verified 19/20 | first proposal violated 1 | median vs constant -9.555138798743064
+  final_test surrogate_verified     verified 20/20 | first proposal violated 0 | median vs constant 2.8803429954777586
+  shift      rom_constant           verified 10/10 | first proposal violated 4 | median vs constant 0.023192475585381216
+  shift      rom_shaped             verified 10/10 | first proposal violated 2 | median vs constant 11.120187046511415
+  shift      simulator_constant     verified 10/10 | first proposal violated 0 | median vs constant 0.0
+  shift      surrogate_published    verified 9/10 | first proposal violated 2 | median vs constant -11.837171550431032
+  shift      surrogate_verified     verified 10/10 | first proposal violated 4 | median vs constant 0.023192475585381216
 
 # SubsurfaceML results - configuration `study`
 
-Generated Sun Sep 20 15:39:27 2026 by `scripts/run_pipeline.py` from `metrics/summary.json`. Total wall time 47.6 min.
+Generated Sun Oct  4 08:02:11 2026 by `scripts/run_pipeline.py` from `metrics/summary.json`. Total wall time 66 min.
 
-All data are **synthetic**, produced by the simulator in this repository. No field data are used and no field validation is claimed. Pressure and plume limits are stated assumptions, not safety limits.
+All data are **synthetic**, produced by the simulator in this repository. No field data are used and no field validation is claimed. Pressure and plume limits are stated modelling assumptions, not safety limits. 'test' = fresh reservoirs from the training prior, untouched until this run; 'shift' = fresh reservoirs with median permeability 10-30 mD, below the training range.
 
 | Section | Metric | Value | Notes |
 |---|---|---|---|
-| Simulator verification | All checks | **PASS** | 18/18 checks pass (validation.json) |
-| Simulator verification | steady radial pressure | **PASS** |  |
-| Simulator verification | well index bhp | **PASS** |  |
-| Simulator verification | closed tank | **PASS** |  |
-| Simulator verification | buckley leverett front | **PASS** |  |
-| Simulator verification | buckley leverett L1 | **PASS** |  |
-| Simulator verification | bl no clipping | **PASS** |  |
-| Simulator verification | radial mass balance | **PASS** |  |
-| Simulator verification | radial no clipping | **PASS** |  |
-| Simulator verification | radial saturation bounds | **PASS** |  |
-| Simulator verification | no odd even oscillation | **PASS** |  |
-| Simulator verification | time step control insensitive | **PASS** |  |
-| Simulator verification | upscaling 2x2 bounds | **PASS** |  |
-| Simulator verification | upscaling parallel exact | **PASS** |  |
-| Simulator verification | upscaling series exact | **PASS** |  |
-| Simulator verification | upscaling bounds random | **PASS** |  |
-| Simulator verification | well common bhp | **PASS** |  |
-| Simulator verification | well total rate conserved | **PASS** |  |
-| Simulator verification | well shut in no crossflow | **PASS** |  |
-| Dataset | Scenarios | **880 ok / 0 failed** | SYNTHETIC - produced by the in-repo IMPES simulator; no field data, no field validation |
-| Dataset | Generation cost | **1.46e+03 s wall, 2.91e+03 s CPU** | mean 3.31 s per simulation |
-| Surrogates (unseen reservoirs) | dp_bh_max_MPa: selected model | **svr** | lowest grouped-CV RMSE among the course model families |
-| Surrogates (unseen reservoirs) | dp_bh_max_MPa: MAE / RMSE / R2 | **0.42 / 1.24 MPa / 0.9406** | mean-baseline RMSE 5.08 MPa; n = 220 |
-| Surrogates (unseen reservoirs) | dp_bh_max_MPa: P5-P95 error band | **87.7% measured coverage** | mean width 1.55 MPa; calibrated on 164 rows; no guarantee |
-| Surrogates (unseen reservoirs) | r_plume_m95_m: selected model | **elasticnet** | lowest grouped-CV RMSE among the course model families |
-| Surrogates (unseen reservoirs) | r_plume_m95_m: MAE / RMSE / R2 | **6.53 / 10.5 m / 0.9945** | mean-baseline RMSE 142 m; n = 220 |
-| Surrogates (unseen reservoirs) | r_plume_m95_m: P5-P95 error band | **90.9% measured coverage** | mean width 29.4 m; calibrated on 164 rows; no guarantee |
-| Surrogates (unseen reservoirs) | sweep_efficiency: selected model | **svr** | lowest grouped-CV RMSE among the course model families |
-| Surrogates (unseen reservoirs) | sweep_efficiency: MAE / RMSE / R2 | **8.08e-04 / 0.00116 - / 0.9885** | mean-baseline RMSE 0.0108 -; n = 220 |
-| Surrogates (unseen reservoirs) | sweep_efficiency: P5-P95 error band | **83.2% measured coverage** | mean width 0.00266 -; calibrated on 164 rows; no guarantee |
-| Pressure-limit screen | selected / test ROC-AUC | **random_forest / 0.995** | limit dp > 9 MPa |
-| Pressure-limit screen | recall / precision at chosen threshold | **0.941 / 0.941** | threshold chosen on out-of-fold scores for recall >= 0.95 |
-| Pressure-limit screen | traffic light macro-F1 (test) | **0.793** | regression surrogate banded: 0.89 |
-| Cost | simulator per case (serial) | **5.45 s** | 5 test scenarios re-run in-process |
-| Cost | surrogate batched / single call / single end-to-end | **7.39e-05 / 0.00524 / 0.0179 s** | 3 QoIs; end-to-end includes feature building |
-| Cost | speed-up batched / single / end-to-end | **7.38e+04 / 1.04e+03 / 305** | excludes 1.46e+03 s data generation and 623 s training |
-| Schedule screening | median improvement vs constant rate | **1.41%** | 6/7 unseen reservoirs improved (re-simulated) |
-| Schedule screening | screened schedules violating a limit | **3/24** | baselines violating: 1; failed re-simulations: 0 |
+| Verification | All checks | **PASS** | 21/21 checks pass (validation.json) |
+| Verification | steady radial pressure | **PASS** |  |
+| Verification | well index bhp | **PASS** |  |
+| Verification | closed tank | **PASS** |  |
+| Verification | buckley leverett front | **PASS** |  |
+| Verification | buckley leverett L1 | **PASS** |  |
+| Verification | bl no clipping | **PASS** |  |
+| Verification | radial mass balance | **PASS** |  |
+| Verification | radial no clipping | **PASS** |  |
+| Verification | radial saturation bounds | **PASS** |  |
+| Verification | no odd even oscillation | **PASS** |  |
+| Verification | time step control insensitive | **PASS** |  |
+| Verification | upscaling 2x2 bounds | **PASS** |  |
+| Verification | upscaling parallel exact | **PASS** |  |
+| Verification | upscaling series exact | **PASS** |  |
+| Verification | upscaling bounds random | **PASS** |  |
+| Verification | well common bhp | **PASS** |  |
+| Verification | well total rate conserved | **PASS** |  |
+| Verification | well shut in no crossflow | **PASS** |  |
+| Verification | pss bhp single layer | **PASS** |  |
+| Verification | pss bhp two layers | **PASS** |  |
+| Verification | rom matches pss limit | **PASS** |  |
+| Data | Development scenarios | **880 ok / 0 failed** | SYNTHETIC - produced by the in-repo IMPES simulator; no field data, no field validation |
+| Data | final test scenarios | **400 ok / 0 failed** | 100 fresh reservoirs, seed 20261104, median k [30.0, 1000.0] mD |
+| Data | shift scenarios | **240 ok / 0 failed** | 60 fresh reservoirs, seed 20261105, median k [10.0, 30.0] mD |
+| Data | overlap between sets | **0 ids / 0 descriptions** | must be 0 / 0 |
+| Discretisation error of dataset cases | peak build-up, production vs refined | **median 0.1 %, max 0.5 %** | 41 development cases re-simulated |
+| Discretisation error of dataset cases | pressure-limit labels changed | **0/41** | 1 cases within 5 % of the limit |
+| Discretisation error of dataset cases | Plume radius (95 % mass) | **median 2.7 %, max 4.1 %** |  |
+| Discretisation error of dataset cases | Swept pore-volume fraction | **median 8.3 %, max 26.8 %** |  |
+| Peak pressure build-up - test | revised (support-vector regression) | **RMSE 0.306 MPa** | MAE 0.125, R2 0.9962, worst under-prediction 2.7 MPa, P95 |error| 0.526; adaptive_conformal interval: case coverage 95.0 %, reservoirs fully covered 86.0 %, mean width 0.552 MPa |
+| Peak pressure build-up - shift (10-30 mD) | revised (support-vector regression) | **RMSE 1.95 MPa** | MAE 0.605, R2 0.9066, worst under-prediction 15.1 MPa, P95 |error| 2.03; adaptive_conformal interval: case coverage 79.6 %, reservoirs fully covered 70.0 %, mean width 1.15 MPa |
+| Peak pressure build-up - test | published approach, retrained (support-vector regression) | **RMSE 0.701 MPa** | MAE 0.298, R2 0.9802, worst under-prediction 6.65 MPa, P95 |error| 1.14; empirical interval: case coverage 90.5 %, reservoirs fully covered 85.0 %, mean width 1.5 MPa |
+| Peak pressure build-up - shift (10-30 mD) | published approach, retrained (support-vector regression) | **RMSE 3.81 MPa** | MAE 1.53, R2 0.6433, worst under-prediction 31.2 MPa, P95 |error| 6.32; empirical interval: case coverage 46.7 %, reservoirs fully covered 23.3 %, mean width 1.37 MPa |
+| Peak pressure build-up - test | published models as released (support-vector regression) | **RMSE 0.67 MPa** | MAE 0.303, R2 0.9819, worst under-prediction 5.51 MPa, P95 |error| 1.18; empirical interval: case coverage 89.8 %, reservoirs fully covered 83.0 %, mean width 1.5 MPa |
+| Peak pressure build-up - shift (10-30 mD) | published models as released (support-vector regression) | **RMSE 3.76 MPa** | MAE 1.52, R2 0.6531, worst under-prediction 31.5 MPa, P95 |error| 6.42; empirical interval: case coverage 47.1 %, reservoirs fully covered 21.7 %, mean width 1.36 MPa |
+| Peak pressure build-up - paired bootstrap | revised vs published approach test | **dRMSE -0.395 MPa** | 95 % CI [-0.634, -0.1847], resampling 100 reservoirs |
+| Peak pressure build-up - paired bootstrap | revised vs published models test | **dRMSE -0.365 MPa** | 95 % CI [-0.5372, -0.2087], resampling 100 reservoirs |
+| Peak pressure build-up - paired bootstrap | revised vs published approach shift | **dRMSE -1.86 MPa** | 95 % CI [-2.752, -0.9746], resampling 60 reservoirs |
+| Peak pressure build-up - paired bootstrap | revised vs published models shift | **dRMSE -1.81 MPa** | 95 % CI [-2.7458, -0.9142], resampling 60 reservoirs |
+| Plume radius (95 % mass) - test | revised (support-vector regression) | **RMSE 6.36 m** | MAE 3.49, R2 0.998, worst under-prediction 30.3 m, P95 |error| 11.5; adaptive_conformal interval: case coverage 98.0 %, reservoirs fully covered 97.0 %, mean width 20.8 m |
+| Plume radius (95 % mass) - shift (10-30 mD) | revised (support-vector regression) | **RMSE 8.47 m** | MAE 4.89, R2 0.9915, worst under-prediction 12 m, P95 |error| 17.3; adaptive_conformal interval: case coverage 85.4 %, reservoirs fully covered 78.3 %, mean width 16.5 m |
+| Plume radius (95 % mass) - test | published approach, retrained (support-vector regression) | **RMSE 11.3 m** | MAE 5.91, R2 0.9936, worst under-prediction 98.2 m, P95 |error| 23.5; empirical interval: case coverage 89.2 %, reservoirs fully covered 82.0 %, mean width 21.9 m |
+| Plume radius (95 % mass) - shift (10-30 mD) | published approach, retrained (support-vector regression) | **RMSE 12.5 m** | MAE 6.87, R2 0.9815, worst under-prediction 96 m, P95 |error| 25.7; empirical interval: case coverage 79.6 %, reservoirs fully covered 66.7 %, mean width 16.1 m |
+| Plume radius (95 % mass) - test | published models as released (elastic net) | **RMSE 13.8 m** | MAE 8.5, R2 0.9905, worst under-prediction 106 m, P95 |error| 26.5; empirical interval: case coverage 86.5 %, reservoirs fully covered 80.0 %, mean width 28.8 m |
+| Plume radius (95 % mass) - shift (10-30 mD) | published models as released (elastic net) | **RMSE 13.8 m** | MAE 7.57, R2 0.9776, worst under-prediction 107 m, P95 |error| 23.7; empirical interval: case coverage 82.1 %, reservoirs fully covered 73.3 %, mean width 20.8 m |
+| Plume radius (95 % mass) - paired bootstrap | revised vs published approach test | **dRMSE -4.95 m** | 95 % CI [-6.8266, -2.8875], resampling 100 reservoirs |
+| Plume radius (95 % mass) - paired bootstrap | revised vs published models test | **dRMSE -7.47 m** | 95 % CI [-9.485, -5.4492], resampling 100 reservoirs |
+| Plume radius (95 % mass) - paired bootstrap | revised vs published approach shift | **dRMSE -4.06 m** | 95 % CI [-7.2182, -0.1891], resampling 60 reservoirs |
+| Plume radius (95 % mass) - paired bootstrap | revised vs published models shift | **dRMSE -5.31 m** | 95 % CI [-9.0338, -0.7885], resampling 60 reservoirs |
+| Swept pore-volume fraction - test | revised (support-vector regression) | **RMSE 9.21e-04 -** | MAE 6.12e-04, R2 0.9921, worst under-prediction 0.00321 -, P95 |error| 0.002; adaptive_conformal interval: case coverage 92.2 %, reservoirs fully covered 78.0 %, mean width 0.00288 - |
+| Swept pore-volume fraction - shift (10-30 mD) | revised (support-vector regression) | **RMSE 6.17e-04 -** | MAE 4.65e-04, R2 0.9908, worst under-prediction 0.00229 -, P95 |error| 0.00121; adaptive_conformal interval: case coverage 91.7 %, reservoirs fully covered 80.0 %, mean width 0.00206 - |
+| Swept pore-volume fraction - test | published approach, retrained (support-vector regression) | **RMSE 9.21e-04 -** | MAE 6.12e-04, R2 0.9921, worst under-prediction 0.00321 -, P95 |error| 0.002; empirical interval: case coverage 88.5 %, reservoirs fully covered 66.0 %, mean width 0.00261 - |
+| Swept pore-volume fraction - shift (10-30 mD) | published approach, retrained (support-vector regression) | **RMSE 6.17e-04 -** | MAE 4.65e-04, R2 0.9908, worst under-prediction 0.00229 -, P95 |error| 0.00121; empirical interval: case coverage 95.4 %, reservoirs fully covered 85.0 %, mean width 0.00261 - |
+| Swept pore-volume fraction - test | published models as released (support-vector regression) | **RMSE 0.00103 -** | MAE 7.36e-04, R2 0.9901, worst under-prediction 0.00334 -, P95 |error| 0.00221; empirical interval: case coverage 84.2 %, reservoirs fully covered 56.0 %, mean width 0.00266 - |
+| Swept pore-volume fraction - shift (10-30 mD) | published models as released (support-vector regression) | **RMSE 9.53e-04 -** | MAE 7.22e-04, R2 0.9781, worst under-prediction 0.00204 -, P95 |error| 0.00207; empirical interval: case coverage 87.9 %, reservoirs fully covered 68.3 %, mean width 0.00266 - |
+| Swept pore-volume fraction - paired bootstrap | revised vs published approach test | **dRMSE 0 -** | 95 % CI [0.0, 0.0], resampling 100 reservoirs |
+| Swept pore-volume fraction - paired bootstrap | revised vs published models test | **dRMSE -1.12e-04 -** | 95 % CI [-0.0002, -0.0], resampling 100 reservoirs |
+| Swept pore-volume fraction - paired bootstrap | revised vs published approach shift | **dRMSE 0 -** | 95 % CI [0.0, 0.0], resampling 60 reservoirs |
+| Swept pore-volume fraction - paired bootstrap | revised vs published models shift | **dRMSE -3.36e-04 -** | 95 % CI [-0.0005, -0.0002], resampling 60 reservoirs |
+| Pressure-limit screen (test) | classifier / ROC-AUC | **xgboost / 1** | limit: build-up > 9 MPa |
+| Pressure-limit screen (test) | recall / precision at chosen threshold | **0.967 / 0.989** | threshold from out-of-fold scores for recall >= 0.95 |
+| Pressure-limit screen (test) | interval upper edge: missed exceedances | **0/90** | false alarms 3 |
+| Cost | simulator per case (serial) | **5 s** | 5 test scenarios re-run in-process |
+| Cost | surrogates, single case end to end | **0.0487 s** | speed-up 103x; batched 9.10e-05 s/case |
+| Screening - final test | rom constant | **20/20 verified** | first simulated proposal violated: 13; no feasible found: 0; median verified mass vs simulator-only constant rate 0.0736 %; mean simulations 2.65 |
+| Screening - final test | rom shaped | **20/20 verified** | first simulated proposal violated: 5; no feasible found: 0; median verified mass vs simulator-only constant rate 3.42 %; mean simulations 2.7 |
+| Screening - final test | simulator constant | **20/20 verified** | first simulated proposal violated: 0; no feasible found: 0; median verified mass vs simulator-only constant rate 0 %; mean simulations 3.4 |
+| Screening - final test | surrogate published | **19/20 verified** | first simulated proposal violated: 1; no feasible found: 1; median verified mass vs simulator-only constant rate -9.56 %; mean simulations 3 |
+| Screening - final test | surrogate verified | **20/20 verified** | first simulated proposal violated: 0; no feasible found: 0; median verified mass vs simulator-only constant rate 2.88 %; mean simulations 3.25 |
+| Screening - shift | rom constant | **10/10 verified** | first simulated proposal violated: 4; no feasible found: 0; median verified mass vs simulator-only constant rate 0.0232 %; mean simulations 2.5 |
+| Screening - shift | rom shaped | **10/10 verified** | first simulated proposal violated: 2; no feasible found: 0; median verified mass vs simulator-only constant rate 11.1 %; mean simulations 2.4 |
+| Screening - shift | simulator constant | **10/10 verified** | first simulated proposal violated: 0; no feasible found: 0; median verified mass vs simulator-only constant rate 0 %; mean simulations 3.2 |
+| Screening - shift | surrogate published | **9/10 verified** | first simulated proposal violated: 2; no feasible found: 1; median verified mass vs simulator-only constant rate -11.8 %; mean simulations 3 |
+| Screening - shift | surrogate verified | **10/10 verified** | first simulated proposal violated: 4; no feasible found: 0; median verified mass vs simulator-only constant rate 0.0232 %; mean simulations 2.5 |
 | Physics checks | retained vs planned mass | **3.23e-13** | max relative difference, sealed boundary |
 | Physics checks | open boundary retention (median) | **0.812** | 6/10 runs lost CO2 across r_e |
 
 
-Total wall time 47.6 min
-Summary: /home/claude/work/SubsurfaceML/results/study/metrics/summary.json
-Figures: /home/claude/work/SubsurfaceML/results/study/figures
-Models:  /home/claude/work/SubsurfaceML/results/study/models
+Total wall time 66.0 min
+Summary: /home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/metrics/summary.json
+Figures: /home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/figures
+Models:  /home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/models

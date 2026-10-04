@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "subsurfaceml"
-version = "2.0.0"
-description = "Layered radial CO2-brine IMPES simulator with course-based ML surrogates (synthetic data)"
+version = "3.0.0"
+description = "Layered radial CO2-brine IMPES simulator, analytical ROM and hybrid surrogates with reservoir-calibrated intervals and verification-gated schedule screening (synthetic data)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

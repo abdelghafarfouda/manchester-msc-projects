@@ -242,7 +242,7 @@ def build_model(cfg: Config, r: Realisation):
         outer_bc=s.outer_bc, cfl=s.cfl, max_dS=s.max_dS,
         dt_init=s.dt_init_s, dt_max=s.dt_max_days * 86400.0,
         dt_min=s.dt_min_s, max_overshoot=s.max_overshoot,
-        enforce_cfl=s.enforce_cfl)
+        enforce_cfl=s.enforce_cfl, max_steps=getattr(s, "max_steps", 200_000))
     return model, grids, rock, fl, rp
 
 

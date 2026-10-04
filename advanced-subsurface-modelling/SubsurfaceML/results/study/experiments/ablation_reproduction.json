@@ -1,0 +1,217 @@
+{
+  "command": "python scripts/run_experiments.py --config config/study.yaml --only ablation",
+  "config_note": "run as --config results/scratch/exp_repro.yaml, a copy of config/study.yaml that differs only in its output paths; it reads the same development data results/study/data/",
+  "started": "Sun Oct  4 08:45:09 2026",
+  "finished": "Sun Oct  4 09:55:50 2026",
+  "seconds": 4241.083065456001,
+  "machine_note": "4-core VM, no other job running (the original run shared the machine with other jobs: 4959 s)",
+  "environment": {
+    "python": "3.11.15",
+    "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "pandas": "3.0.2",
+    "scikit_learn": "1.8.0",
+    "xgboost": "3.2.0",
+    "git_commit": "f0f1068"
+  },
+  "decisions_identical": true,
+  "decisions": {
+    "pressure_variant": "V3_hybrid_rom_residual",
+    "ml.feature_set": "all",
+    "ml.pressure_model": "hybrid",
+    "ml.feature_set_plume": "all",
+    "ml.feature_set_sweep": "baseline",
+    "ml.interval_method": "adaptive_conformal",
+    "interval_rule": "smallest mean relative width with mean whole-reservoir coverage >= 0.88"
+  },
+  "variants": {
+    "dp_bh_max_MPa/V0_published_features": {
+      "RMSE_committed": 1.1375959907402968,
+      "RMSE_reproduced": 1.1235336898103765,
+      "worst_underprediction_committed": 15.846721771492824,
+      "worst_underprediction_reproduced": 15.84313111856499,
+      "max_abs_oof_difference": 4.355861406408891,
+      "selected_families_committed": {
+        "svr": 528,
+        "elasticnet": 176,
+        "xgboost": 176
+      },
+      "selected_families_reproduced": {
+        "svr": 352,
+        "elasticnet": 176,
+        "xgboost": 176,
+        "ridge": 176
+      }
+    },
+    "dp_bh_max_MPa/V1_plus_realised_rock": {
+      "RMSE_committed": 0.8441364922452356,
+      "RMSE_reproduced": 0.8445936360710143,
+      "worst_underprediction_committed": 12.828622563442888,
+      "worst_underprediction_reproduced": 12.83353898963102,
+      "max_abs_oof_difference": 0.022797702241579287,
+      "selected_families_committed": {
+        "svr": 880
+      },
+      "selected_families_reproduced": {
+        "svr": 880
+      }
+    },
+    "dp_bh_max_MPa/V2_plus_rom_feature": {
+      "RMSE_committed": 0.45754914665991364,
+      "RMSE_reproduced": 0.45755222366923926,
+      "worst_underprediction_committed": 8.354275793054356,
+      "worst_underprediction_reproduced": 8.353710715545734,
+      "max_abs_oof_difference": 0.007783698783935478,
+      "selected_families_committed": {
+        "svr": 352,
+        "elasticnet": 352,
+        "linear": 176
+      },
+      "selected_families_reproduced": {
+        "svr": 352,
+        "elasticnet": 352,
+        "linear": 176
+      }
+    },
+    "dp_bh_max_MPa/V3_hybrid_rom_residual": {
+      "RMSE_committed": 0.2664519793270564,
+      "RMSE_reproduced": 0.2661434793771868,
+      "worst_underprediction_committed": 4.638862139947374,
+      "worst_underprediction_reproduced": 4.625406267121011,
+      "max_abs_oof_difference": 0.013455872826362736,
+      "selected_families_committed": {
+        "svr": 880
+      },
+      "selected_families_reproduced": {
+        "svr": 880
+      }
+    },
+    "dp_bh_max_MPa/V4_rom_only": {
+      "RMSE_committed": 0.5588101319137999,
+      "RMSE_reproduced": 0.5588101319138,
+      "worst_underprediction_committed": 4.744819761292998,
+      "worst_underprediction_reproduced": 4.744819761292998,
+      "max_abs_oof_difference": 1.4210854715202004e-14,
+      "selected_families_committed": {
+        "rom": 880
+      },
+      "selected_families_reproduced": {
+        "rom": 880
+      }
+    },
+    "dp_bh_max_MPa/V5_published_features_3x_search": {
+      "RMSE_committed": 1.1686790232211108,
+      "RMSE_reproduced": 1.1686819206442174,
+      "worst_underprediction_committed": 15.846721771492824,
+      "worst_underprediction_reproduced": 15.84313111856499,
+      "max_abs_oof_difference": 0.009680775460640945,
+      "selected_families_committed": {
+        "svr": 528,
+        "elasticnet": 176,
+        "xgboost": 176
+      },
+      "selected_families_reproduced": {
+        "svr": 528,
+        "elasticnet": 176,
+        "xgboost": 176
+      }
+    },
+    "r_plume_m95_m/V0_published_features": {
+      "RMSE_committed": 9.57485602795739,
+      "RMSE_reproduced": 9.574856027958091,
+      "worst_underprediction_committed": 60.677984492215955,
+      "worst_underprediction_reproduced": 60.677984492215955,
+      "max_abs_oof_difference": 4.448565960046835e-10,
+      "selected_families_committed": {
+        "lasso": 528,
+        "svr": 352
+      },
+      "selected_families_reproduced": {
+        "lasso": 528,
+        "svr": 352
+      }
+    },
+    "r_plume_m95_m/V2_plus_rock_and_rom_features": {
+      "RMSE_committed": 6.510649696040826,
+      "RMSE_reproduced": 6.510649696044065,
+      "worst_underprediction_committed": 36.61045534498032,
+      "worst_underprediction_reproduced": 36.61045534498089,
+      "max_abs_oof_difference": 5.547917680814862e-10,
+      "selected_families_committed": {
+        "svr": 528,
+        "elasticnet": 352
+      },
+      "selected_families_reproduced": {
+        "svr": 528,
+        "elasticnet": 352
+      }
+    },
+    "sweep_efficiency/V0_published_features": {
+      "RMSE_committed": 0.0010886009247356569,
+      "RMSE_reproduced": 0.0010886009247358574,
+      "worst_underprediction_committed": 0.006956222271603661,
+      "worst_underprediction_reproduced": 0.00695622227158945,
+      "max_abs_oof_difference": 2.842001807501493e-13,
+      "selected_families_committed": {
+        "svr": 880
+      },
+      "selected_families_reproduced": {
+        "svr": 880
+      }
+    },
+    "sweep_efficiency/V2_plus_rock_and_rom_features": {
+      "RMSE_committed": 0.0011160717889445067,
+      "RMSE_reproduced": 0.001116071788945804,
+      "worst_underprediction_committed": 0.007318765311879714,
+      "worst_underprediction_reproduced": 0.007318765311822871,
+      "max_abs_oof_difference": 1.846994779342026e-13,
+      "selected_families_committed": {
+        "svr": 880
+      },
+      "selected_families_reproduced": {
+        "svr": 880
+      }
+    }
+  },
+  "cause_of_differences": "the original run rebuilt the input table from scenarios.csv (rebuild_inputs); the reproduction read scenarios_features.csv written by the pipeline. The two agree to 2e-13 relative (35 of 37 inputs differ in the last digits), which changes near-tied choices in the randomised searches: in one outer fold of V0 the inner search picked ridge instead of SVR. Variants without learning (V4) and the plume and sweep variants agree to 1e-9 or better.",
+  "kept": "the committed ablation files are the ones the decisions were taken on; this file only records the reproduction",
+  "reproduction_1_note": "the fields above record the first reproduction, whose inputs were read from scenarios_features.csv instead of being rebuilt from scenarios.csv",
+  "near_tie_check": {
+    "what": "inner-CV RMSE of SVR and ridge in the outer fold whose selection flipped (V0, peak build-up)",
+    "outer_fold": 2,
+    "n_train_cases": 704,
+    "n_test_cases": 176,
+    "rebuilt_from_scenarios_csv": {
+      "ridge": 0.979037746528464,
+      "svr": 0.978587582429461,
+      "chosen_of_two": "svr"
+    },
+    "read_from_scenarios_features_csv": {
+      "ridge": 0.9790377465284669,
+      "svr": 0.9790542024932474,
+      "chosen_of_two": "ridge"
+    },
+    "relative_gap_with_recorded_inputs": 0.0004600141132851121
+  },
+  "reproduction_2_pinned_inputs": {
+    "command": "python scripts/run_experiments.py --config config/study.yaml --only ablation",
+    "config_note": "run as --config results/scratch/exp_repro2.yaml (output paths only differ); inputs from experiments.load_dev_table (rebuilt from scenarios.csv, named CSV parser)",
+    "scope": "the six peak build-up variants, which are the only ones that differed in reproduction 1; the run was stopped before the plume and swept-fraction variants, which had already agreed to 1e-9",
+    "oof_files_identical": {
+      "ablation_oof_dp_bh_max_MPa_V0_published_features.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V1_plus_realised_rock.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V2_plus_rom_feature.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V3_hybrid_rom_residual.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V4_rom_only.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V5_published_features_3x_search.csv": true
+    },
+    "all_compared_identical": true
+  },
+  "tolerances": {
+    "same_inputs_same_environment": "identical out-of-fold predictions (verified for the six pressure variants)",
+    "inputs_differing_in_last_digits": "identical design decisions; aggregate out-of-fold RMSE within about 1.5 %; individual predictions can differ by the gap between near-tied model families (observed: 4.36 MPa for one case)",
+    "other_platforms_or_library_builds": "not tested; identity is not claimed"
+  }
+}

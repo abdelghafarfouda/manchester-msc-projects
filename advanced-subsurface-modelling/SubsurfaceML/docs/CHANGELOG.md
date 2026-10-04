@@ -1,5 +1,136 @@
 # Changelog
 
+## 2026-10-04 — completion pass (no pipeline results changed)
+
+A bounded pass to close correctness and publication issues. The pipeline's
+results, models and figures are unchanged. Two checks were added and are
+recorded separately from the original evaluation.
+
+* **Calibration independence.** The 41 interval-calibration reservoirs had
+  taken part in the development experiments that chose the design, so the
+  pipeline's intervals carry measured coverage only, and every guarantee
+  wording was corrected. A protocol addendum, pushed before the data existed
+  (commit `4717b96`), recalibrated the fixed design on 41 fresh reservoirs:
+  97 % / 91 % of test cases / reservoirs covered for peak build-up (original
+  95 % / 86 %), at most 73 % of shift reservoirs
+  (`results/study/experiments/calibration_check.json`).
+* **Data roles.** The calibration reservoirs also train the pressure-limit
+  classifier and serve as the domain check's reference set; "interval
+  calibration only" was corrected.
+* **Reproducibility.** A re-run of the ablation whose inputs were read from the stored feature table
+  (equal to 2e-13) gave the same decisions and RMSEs within 0.014 MPa, but moved one prediction by
+  4.36 MPa: a near-tied SVR/ridge choice flipped. The experiments now always rebuild their inputs from
+  `scenarios.csv` and record their hash. Re-run this way, all six pressure variants are bit-identical
+  to the record. Tolerances: `docs/TECHNICAL_REPORT.md` §8.
+* **Documentation.** `docs/REVIEW_CHECKLIST.md` records each review
+  recommendation as completed, remaining, portfolio-wide or future
+  extension. The Supervisor Overview, README, technical report, assumptions
+  and notebooks now state the measured coverages, the out-of-distribution
+  limits, what simulator verification checks, and that the pressure limit is
+  not a validated fracture or caprock criterion. PR #1's SubsurfaceML edits
+  were reconciled: its "how to run" line and its note on the classifier's
+  training data were adopted; its earlier split wording is superseded, and
+  its attribution sentence was not adopted because it does not describe
+  this revision.
+* `subsurfaceml predict` / `simulate`: malformed input files give a one-line error and exit code 2,
+  where they had raised a traceback.
+* Tests: 103 → 107 (calibration-check set; experiment input source; command-line input handling).
+
+## 2026-10 — revision: reliable surrogate-assisted screening (results regenerated)
+
+Implemented after two portfolio reviews (only the English review was
+available; see the README's version history). **All results in
+`results/study/` and `results/demo/` were regenerated** with the code of this
+version; the 2026-09-20 run was first reproduced end to end from a clean
+environment (all 2,961 recorded values identical,
+`results/published_2026-09-20/baseline_reproduction.json`).
+
+### Findings that drove the changes
+
+* **Pressure failures had one cause.** The published surrogate saw each
+  reservoir through the parameters of its sampling prior (median
+  permeability, target V_DP). With four layers per realisation, the realised
+  rock can be several times tighter or more permeable than those parameters
+  imply; the worst under-prediction (R0172: 32.4 MPa simulated, 17.6 MPa
+  predicted) and the reservoir on which every screened schedule failed (R0036)
+  both have realised mean permeability about one third of what their prior
+  parameters imply.
+* **No verification check covered the surrogate target.** V1–V3 verified the
+  separate single-phase solver; the two-phase bottom-hole pressure had no
+  analytical check.
+
+### Added
+
+* V12/V13: the two-phase simulator's bottom-hole pressure against the
+  bounded-reservoir PSS solution (one layer, two commingled layers).
+* `rom.py`: analytical multi-layer sealed-tank PSS model with a common BHP.
+* Realised-layer inputs and ROM inputs; `hybrid.py` (ROM × learned
+  correction).
+* `numerics.py`: discretisation error of the dataset targets themselves, and a
+  screen of every case for a peak set by a well-block transient
+  (`scripts/run_experiments.py --only peak_screen`).
+* `rz.py` + `scripts/run_model_form.py`: r–z reference model with gravity and
+  vertical crossflow, measuring the model-form error of the layered model.
+* `intervals.py`: reservoir-grouped split-conformal intervals (and three
+  alternatives, compared); `domain.py`: applicability-domain check.
+* `screening.py`: verification-gated screening; nothing is recommended
+  without simulator verification; explicit no-recommendation outcomes.
+* `final_eval.py`: fresh final-test and distribution-shift reservoirs,
+  generated after the design was fixed (`docs/EVALUATION_PROTOCOL.md`).
+* `experiments.py` + `scripts/run_experiments.py`: nested reservoir-grouped
+  ablation and interval selection on development data only.
+* `figures.py` / `labels.py`: every figure with readable axis labels.
+* Tests: 72 → 103 (ROM, hybrid, intervals, domain, screening invariants,
+  evaluation design and leakage, r–z model, discretisation study).
+
+### Changed
+
+* The published run's 55 test reservoirs (inspected during development) are
+  now training data; testing uses fresh reservoirs.
+* The old screening (`optimise_schedule`, which ranked candidates that were
+  only predicted to be feasible) is removed; `optimise.py` keeps the
+  candidate sampler.
+* `pipeline.py` split into stages; plotting moved to `figures.py`.
+* The course-coverage record of 2026-09-20 moved to
+  `docs/archive/2026-09-20_course_coverage/` (not regenerated).
+
+### Ablation (development reservoirs, nested grouped CV, out-of-fold RMSE of peak build-up)
+
+| Variant | RMSE [MPa] | Worst under-prediction [MPa] |
+|---|---|---|
+| V0 published inputs | 1.138 | 15.8 |
+| V1 + realised layers | 0.844 | 12.8 |
+| V2 + ROM as an input | 0.458 | 8.4 |
+| V3 hybrid (selected) | 0.266 | 4.6 |
+| V4 ROM alone | 0.559 | 4.7 |
+| V5 published inputs, 3× search | 1.169 | 15.8 |
+
+Plume radius: 9.57 → 6.51 m with the new inputs (adopted); swept fraction:
+0.00109 → 0.00112 (not adopted). Interval method: adaptive conformal
+(whole-reservoir coverage 0.90 at the smallest width).
+
+### Results
+
+On 100 fresh test reservoirs (400 cases), scored once after the design was
+fixed: peak build-up RMSE 0.31 MPa (published approach retrained on the same
+reservoirs: 0.70; published models as released: 0.67), worst
+under-prediction 2.7 MPa (6.7); interval 95 % of cases and 86 % of whole
+reservoirs covered at 0.55 MPa mean width (published band 90 % / 85 % at
+1.50 MPa). On 60 lower-permeability shift reservoirs: 1.95 vs 3.81 MPa; all
+flagged out of domain. Screening at four simulations per reservoir: every
+recommendation simulator-verified; median +2.9 % mass over the best constant
+rate (published screening −9.6 %; ROM-ranked shapes +3.4 %). Discretisation
+error of the training data (41 cases re-simulated with refined grid, well
+block and time step): peak build-up median 0.06 %, no pressure-limit label
+changes; at production resolution the plume radius is about 4 % and the swept
+fraction about 17 % too large. A screen of all 1,520 cases found peaks set
+by a start-up transient of the well block in 4 development, 0 test and 32
+shift cases (2–14 % too high; one shift label changes). Omitting gravity and crossflow: peak build-up
+−4 %, plume radius +88 % (medians). Details: `docs/TECHNICAL_REPORT.md` §4–5.
+The full pipeline was run twice from clean data with identical machine-learning,
+interval and screening results; re-running the development ablation reproduced
+every design decision (`results/study/experiments/ablation_reproduction.json`).
+
 ## 2026-09-27 — publication review (no results changed)
 
 Reviewed before publication in the Manchester MSc collection. **No simulation,

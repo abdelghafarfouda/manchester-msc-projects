@@ -80,6 +80,8 @@ class SolverConfig:
     outer_bc: str = "constant_pressure"
     p_init_MPa: float = 15.0
     validation_full: bool = False  # finest grid / well-block levels in V7
+    max_steps: int = 200_000       # guard against a runaway simulation (never reached
+                                   # at production resolution; raised for refined levels)
 
 
 @dataclass
@@ -133,6 +135,14 @@ class MLConfig:
     band_upper_pct: float = 95.0
     margin_warning_fraction: float = 0.8  # traffic-light "near limit" band
     run_studies: bool = True       # the ML-method studies of studies.py
+    #: Revised design (2026-10), fixed by the development-set experiments of
+    #: scripts/run_experiments.py before the independent test sets existed.
+    feature_set: str = "all"       # baseline | rock | all  (features.py), pressure target
+    feature_set_plume: str = "all" # the same for the plume-radius target
+    feature_set_sweep: str = "baseline"  # the same for the sweep target
+    pressure_model: str = "hybrid" # hybrid (ROM x learned factor) | log
+    interval_method: str = "adaptive_conformal"    # intervals.METHODS
+    interval_alpha: float = 0.10   # nominal 90 % two-sided intervals
 
 
 @dataclass
@@ -146,6 +156,46 @@ class OptimConfig:
 
 
 @dataclass
+class NumericsConfig:
+    """Discretisation error of the dataset targets (numerics.py): a stratified
+    sample of development cases re-simulated with refined grid, well block
+    and time step."""
+    run: bool = False
+    cases_per_cell: int = 3        # per permeability tercile x intensity quartile
+    finer_cases: int = 10          # subset also run at the 'finer' level
+    finer_max_production_steps: int = 12_000  # 'finer' costs ~100x a production run;
+                                              # it is a convergence check, so it uses
+                                              # cases below this production step count
+
+
+@dataclass
+class EvaluationConfig:
+    """Independent evaluation sets, generated only after every modelling
+    choice has been fixed on the development reservoirs
+    (``docs/EVALUATION_PROTOCOL.md``).  Their seeds differ from the
+    development seed, and their realisation ids are offset so they can never
+    be confused with development reservoirs."""
+    final_test_seed: int = 20261004
+    final_test_realisations: int = 100
+    final_test_id_offset: int = 10000
+    shift_seed: int = 20261005
+    shift_realisations: int = 60
+    shift_id_offset: int = 20000
+    #: the one prior range changed for the distribution-shift set
+    shift_k_median_mD: tuple = (10.0, 30.0)
+    screening_reservoirs_final_test: int = 20
+    screening_reservoirs_shift: int = 10
+    screening_budget: int = 4      # simulator runs per reservoir and method
+    screening_candidates: int = 4000
+    #: fresh reservoirs from the development prior, used only to re-calibrate
+    #: the fixed design's intervals independently of every design choice
+    #: (protocol addendum, ``scripts/run_experiments.py --only calibration_check``)
+    calibration_check_seed: int = 20261006
+    calibration_check_realisations: int = 41
+    calibration_check_id_offset: int = 30000
+
+
+@dataclass
 class Config:
     name: str = "demo"
     paths: Paths = field(default_factory=Paths)
@@ -155,6 +205,8 @@ class Config:
     scenarios: ScenarioConfig = field(default_factory=ScenarioConfig)
     ml: MLConfig = field(default_factory=MLConfig)
     optim: OptimConfig = field(default_factory=OptimConfig)
+    evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
+    numerics: NumericsConfig = field(default_factory=NumericsConfig)
     n_jobs: int = -1
 
     # -- convenience -------------------------------------------------------
@@ -176,7 +228,8 @@ class Config:
 
 _SECTIONS = {"grid": GridConfig, "solver": SolverConfig,
              "schedule": ScheduleConfig, "scenarios": ScenarioConfig,
-             "ml": MLConfig, "optim": OptimConfig}
+             "ml": MLConfig, "optim": OptimConfig,
+             "evaluation": EvaluationConfig, "numerics": NumericsConfig}
 
 
 class ConfigError(ValueError):
@@ -213,6 +266,23 @@ def validate_config(cfg: "Config") -> "Config":
          "ml.test_fraction and ml.calib_fraction in (0, 0.5)")
     need(0 <= ml.band_lower_pct < ml.band_upper_pct <= 100, "ml band percentiles")
     need(o.p_limit_MPa > s.p_init_MPa, "optim.p_limit_MPa must exceed solver.p_init_MPa")
+    need(all(v in ("baseline", "rock", "all") for v in
+             (ml.feature_set, ml.feature_set_plume, ml.feature_set_sweep)),
+         "ml.feature_set / feature_set_plume / feature_set_sweep must be baseline, rock or all")
+    need(ml.pressure_model in ("hybrid", "log"), "ml.pressure_model must be hybrid or log")
+    need(ml.interval_method in ("empirical", "case_conformal", "reservoir_conformal",
+                                "adaptive_conformal"), "ml.interval_method unknown")
+    need(0 < ml.interval_alpha < 0.5, "ml.interval_alpha in (0, 0.5)")
+    e = cfg.evaluation
+    need(e.final_test_seed != sc.seed and e.shift_seed != sc.seed,
+         "evaluation seeds must differ from the development seed")
+    need(e.final_test_id_offset >= sc.n_realisations and e.shift_id_offset >= sc.n_realisations
+         and e.final_test_id_offset != e.shift_id_offset,
+         "evaluation realisation ids must not overlap the development ids")
+    need(e.calibration_check_seed not in (sc.seed, e.final_test_seed, e.shift_seed)
+         and e.calibration_check_id_offset >= sc.n_realisations
+         and e.calibration_check_id_offset not in (e.final_test_id_offset, e.shift_id_offset),
+         "the calibration-check set needs its own seed and id range")
     return cfg
 
 

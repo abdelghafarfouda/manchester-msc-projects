@@ -23,6 +23,12 @@ V10 Single-phase upscaling applied to a *two-phase* problem
     (``2-Upscaling.pdf`` p.3-4 poses the question).
 V11 Multi-layer well: prescribed total rate conserved, one common
     bottom-hole pressure, split between layers in the single-phase limits.
+V12 The *two-phase* simulator's bottom-hole pressure, run in a
+    single-phase-equivalent configuration in a sealed compartment, against
+    the pseudo-steady-state solution of a bounded circular reservoir.
+V13 The same for two commingled layers sharing one bottom-hole pressure
+    (late-time limit: pore-volume rate split); also checks the analytical
+    reduced-order model of :mod:`rom` in the same limit.
 
 (A Theis line-source benchmark was removed: that solution is not in the
 supplied material.)
@@ -339,6 +345,74 @@ def v10_upscaling_two_phase() -> dict:
     }
 
 
+def _pss_case(ks_mD, phis, h, r_e, q_mass, T, *, n_r=60, r_near=5.0):
+    """Two-phase simulator run in a *single-phase-equivalent* configuration
+    (equal phase viscosities and compressibilities, linear relative
+    permeabilities with zero residuals, so ``lambda_t = 1/mu`` and
+    ``c_t = c_r + c_a`` everywhere) in a sealed compartment, against the
+    late-time pseudo-steady-state (PSS) solution of a bounded circular
+    reservoir with a common bottom-hole pressure:
+
+    ``p_w - p_i = Q t / (c_t V_T) + sum_l V_l (q_l / J_l) / V_T``,
+    ``q_l = Q V_l / V_T``, ``J_l = 2 pi k_l h / (mu (ln(r_e/r_w) - 3/4))``.
+
+    For one layer this is the classical PSS drawdown (here build-up)
+    equation; for several layers it is its commingled late-time limit, in
+    which every layer pressurises at the same rate, so the rate split follows
+    pore volume.  This checks the quantity the surrogates learn -- the
+    simulator's bottom-hole pressure -- including the well index, the units,
+    the storage term and the sealed boundary, which V1-V3 check only for the
+    separate single-phase solver.
+    """
+    from . import rom
+    mu, c_a, c_r = rom.MU_A, rom.C_A, rom.C_R
+    fl = FluidProperties(rho_g=1000.0, rho_a=1000.0, mu_g=mu, mu_a=mu,
+                         c_g=c_a, c_a=c_a)
+    rp = RelPerm(S_ar=0.0, S_gr=0.0, n_a=1.0, n_g=1.0, kra0=1.0, krg0=1.0)
+    L = len(ks_mD)
+    grids = [RadialGrid(n=n_r, r_w=0.15, r_e=r_e, h=h, r_near=r_near)
+             for _ in range(L)]
+    k = np.stack([np.full(n_r, md_to_m2(x)) for x in ks_mD])
+    phi = np.stack([np.full(n_r, x) for x in phis])
+    m = TwoPhaseModel(grids, k, phi, fl, rp, RockProperties(c_r=c_r),
+                      15.0 * MPA, outer_bc="closed", max_dS=1.0,
+                      dt_max=10 * DAY)
+    res = m.run(InjectionSchedule([0.0, T], [q_mass]), np.linspace(0.0, T, 5))
+    Q, c_t = q_mass / fl.rho_g, c_r + c_a
+    V = np.pi * (r_e ** 2 - 0.15 ** 2) * h * np.asarray(phis, float)
+    J = np.array([2 * np.pi * md_to_m2(x) * h / mu / (np.log(r_e / 0.15) - 0.75)
+                  for x in ks_mD])
+    VT = V.sum()
+    ana = Q * T / (c_t * VT) + float(np.sum(V * (Q * V / VT) / J)) / VT
+    sim = float(res.p_bh[-1] - 15.0 * MPA)
+    # the analytical ROM used as a surrogate feature, same configuration
+    rom_dp = float(rom.bhp_buildup_layers(
+        md_to_m2(np.asarray(ks_mD, float)), np.full(L, h), phis, r_e, 0.15,
+        fl.rho_g, np.array([[q_mass]]), T, steps_per_period=400,
+        co2_storage=False)[0])
+    return {"layers_k_mD": list(map(float, ks_mD)), "phi": list(map(float, phis)),
+            "t_years": T / YEAR, "q_kg_s": q_mass,
+            "sim_dp_bh_MPa": sim / MPA, "pss_analytic_dp_MPa": ana / MPA,
+            "rel_err_sim_vs_pss": abs(sim - ana) / ana,
+            "rom_dp_MPa": rom_dp / MPA,
+            "rel_err_rom_vs_pss": abs(rom_dp - ana) / ana,
+            "late_layer_rate_fraction_sim": (res.q_layer[-1] / res.q_layer[-1].sum()).tolist(),
+            "late_layer_rate_fraction_pss": (V / VT).tolist(),
+            "mass_balance_error": res.mass_balance_error,
+            "n_steps": int(res.diagnostics["n_steps"]),
+            "wall_time_s": float(res.diagnostics["wall_time_s"])}
+
+
+def v12_v13_pss_well_pressure() -> dict:
+    """V12: one layer; V13: two commingled layers (the V11 contrast) sharing
+    one bottom-hole pressure.  Both in a sealed compartment, compared at late
+    time with the PSS solution (see :func:`_pss_case`)."""
+    return {"V12_single_layer": _pss_case([100.0], [0.20], 20.0, 2000.0, 10.0,
+                                          3 * YEAR),
+            "V13_two_layers": _pss_case([500.0, 20.0], [0.25, 0.08], 10.0,
+                                        1500.0, 20.0, 3 * YEAR)}
+
+
 # --------------------------------------------------------------------------
 def run_all(cfg: Config | None = None, *, save: bool = True,
             verbose: bool = True) -> dict:
@@ -352,6 +426,7 @@ def run_all(cfg: Config | None = None, *, save: bool = True,
         "V9_upscaling": v9_upscaling(),
         "V10_upscaling_two_phase": v10_upscaling_two_phase(),
         "V11_well_coupling": v11_well_coupling(),
+        "V12_V13_pss_well_pressure": v12_v13_pss_well_pressure(),
     }
     res["wall_time_s"] = time.perf_counter() - t0
     res["verdict"] = _verdict(res)
@@ -396,5 +471,12 @@ def _verdict(res: dict) -> dict:
     v["well_common_bhp"] = w["max_bhp_spread_Pa"] < 1e-3
     v["well_total_rate_conserved"] = w["max_rate_rel_err"] < 1e-10
     v["well_shut_in_no_crossflow"] = w["shut_in_layer_rates_all_zero"]
+    if "V12_V13_pss_well_pressure" in res:
+        pss = res["V12_V13_pss_well_pressure"]
+        v["pss_bhp_single_layer"] = pss["V12_single_layer"]["rel_err_sim_vs_pss"] < 1e-4
+        v["pss_bhp_two_layers"] = pss["V13_two_layers"]["rel_err_sim_vs_pss"] < 1e-3
+        v["rom_matches_pss_limit"] = max(
+            pss["V12_single_layer"]["rel_err_rom_vs_pss"],
+            pss["V13_two_layers"]["rel_err_rom_vs_pss"]) < 1e-3
     v["ALL_PASS"] = all(v.values())
     return v
