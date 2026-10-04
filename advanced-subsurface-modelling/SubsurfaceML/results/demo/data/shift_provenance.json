@@ -1,0 +1,13 @@
+{
+  "set": "shift",
+  "seed": 20261205,
+  "n_realisations": 15,
+  "n_requested": 45,
+  "n_success": 45,
+  "n_failed": 0,
+  "k_median_mD_range": [
+    10.0,
+    30.0
+  ],
+  "wall_time_s": 5.495030199999746
+}

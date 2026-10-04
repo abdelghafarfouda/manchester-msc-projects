@@ -284,10 +284,17 @@ def nb00():
         code("display(Image(str(Path(cfg.paths.figures)/'06_surrogate_parity.png')))\n"
              "display(Image(str(Path(cfg.paths.figures)/'08_errors_dp_bh_max_MPa.png')))\n"
              "sg = S['ml']['targets']['dp_bh_max_MPa']['designs']\n"
-             "for d in ('revised', 'published_approach'):\n"
-             "    print(d); display(pd.DataFrame({g: {k: v['RMSE'] for k, v in grp.items()} for g, grp in\n"
-             "          sg[d]['evaluation']['test']['subgroups'].items()}).round(3))\n"
-             "provenance('loaded', 'subgroup RMSE [MPa] on the test reservoirs')"),
+             "names = {'k_group': 'median permeability tercile',\n"
+             "         'mismatch_group': 'realised vs prior permeability',\n"
+             "         'near_limit': 'distance to the 9 MPa limit'}\n"
+             "rows = [{'grouping': names.get(g, g), 'subgroup': lv, 'n': m['n'], 'design': d,\n"
+             "         'RMSE [MPa]': m['RMSE'], 'worst under-prediction [MPa]': m['worst_underprediction']}\n"
+             "        for d in ('revised', 'published_approach')\n"
+             "        for g, grp in sg[d]['evaluation']['test']['subgroups'].items()\n"
+             "        for lv, m in grp.items()]\n"
+             "display(pd.DataFrame(rows).pivot_table(index=['grouping', 'subgroup', 'n'], columns='design',\n"
+             "        values=['RMSE [MPa]', 'worst under-prediction [MPa]']).round(3))\n"
+             "provenance('loaded', 'subgroup errors on the test reservoirs')"),
 
         md("## 8. Intervals: what they cover and what they do not\n\n"
            "The interval method was chosen on development data by a pre-declared rule. "
@@ -468,7 +475,12 @@ def nb02():
              "r7 = V['V6_V7_V8_radial_two_phase']\n"
              "for key in ('n_r', 'r_near', 'max_dS'):\n"
              "    print(key); display(pd.DataFrame(r7[key]).T[['dp_bh_max_MPa','r_plume_end_m','n_steps','wall_time_s']])\n"
-             "print('strict vs relaxed time stepping'); display(pd.DataFrame(r7['cfl']).T)"),
+             "c = r7['cfl']\n"
+             "print('strict vs relaxed time stepping')\n"
+             "display(pd.DataFrame({k: c[k] for k in ('relaxed', 'strict_default')}).T[\n"
+             "    ['dp_bh_max_MPa', 'r_plume_end_m', 'mass_retained_Mt', 'n_steps', 'near_well_oscillation']])\n"
+             "print('relative differences, strict vs relaxed:', {k: float(f'{v:.2g}') for k, v in c['rel_diff'].items()})\n"
+             "print('time steps, strict / relaxed:', round(c['step_ratio_strict_over_relaxed'], 2))"),
         code("display(Image(str(Path(cfg.paths.figures)/'02_validation_convergence.png')))\n"
              "print(json.dumps(V['V10_upscaling_two_phase']['relative_error'], indent=1))"),
         md("## 4. V12 / V13: the two-phase bottom-hole pressure against the PSS solution\n\n"
