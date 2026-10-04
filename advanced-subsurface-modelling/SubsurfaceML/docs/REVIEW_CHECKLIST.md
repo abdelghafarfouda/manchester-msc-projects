@@ -40,7 +40,8 @@ No recommendation that appears only in it is claimed as addressed.
 |---|---|---|
 | The 41 interval-calibration reservoirs had taken part in choosing the design | Completed | The pipeline's coverage is now reported as measured only. A protocol addendum, pushed before the data existed, recalibrated the fixed design on 41 fresh reservoirs: 97 % / 91 % of test cases / reservoirs covered (`docs/EVALUATION_PROTOCOL.md` addendum, `results/study/experiments/calibration_check.json`) |
 | "Calibration reservoirs: interval calibration only" was inaccurate | Completed | Corrected in the README and technical report: they also train the pressure-limit classifier and serve as the domain check's reference set |
-| A reproduction of the ablation differed in one prediction by 4.36 MPa | Completed | The experiment inputs now come from one source. The re-run reproduces the record, and the tolerances are documented (`docs/TECHNICAL_REPORT.md` §8) |
+| A reproduction of the ablation differed in one prediction by 4.36 MPa | Completed | The experiment inputs now come from one source. Re-run that way, the pressure ablation is bit-identical to the record; tolerances in `docs/TECHNICAL_REPORT.md` §8 |
+| A malformed `subsurfaceml predict` input raised a traceback | Completed | Checked before any model loads: one-line error, exit code 2 (`tests/test_cli.py`) |
 | Peak build-up set by a well-block start-up transient in 32 of 240 shift cases | Documented; fix is a future extension | `results/study/experiments/peak_screen.json`. The error over-states the peak (conservative), and the test set is unaffected |
 
 ## Portfolio-wide (outside this project)

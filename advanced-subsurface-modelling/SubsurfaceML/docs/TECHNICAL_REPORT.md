@@ -358,15 +358,37 @@ For the plume radius the realised-layer and ROM inputs lower the out-of-fold
 RMSE from 9.57 to 6.51 m (ΔRMSE −3.06 m, CI [−4.15, −2.04]); for the swept
 fraction they do not help (0.00109 → 0.00112) and were not adopted.
 
-**Reproduction** (`experiments/ablation_reproduction.json`). Re-running the
-ablation with the documented command reproduced every decision. The plume,
-swept-fraction and ROM-only results agree to 1e-9; the learned pressure
-variants agree within 0.014 MPa RMSE (V3 0.266 both times; V0 1.138 →
-1.124, where one outer fold's inner search chose ridge instead of SVR). The
-cause is the input table. The original run rebuilt it from `scenarios.csv`;
-the reproduction read the stored `scenarios_features.csv`. The two agree to
-2e-13 relative, which is enough to tip near-tied choices in the randomised
-searches.
+**Reproduction and tolerances** (`experiments/ablation_reproduction.json`).
+The documented command was re-run twice.
+
+1. *Inputs read from the stored `scenarios_features.csv`.* The recorded run
+   had rebuilt its inputs from `scenarios.csv`. The two tables agree only to
+   2e-13 relative, because pandas' default CSV parser is not round-trip
+   exact. Every decision was reproduced, and the plume, swept-fraction and
+   ROM-only results agree to 1e-9. The learned pressure variants agree within
+   0.014 MPa RMSE (V0: 1.138 → 1.124), but individual predictions do not:
+   R0033_S+00 moved by **4.36 MPa**. In that outer fold the inner search
+   chose ridge instead of SVR. Their inner-CV RMSEs differ by 0.05 %, and the
+   tiny input change reversed their order. The ablation is
+   model-selection-sensitive in this sense.
+2. *Inputs pinned.* `experiments.load_dev_table` now always rebuilds the
+   inputs from `scenarios.csv` with a named parser, and each run records a
+   hash of its input table. Re-run this way, the out-of-fold predictions of
+   all six pressure variants are bit-identical to the record. These are the
+   only variants that had differed; the run was stopped before the plume and
+   swept-fraction variants, which had already agreed to 1e-9.
+
+Tolerances a re-run should meet:
+* with the same inputs (same hash) and the pinned environment, identical
+  results;
+* with inputs that differ in the last digits (another source, platform or
+  library build), identical design decisions and aggregate RMSE within
+  about 1.5 %, while single predictions can differ by the gap between
+  near-tied model families — several MPa, as observed;
+* identity across platforms is not claimed.
+
+The final evaluation depends on the ablation's decisions only, not on its
+individual predictions.
 
 ## 9. Results on the untouched test reservoirs and under distribution shift
 

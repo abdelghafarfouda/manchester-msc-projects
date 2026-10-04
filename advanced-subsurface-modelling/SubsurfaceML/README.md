@@ -350,12 +350,10 @@ Step 1 needs the development data (`results/study/data/scenarios.csv`), which
 step 2 writes; the published copy is what the pipeline regenerates (identical
 in every simulated value), so the order shown is the order used. Running the
 pipeline twice from clean data gave identical machine-learning, interval and
-screening results. Re-running step 1 reproduced every design decision, with
-out-of-fold RMSEs within 0.014 MPa of the recorded ones
-(`results/study/experiments/ablation_reproduction.json`): its inputs, read
-from `scenarios_features.csv` rather than rebuilt from `scenarios.csv`, differ
-in the last digits (≤ 2e-13 relative), which tips near-tied model choices in
-the hyper-parameter searches. A pipeline run overwrites its configuration's folder in
+screening results. Re-running step 1 with its pinned inputs (rebuilt from `scenarios.csv`, hash recorded) reproduced the
+recorded pressure ablation bit for bit. Inputs from another source that agree only to 2e-13 give the same
+decisions and RMSEs within 0.014 MPa, but one prediction moved by 4.36 MPa when a near-tied model
+choice flipped; the tolerances are in `docs/TECHNICAL_REPORT.md` §8. A pipeline run overwrites its configuration's folder in
 `results/` except `experiments/`. Other entry points:
 `subsurfaceml predict --config config/study.yaml --input examples/worked_example_input.json`,
 `subsurfaceml simulate`, `subsurfaceml validate`, and

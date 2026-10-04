@@ -176,5 +176,42 @@
     }
   },
   "cause_of_differences": "the original run rebuilt the input table from scenarios.csv (rebuild_inputs); the reproduction read scenarios_features.csv written by the pipeline. The two agree to 2e-13 relative (35 of 37 inputs differ in the last digits), which changes near-tied choices in the randomised searches: in one outer fold of V0 the inner search picked ridge instead of SVR. Variants without learning (V4) and the plume and sweep variants agree to 1e-9 or better.",
-  "kept": "the committed ablation files are the ones the decisions were taken on; this file only records the reproduction"
+  "kept": "the committed ablation files are the ones the decisions were taken on; this file only records the reproduction",
+  "reproduction_1_note": "the fields above record the first reproduction, whose inputs were read from scenarios_features.csv instead of being rebuilt from scenarios.csv",
+  "near_tie_check": {
+    "what": "inner-CV RMSE of SVR and ridge in the outer fold whose selection flipped (V0, peak build-up)",
+    "outer_fold": 2,
+    "n_train_cases": 704,
+    "n_test_cases": 176,
+    "rebuilt_from_scenarios_csv": {
+      "ridge": 0.979037746528464,
+      "svr": 0.978587582429461,
+      "chosen_of_two": "svr"
+    },
+    "read_from_scenarios_features_csv": {
+      "ridge": 0.9790377465284669,
+      "svr": 0.9790542024932474,
+      "chosen_of_two": "ridge"
+    },
+    "relative_gap_with_recorded_inputs": 0.0004600141132851121
+  },
+  "reproduction_2_pinned_inputs": {
+    "command": "python scripts/run_experiments.py --config config/study.yaml --only ablation",
+    "config_note": "run as --config results/scratch/exp_repro2.yaml (output paths only differ); inputs from experiments.load_dev_table (rebuilt from scenarios.csv, named CSV parser)",
+    "scope": "the six peak build-up variants, which are the only ones that differed in reproduction 1; the run was stopped before the plume and swept-fraction variants, which had already agreed to 1e-9",
+    "oof_files_identical": {
+      "ablation_oof_dp_bh_max_MPa_V0_published_features.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V1_plus_realised_rock.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V2_plus_rom_feature.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V3_hybrid_rom_residual.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V4_rom_only.csv": true,
+      "ablation_oof_dp_bh_max_MPa_V5_published_features_3x_search.csv": true
+    },
+    "all_compared_identical": true
+  },
+  "tolerances": {
+    "same_inputs_same_environment": "identical out-of-fold predictions (verified for the six pressure variants)",
+    "inputs_differing_in_last_digits": "identical design decisions; aggregate out-of-fold RMSE within about 1.5 %; individual predictions can differ by the gap between near-tied model families (observed: 4.36 MPa for one case)",
+    "other_platforms_or_library_builds": "not tested; identity is not claimed"
+  }
 }

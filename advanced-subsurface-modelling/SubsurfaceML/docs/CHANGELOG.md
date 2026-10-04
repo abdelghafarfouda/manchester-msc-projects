@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-10-04 — completion pass (no pipeline results changed)
+
+A bounded pass to close correctness and publication issues. The pipeline's
+results, models and figures are unchanged. Two checks were added and are
+recorded separately from the original evaluation.
+
+* **Calibration independence.** The 41 interval-calibration reservoirs had
+  taken part in the development experiments that chose the design, so the
+  pipeline's intervals carry measured coverage only, and every guarantee
+  wording was corrected. A protocol addendum, pushed before the data existed
+  (commit `4717b96`), recalibrated the fixed design on 41 fresh reservoirs:
+  97 % / 91 % of test cases / reservoirs covered for peak build-up (original
+  95 % / 86 %), at most 73 % of shift reservoirs
+  (`results/study/experiments/calibration_check.json`).
+* **Data roles.** The calibration reservoirs also train the pressure-limit
+  classifier and serve as the domain check's reference set; "interval
+  calibration only" was corrected.
+* **Reproducibility.** A re-run of the ablation whose inputs were read from the stored feature table
+  (equal to 2e-13) gave the same decisions and RMSEs within 0.014 MPa, but moved one prediction by
+  4.36 MPa: a near-tied SVR/ridge choice flipped. The experiments now always rebuild their inputs from
+  `scenarios.csv` and record their hash. Re-run this way, all six pressure variants are bit-identical
+  to the record. Tolerances: `docs/TECHNICAL_REPORT.md` §8.
+* **Documentation.** `docs/REVIEW_CHECKLIST.md` records each review
+  recommendation as completed, remaining, portfolio-wide or future
+  extension. The Supervisor Overview, README, technical report, assumptions
+  and notebooks now state the measured coverages, the out-of-distribution
+  limits, what simulator verification checks, and that the pressure limit is
+  not a validated fracture or caprock criterion. PR #1's SubsurfaceML edits
+  were reconciled: its "how to run" line and its note on the classifier's
+  training data were adopted; its earlier split wording is superseded, and
+  its attribution sentence was not adopted because it does not describe
+  this revision.
+* `subsurfaceml predict` / `simulate`: malformed input files give a one-line error and exit code 2,
+  where they had raised a traceback.
+* Tests: 103 → 107 (calibration-check set; experiment input source; command-line input handling).
+
 ## 2026-10 — revision: reliable surrogate-assisted screening (results regenerated)
 
 Implemented after two portfolio reviews (only the English review was
