@@ -46,3 +46,21 @@ def test_summary_counts_label_flips_and_failures():
     assert rep["n_failed_runs"] == 1
     assert rep["pressure_limit_label_flips"]["n_flipped"] == 1
     assert rep["pressure_limit_label_flips"]["flipped_cases"] == ["a"]
+
+
+def test_startup_peak_screen_flags_only_peaks_between_reports():
+    from subsurfaceml.numerics import startup_peak_screen
+    t = [0.0, 1.0, 2.0, 3.0]
+    q = [5.0, 5.0, 5.0, 0.0]                     # injection ends at t = 2
+    rows = []
+    for sid, dp in (("late", [1.0, 2.0, 3.0, 9.0]), ("spike", [1.0, 2.0, 3.0, 9.0])):
+        rows += [{"scenario_id": sid, "t_s": a, "q_kg_s": b, "dp_bh_Pa": c}
+                 for a, b, c in zip(t, q, dp)]
+    series = pd.DataFrame(rows)
+    # 'late' peaks at a reported time; 'spike' peaks between reports (time-step
+    # maximum 3.3 > 3.0); the shut-in value 9.0 must be ignored
+    scen = pd.DataFrame({"scenario_id": ["late", "spike"], "realisation_id": [0, 1],
+                         "dp_bh_max_Pa": [3.0, 3.3]})
+    out = startup_peak_screen(series, scen, tol=0.01).set_index("scenario_id")
+    assert not out.loc["late", "flagged"] and out.loc["late", "excess"] == 0.0
+    assert out.loc["spike", "flagged"] and abs(out.loc["spike", "excess"] - 0.1) < 1e-12

@@ -108,9 +108,11 @@ def _run(cfg, r, rates, level):
 
 
 def refinement_study(cfg, cases: pd.DataFrame, levels=LEVELS,
-                     n_jobs: int = -1) -> pd.DataFrame:
-    """Re-simulate ``cases`` (rows of the scenario table) at each level."""
-    reals = {r.realisation_id: r for r in sample_realisations(cfg)}
+                     n_jobs: int = -1, realisations=None) -> pd.DataFrame:
+    """Re-simulate ``cases`` (rows of the scenario table) at each level.
+    ``realisations`` (``{id: Realisation}``) defaults to the development
+    reservoirs of ``cfg``."""
+    reals = realisations or {r.realisation_id: r for r in sample_realisations(cfg)}
     qcols = [f"q{i + 1}_kg_s" for i in range(cfg.schedule.n_periods)]
     jobs = []
     for _, row in cases.iterrows():
@@ -165,3 +167,29 @@ def summarise(runs: pd.DataFrame, cases: pd.DataFrame, dp_limit_MPa: float,
             "n_within_5pct_of_limit": int((np.abs(both["production"] - dp_limit_MPa)
                                            < 0.05 * dp_limit_MPa).sum())}
     return rep
+
+
+def startup_peak_screen(series: pd.DataFrame, scenarios: pd.DataFrame,
+                        tol: float = 0.01) -> pd.DataFrame:
+    """Flag cases whose peak build-up is a transient between reporting times.
+
+    The reported series samples the bottom-hole pressure every quarter-year,
+    including the end of every schedule period.  In a sealed compartment the
+    build-up within a period is largest at its end, unless a transient right
+    after injection starts or the rate rises -- while the well block is still
+    brine-filled -- is higher.  The height of that transient depends on the
+    well-block size, so it is a discretisation artefact rather than a
+    property of the reservoir.  ``excess`` is the time-step maximum
+    (``dp_bh_max_Pa``) relative to the largest reported value during
+    injection; cases with ``excess > tol`` are flagged for refinement.
+    """
+    s = series.copy()
+    t_end = s[s["q_kg_s"] > 0].groupby("scenario_id")["t_s"].max().rename("_t_end")
+    s = s.join(t_end, on="scenario_id")
+    s = s[s["t_s"] <= s["_t_end"]]
+    rep = s.groupby("scenario_id")["dp_bh_Pa"].max().rename("dp_reported_max_Pa")
+    out = scenarios[["scenario_id", "realisation_id", "dp_bh_max_Pa"]].join(
+        rep, on="scenario_id")
+    out["excess"] = out["dp_bh_max_Pa"] / out["dp_reported_max_Pa"] - 1.0
+    out["flagged"] = out["excess"] > tol
+    return out.reset_index(drop=True)

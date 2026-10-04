@@ -1,15 +1,20 @@
 #!/usr/bin/env python
-"""Controlled experiments on the development reservoirs (ablation, interval
-method selection, numerical refinement of dataset cases).
+"""Controlled experiments (ablation, interval method selection, numerical
+refinement of dataset cases, screen for transient peaks).
 
-    python scripts/run_experiments.py --config config/study.yaml
     python scripts/run_experiments.py --config config/study.yaml --only ablation
+    python scripts/run_experiments.py --config config/study.yaml --only decide
     python scripts/run_experiments.py --config config/study.yaml --only numerics
+    python scripts/run_experiments.py --config config/study.yaml --only peak_screen
 
-Reads ``results/<name>/data/scenarios.csv`` (written by run_pipeline.py) and
-writes everything to ``results/<name>/experiments/``.  Only the development
-reservoirs are used; the untouched final-test and distribution-shift
-reservoirs are generated and scored by ``scripts/run_final_evaluation.py``.
+Reads ``results/<name>/data/`` (written by run_pipeline.py) and writes to
+``results/<name>/experiments/``.  The ablation, the decision rules and the
+refinement study use the development reservoirs only; the final-test and
+distribution-shift reservoirs are generated and scored once by
+``run_pipeline.py``.  ``peak_screen`` is a numerical check of the targets of
+every set (it re-simulates the test and shift cases to record their pressure
+series and refines the cases it flags); it changes no model, decision or
+reported evaluation.
 """
 from __future__ import annotations
 
@@ -168,9 +173,11 @@ def run_numerics(cfg, df, out_dir, n_per_cell, finer_n, seed):
     cases = select_cases(df, n_per_cell=n_per_cell, seed=seed, always=always)
     t0 = time.perf_counter()
     runs = refinement_study(cfg, cases)
-    # the 'finer' level on a subset (it is the expensive one)
-    sub = cases.sort_values("k_median_mD").iloc[
-        np.linspace(0, len(cases) - 1, finer_n).astype(int)]
+    # the 'finer' level on a subset (it is the expensive one); same rule as
+    # pipeline.stage_numerics
+    elig = cases[cases["n_steps"] <= cfg.numerics.finer_max_production_steps]
+    sub = elig.sort_values("k_median_mD").iloc[
+        np.unique(np.linspace(0, len(elig) - 1, finer_n).astype(int))]
     runs_f = refinement_study(cfg, sub, levels=("finer",))
     runs = pd.concat([runs, runs_f], ignore_index=True)
     runs.to_csv(Path(out_dir) / "numerics_refinement_runs.csv", index=False)
@@ -189,11 +196,104 @@ def run_numerics(cfg, df, out_dir, n_per_cell, finer_n, seed):
     return rep
 
 
+def run_peak_screen(cfg, out_dir, tol=0.01):
+    """Screen every development, final-test and shift case for a peak build-up
+    set by a transient between reporting times (``numerics.startup_peak_screen``),
+    refine the flagged cases, and recompute the revised pressure surrogate's
+    test and shift errors with the refined targets."""
+    from joblib import Parallel, delayed
+    from subsurfaceml.artifacts import load_bundle
+    from subsurfaceml.evaluation import point_metrics
+    from subsurfaceml.final_eval import eval_realisations
+    from subsurfaceml.numerics import refinement_study, startup_peak_screen
+    from subsurfaceml.scenarios import run_scenario, sample_realisations, sample_schedules
+    from subsurfaceml.units import MPA
+    d = Path(cfg.paths.data)
+    dp_lim = cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa
+    levels = ("production", "r_near_half", "n_r_x2", "fine")
+    sur = load_bundle(cfg, ["surrogate_dp_bh_max_MPa.joblib"])["surrogate_dp_bh_max_MPa.joblib"]
+    rep = {"rule": "flag a case when its time-step peak build-up exceeds the largest "
+                   f"reported (quarter-yearly) value during injection by more than {tol:.0%}",
+           "tolerance": tol, "levels": list(levels), "dp_limit_MPa": dp_lim, "sets": {}}
+    screens, all_runs = [], []
+    t0 = time.perf_counter()
+    for which in ("development", "final_test", "shift"):
+        if which == "development":
+            c, rl = cfg, sample_realisations(cfg)
+            sc = pd.read_csv(d / "scenarios.csv")
+            ser = pd.read_csv(d / "timeseries.csv")
+            reproduced = None
+        else:
+            c, rl = eval_realisations(cfg, which)
+            sc = pd.read_csv(d / f"{which}_scenarios.csv")
+            jobs = [(r, s) for r in rl for s in sample_schedules(c, r)]
+            res = Parallel(n_jobs=cfg.n_jobs, batch_size=4)(
+                delayed(run_scenario)(c, r, s, want_series=True) for r, s in jobs)
+            ok = [x for x in res if x["status"] == "ok"]
+            ser = pd.concat([x["series"] for x in ok], ignore_index=True)
+            new = pd.DataFrame([x["row"] for x in ok]).set_index("scenario_id")
+            reproduced = float(np.max(np.abs(
+                new.loc[sc["scenario_id"], "dp_bh_max_Pa"].to_numpy()
+                / sc["dp_bh_max_Pa"].to_numpy() - 1.0)))
+        reals = {r.realisation_id: r for r in rl}
+        scr = startup_peak_screen(ser, sc, tol=tol)
+        scr.insert(0, "set", which)
+        screens.append(scr)
+        flagged = sc[sc["scenario_id"].isin(scr.loc[scr["flagged"], "scenario_id"])]
+        cases = []
+        if len(flagged):
+            runs = refinement_study(c, flagged, levels=levels, n_jobs=cfg.n_jobs,
+                                    realisations=reals)
+            runs.insert(0, "set", which)
+            all_runs.append(runs)
+            w = runs[runs["status"] == "ok"].pivot(index="scenario_id", columns="level",
+                                                   values="dp_bh_max_MPa")
+            for sid, v in w.iterrows():
+                cases.append({"scenario_id": sid,
+                              "excess": float(scr.set_index("scenario_id").loc[sid, "excess"]),
+                              **{f"dp_{lv}_MPa": float(v[lv]) for lv in levels if lv in v},
+                              "rel_change_fine": float(v["fine"] / v["production"] - 1.0),
+                              "limit_label_changes": bool((v["production"] > dp_lim)
+                                                          != (v["fine"] > dp_lim))})
+        ex = scr["excess"]
+        srep = {"n_cases": int(len(scr)), "n_flagged": int(scr["flagged"].sum()),
+                "share_flagged": float(scr["flagged"].mean()),
+                "excess_median": float(ex.median()), "excess_p99": float(ex.quantile(0.99)),
+                "excess_max": float(ex.max()),
+                "n_excess_between_0.1pct_and_tol": int(((ex > 1e-3) & (ex <= tol)).sum()),
+                "flagged_cases": cases,
+                "n_limit_label_changes": int(sum(x["limit_label_changes"] for x in cases))}
+        if reproduced is not None:
+            srep["resimulation_reproduces_stored_targets_max_rel"] = reproduced
+            # the revised pressure surrogate, scored against the stored and the
+            # refined targets (refined value for the flagged cases only)
+            y = sc["dp_bh_max_MPa"].to_numpy(float)
+            y_ref = y.copy()
+            fine = {x["scenario_id"]: x["dp_fine_MPa"] for x in cases}
+            m = sc["scenario_id"].isin(list(fine)).to_numpy()
+            y_ref[m] = sc.loc[m, "scenario_id"].map(fine).to_numpy(float)
+            p = np.asarray(sur.predict(sc), float)
+            srep["revised_surrogate"] = {"stored_targets": point_metrics(y, p),
+                                         "flagged_targets_refined": point_metrics(y_ref, p)}
+        rep["sets"][which] = srep
+        print(f"  [{which}] {srep['n_flagged']} of {srep['n_cases']} flagged; "
+              f"label changes {srep['n_limit_label_changes']}")
+    rep["seconds"] = time.perf_counter() - t0
+    pd.concat(screens, ignore_index=True).to_csv(Path(out_dir) / "peak_screen_cases.csv",
+                                                 index=False)
+    if all_runs:
+        pd.concat(all_runs, ignore_index=True).to_csv(
+            Path(out_dir) / "peak_screen_refinement_runs.csv", index=False)
+    _jdump(rep, Path(out_dir) / "peak_screen.json")
+    return rep
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default=str(ROOT / "config" / "study.yaml"))
-    ap.add_argument("--only", choices=["ablation", "numerics", "decide"], default=None)
+    ap.add_argument("--only", choices=["ablation", "numerics", "decide", "peak_screen"],
+                    default=None)
     ap.add_argument("--n-iter", type=int, default=20)
     ap.add_argument("--outer", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
@@ -231,6 +331,11 @@ def main() -> int:
         t0 = time.perf_counter()
         run_numerics(cfg, df, out, a.numerics_per_cell, a.numerics_finer, a.seed)
         meta["numerics_seconds"] = time.perf_counter() - t0
+    if a.only == "peak_screen":
+        print("=== screen for transient peaks (all sets) ===")
+        t0 = time.perf_counter()
+        run_peak_screen(cfg, out)
+        meta["peak_screen_seconds"] = time.perf_counter() - t0
     meta["finished"] = time.ctime()
     prev = out / "experiments_run.json"
     old = json.loads(prev.read_text()) if prev.exists() else {}
