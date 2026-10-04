@@ -31,10 +31,15 @@ generated for this study. There are no measurements anywhere in it, and none
 of its numbers are a claim about real vapour–liquid equilibrium.
 
 **The question.** The taught calculation finds $F_V$ by iterating on
-Rachford-Rice. Can a small feed-forward network predict $F_V$ directly from
-composition, pressure and temperature for mixtures it has never seen, and does
-adding the Rachford-Rice equation itself to the loss function change the
-result?
+Rachford-Rice. Can a small feed-forward network reproduce it for mixtures it
+has never seen, **where does it fail**, and **when does adding the
+Rachford-Rice residual to the loss improve the prediction**?
+
+The project began as MSc coursework connecting the two modules. It was
+rebuilt and re-verified in September 2026 (the six models and the metrics in
+§4), then extended in October 2026: an error analysis across the two-phase
+window (§4.2), a bounded network-capacity comparison (§6) and a guarded
+prediction path (§7).
 
 **Scope.** Only the Wilson route is modelled. The equation-of-state route to
 $K$-values is named in the notes (p. 6) without an equation of state being
@@ -48,20 +53,25 @@ written down, and is outside the scope chosen here.
 | 2. dataset | `data/flash_dataset.npz`, `results/metrics/dataset.json` | the summary statistics and plots |
 | 3. network and losses | — | $\lambda$, a 20-epoch smoke test |
 | 4. results | the six checkpoints in `results/checkpoints/` | every metric, from those checkpoints |
+| 4.2 error across the two-phase window | the same six checkpoints | window positions, boundary bands, every share quoted |
 | 5. learning curve | `results/metrics/learning_curve.json` | the plot |
+| 6. network capacity | the selection record `results/capacity/capacity_results.json`; the capacity checkpoints | test and extrapolation errors, from those checkpoints |
+| 7. guarded prediction | `configs/prediction_domain.json`, the default checkpoint | every route and value shown |
 
-The six models were trained by `scripts/train.py` (200 epochs, three seeds per
-variant); training is not repeated here. Everything else is recomputed while
-the notebook runs.
+All models were trained by `scripts/train.py` (200 epochs, three seeds per
+variant and width); training is not repeated here. Everything else is
+recomputed while the notebook runs.
 
 ### Sections
 
 1. the physics, the component table, and the solver against the notes' worked examples
 2. the dataset, and the split by mixture
 3. the network and the two loss functions
-4. results
+4. results, and where in the two-phase window the error sits
 5. error against the number of training mixtures
-6. what this does and does not show
+6. network capacity: 3 x 64, 3 x 128, 3 x 192 hidden units
+7. guarded prediction: when the network is allowed to answer
+8. what this does and does not show
 """)
 
 code(r"""
@@ -585,6 +595,86 @@ machine is doing — repeated measurements on this container have spanned about
 speed is not the reason to build this surrogate.
 """)
 
+md(r"""
+### 4.2 Where in the two-phase window the error sits
+
+Wilson's $K_i$ is proportional to $1/p$, so the phase test of p. 8 reduces to
+$p_d < p < p_b$, with the bubble and dew points of pp. 12-13
+($p_b=\sum_i z_i p_{ci}e^{5.37(1+\omega_i)(1-T_{ci}/T)}$, $1/p_d=\sum_i z_i/(p_{ci}e^{\dots})$
+-- the `Bpi` and `Dpi` columns of the p. 14 sheet). Each row's position in its own
+window is
+
+$$\xi=\frac{\ln(p/p_d)}{\ln(p_b/p_d)}\qquad \xi=0 \text{ at the dew point } (F_V=1),\quad \xi=1 \text{ at the bubble point } (F_V=0).$$
+
+The 5 % of test rows with the smallest $\xi$ are the *dew band*, the 5 % with the
+largest the *bubble band*; the same $\xi$ limits are used for the extrapolation
+set. `scripts/analyse_errors.py` writes the full tables to `results/analysis/`;
+here the headline numbers are recomputed from the six checkpoints.
+""")
+
+code(r"""
+XI = {}
+for name, s_ in sets.items():
+    pb_, pd_ = flash.wilson_saturation_pressures(s_[2], s_[0][:, 8], C.TC_RANKINE, C.PC_PSIA, C.OMEGA)
+    XI[name] = flash.window_position(s_[0][:, 7], pb_, pd_)
+    assert ((XI[name] > 0) & (XI[name] < 1)).all()          # every row is two-phase
+""")
+
+code(r"""
+xs = np.sort(XI["test"]); k = int(round(0.05 * xs.size))
+dew_max, bub_min = xs[k - 1], xs[xs.size - k]
+print(f"dew band: xi <= {dew_max:.4f}   bubble band: xi >= {bub_min:.4f}   (5 % of test rows each)")
+print(f"extrapolation rows: xi from {XI['extrapolation'].min():.3f} to {XI['extrapolation'].max():.3f} "
+      f"-- all in the upper part of their windows\n")
+
+def band_share(err, xi_):
+    sse = (err**2).sum()
+    return ((err[xi_ <= dew_max]**2).sum() / sse, (err[xi_ >= bub_min]**2).sum() / sse)
+
+print(f"{'model':>14} | {'test: share of squared error':>30} | {'extrapolation':>24}")
+print(f"{'':>14} | {'dew band':>14} {'bubble band':>15} | {'dew band':>11} {'bubble band':>12}")
+for tag in sorted(rows):
+    t_ = band_share(preds[(tag, "test")] - sets["test"][1], XI["test"])
+    e_ = band_share(preds[(tag, "extrapolation")] - sets["extrapolation"][1], XI["extrapolation"])
+    print(f"{tag:>14} | {t_[0]:14.1%} {t_[1]:15.1%} | {e_[0]:11.1%} {e_[1]:12.1%}")
+
+print("\nphysics loss against data loss, same seed: RMSE change, and the share of the change in")
+print("squared error that falls in the dew band")
+for name in sets:
+    for seed in (0, 1, 2):
+        ea = preds[(f"ffn_phys0_s{seed}", name)] - sets[name][1]
+        eb = preds[(f"ffn_phys1_s{seed}", name)] - sets[name][1]
+        d_ = ea**2 - eb**2
+        ch = 100 * (np.sqrt((eb**2).mean()) / np.sqrt((ea**2).mean()) - 1)
+        print(f"  {name:>13} seed {seed}: RMSE {ch:+6.1f} %   dew-band share of the change "
+              f"{d_[XI[name] <= dew_max].sum() / d_.sum():6.1%}")
+""")
+
+code(r"""
+order = np.argsort(XI["test"]); groups = np.array_split(order, 20)
+fig, ax = plt.subplots(figsize=(7.0, 4.0))
+for tag in sorted(rows):
+    e_ = preds[(tag, "test")] - sets["test"][1]
+    ax.plot([np.median(XI["test"][g]) for g in groups], [np.sqrt((e_[g]**2).mean()) for g in groups],
+            "o-", ms=3, lw=1.2, color="C1" if rows[tag]["physics"] else "C0",
+            label=("data + physics loss" if rows[tag]["physics"] else "data loss only") if tag.endswith("s0") else None)
+for v in (dew_max, bub_min): ax.axvline(v, color="0.4", ls=":", lw=1)
+ax.set_yscale("log"); ax.set_xlim(0, 1)
+ax.set_xlabel(r"position in the two-phase window $\xi$  [-]   (0 = dew point, 1 = bubble point)")
+ax.set_ylabel(r"RMSE in $F_V$ per 5 % of test rows  [-]")
+ax.set_title("Test mixtures: error along the window, six models"); ax.grid(alpha=0.3, which="both"); ax.legend(fontsize=9)
+fig.tight_layout(); plt.show()
+""")
+
+md(r"""
+The error is concentrated next to the **dew point** -- where $F_V$ is close to 1
+-- and the bubble-point side is not a problem area. The physics term lowered
+the in-range error in every seed, but how much of that came from the dew band
+varies from seed to seed, and on the pressure-extrapolation set it made the
+error worse in two of the three seeds. `docs/ERROR_ANALYSIS.md` has the full
+tables, including the error quantiles and a mixture-resampling check.
+""")
+
 # ------------------------------------------------------------------ 5
 md(r"""
 ---
@@ -609,9 +699,8 @@ for n_, r_ in zip(lc["n_train_realisations"], lc["test_rmse"]):
 md(r"""
 Adding training mixtures reduced the test error at every step, and it was
 still falling at the largest size tried. That says more data would help at
-this architecture; it does not establish that capacity is unimportant, since
-only one width and depth were tried. Separating the two would need a second
-sweep over network size, which is outside the scope kept here.
+this architecture. On its own it does not say whether the width was right;
+§6 compares widths directly.
 """)
 
 # ------------------------------------------------------------------ 6

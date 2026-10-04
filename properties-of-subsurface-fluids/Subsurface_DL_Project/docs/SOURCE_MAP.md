@@ -103,6 +103,8 @@ or temperature outside the supplied material is used.
 | dew point `F_V = 1`, `Σ z_i/K_i = 1` | verification case A | `Models/3 - ...`, p. 13 |
 | binary closed forms `F_V = (1 − z₁K₁ − z₂K₂)/[(K₁−1)(K₂−1)]` and `F_V = [z₁(K₁−K₂)/(1−K₂) − 1]/(K₁−1)` | verification case C, independent check on the bisection | `Models/3 - ...`, pp. 17–18 |
 | K-values span ~10² to ~10⁻² over reservoir pressures, converging to 1 at the convergence pressure | context for the pressure window; not used numerically | `Models/3 - ...`, p. 5 (chart) |
+| bubble- and dew-point pressures as the sums `Σ z_i p_ci exp[…]` and `1/Σ z_i/(p_ci exp[…])` (the `Bpi`, `Dpi` columns), so that the phase test is `p_d < p < p_b` | `sfp/flash.py::wilson_saturation_pressures`; the guarded predictor's phase labels; the window position of the error analysis (2026-10-04) | `Models/3 - ...`, pp. 12–14 |
+| phase test before any prediction: liquid if `Σ z_iK_i ≤ 1`, vapour if `Σ z_i/K_i ≤ 1`, saturated at equality | `sfp/predict.py::classify_phase` (2026-10-04) | `Models/3 - ...`, p. 8 and the table on p. 11; bubble and dew points pp. 12–13 |
 
 ## 3. Verification cases — all from the supplied material
 
@@ -143,8 +145,10 @@ damped-oscillator and wave-equation examples.
 ## 5. What is **not** from the supplied material
 
 Ordinary experiment settings. They are documented here as project choices, not
-as anything the course prescribed. None of them is a physical property value,
-a physical law, a scientific method or a model architecture.
+as anything the course prescribed. None of them is a physical property value
+or a physical law. Apart from the mixture bootstrap of the 2026 revision
+(marked below), none is a scientific method or a model architecture from
+outside the course material.
 
 | choice | value used | what it is |
 |---|---|---|
@@ -160,6 +164,19 @@ a physical law, a scientific method or a model architecture.
 | `λ` in the physics loss | measured, not tuned: the value making the two loss terms equal for the training-mean predictor, from the training rows only | a scaling measurement |
 | bisection instead of a library root-finder | tolerance 1e-12 | makes the replaced iteration visible |
 | file layout, JSON/PNG formats, plot styling | — | presentation |
+
+Added in the October 2026 revision (extension and re-verification), also project choices:
+
+| choice | value used | what it is |
+|---|---|---|
+| training domain of the guarded predictor | 2–2000 psia and 610–680 R (the training band of the window), and each mole fraction's range in the training rows | measured from the saved training split by `scripts/derive_domain.py`; marginal checks only |
+| tolerances of the guarded predictor | composition must sum to 1 within 1e-6; a phase-test sum within 1e-9 of 1 is a saturation point | input checking and boundary labelling |
+| default model of the guarded predictor | the saved model with the lowest validation data MSE | a validation rule; no test data |
+| window position `xi` | `ln(p/p_d)/ln(p_b/p_d)`, from the notes' own `p_b`, `p_d` | an analysis coordinate defined here |
+| boundary bands, groups, worst errors | 5 % of test rows nearest each boundary; 20 equal-count groups; largest 1 % of errors | how the error is summarised |
+| **mixture bootstrap** | 2,000 resamples of whole test mixtures, seed 20261004 | a standard statistical resampling, **not taken from the course material**. It is used only to describe how a comparison of two fixed models depends on which mixtures are in the evaluation set. It adds no physics and no model |
+| capacity comparison | widths 3 × 64 and 3 × 192 beside the original 3 × 128; seeds 0–2; selection by mean validation MSE with a 10 % margin (`configs/capacity.json`) | a bounded check of the original width choice |
+| CI tolerances | relative 1e-6, absolute 1e-12 | reproducibility checking (`scripts/compare_results.py`) |
 
 Two further facts belong here rather than in a footnote:
 

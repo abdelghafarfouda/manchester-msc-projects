@@ -1,14 +1,16 @@
 """Evaluate the trained surrogates and draw the figures.
 
-Run:  python scripts/evaluate.py
+Run:  python scripts/evaluate.py [--out-dir DIR] [--fig-dir DIR]
 
 Reads every results/checkpoints/ffn_phys*_s*.pt, scores them on the held-out
 test mixtures and on the pressure-extrapolation set, and writes
-results/metrics/evaluation.json plus results/figures/*.png
+results/metrics/evaluation.json plus results/figures/*.png (or the same names
+in --out-dir / --fig-dir, which CI uses so the recorded files stay untouched).
 """
 
 from __future__ import annotations
 
+import argparse
 import glob
 import json
 import os
@@ -57,6 +59,11 @@ def load_model(path):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out-dir", default=MET, help="folder for evaluation.json (default results/metrics)")
+    ap.add_argument("--fig-dir", default=FIG, help="folder for the figures (default results/figures)")
+    args = ap.parse_args()
+    fig_dir = args.fig_dir
     blob = np.load(os.path.join(HERE, "data", "flash_dataset.npz"))
     ite = blob["idx_test"]
     itr = blob["idx_train"]
@@ -147,7 +154,7 @@ def main():
     }
 
     # ---------------------------------------------------------------- figures
-    os.makedirs(FIG, exist_ok=True)
+    os.makedirs(fig_dir, exist_ok=True)
     hist = {}
     for phys in (0, 1):
         f = os.path.join(MET, f"train_ffn_phys{phys}_s0.json")
@@ -172,7 +179,7 @@ def main():
         ax.legend(fontsize=7)
         ax.grid(alpha=0.3)
         fig.tight_layout()
-        fig.savefig(os.path.join(FIG, "fig1_training_curves.png"), dpi=150)
+        fig.savefig(os.path.join(fig_dir, "fig1_training_curves.png"), dpi=150)
         plt.close(fig)
 
     # fig 2 -- parity on the test mixtures
@@ -192,7 +199,7 @@ def main():
     axes[0].set_ylabel(r"$F_V$ predicted by network  [$-$]")
     fig.suptitle("Held-out test mixtures (seed 0)", fontsize=10)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "fig2_parity_test.png"), dpi=150)
+    fig.savefig(os.path.join(fig_dir, "fig2_parity_test.png"), dpi=150)
     plt.close(fig)
 
     # fig 3 -- where the error sits
@@ -215,7 +222,7 @@ def main():
     ax.legend(fontsize=8)
     ax.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "fig3_error_vs_FV.png"), dpi=150)
+    fig.savefig(os.path.join(fig_dir, "fig3_error_vs_FV.png"), dpi=150)
     plt.close(fig)
 
     # fig 4 -- Rachford-Rice residual of the predictions
@@ -237,7 +244,7 @@ def main():
     axes[0].legend(fontsize=8)
     fig.suptitle("Rachford-Rice residual of the predictions (seed 0)", fontsize=10)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, "fig4_rr_residual.png"), dpi=150)
+    fig.savefig(os.path.join(fig_dir, "fig4_rr_residual.png"), dpi=150)
     plt.close(fig)
 
     # fig 5 -- learning curve, if the subset runs exist
@@ -252,10 +259,11 @@ def main():
         ax.set_title("Is the surrogate limited by the network or by the data?")
         ax.grid(alpha=0.3, which="both")
         fig.tight_layout()
-        fig.savefig(os.path.join(FIG, "fig5_learning_curve.png"), dpi=150)
+        fig.savefig(os.path.join(fig_dir, "fig5_learning_curve.png"), dpi=150)
         plt.close(fig)
 
-    with open(os.path.join(MET, "evaluation.json"), "w") as fh:
+    os.makedirs(args.out_dir, exist_ok=True)
+    with open(os.path.join(args.out_dir, "evaluation.json"), "w") as fh:
         json.dump(report, fh, indent=2)
 
     print(json.dumps({"summary": report["summary"],

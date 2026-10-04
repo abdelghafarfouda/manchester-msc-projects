@@ -1,0 +1,28 @@
+# CPU-only environment for continuous integration (.github/workflows/subsurface-dl.yml),
+# Python 3.11.  PyTorch is the CPU build of 2.14.0, the release that trained and
+# evaluated the recorded models (the recorded run used the PyPI build on a CPU;
+# requirements-lock.txt).  numpy and matplotlib are the recorded run's versions;
+# the remaining pins are their dependencies as resolved for the 2026-10-04 re-run.
+# CI never trains a model.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.0+cpu
+numpy==2.4.4
+matplotlib==3.10.9
+contourpy==1.3.3
+cycler==0.12.1
+fonttools==4.66.1
+kiwisolver==1.5.1
+packaging==26.3
+pillow==12.3.0
+pyparsing==3.3.3
+python-dateutil==2.9.0.post0
+six==1.17.0
+filelock==4.0.10
+fsspec==2026.9.0
+Jinja2==3.1.6
+MarkupSafe==3.0.4
+mpmath==1.3.0
+networkx==3.6.1
+sympy==1.14.0
+typing_extensions==4.16.0
+setuptools==79.0.1

@@ -123,3 +123,39 @@ def phase_compositions(FV, z, K):
     x = z / denom
     y = z * K / denom
     return x, y
+
+
+def wilson_saturation_pressures(z, T, Tc, pc, omega):
+    """Bubble- and dew-point pressures with Wilson K-values -- notes pp. 12-13.
+
+    Wilson's ``K_i`` is inversely proportional to ``p`` (p. 4), so
+    ``SUM z_i K_i = p_b / p`` and ``SUM z_i / K_i = p / p_d`` with
+
+        p_b = SUM z_i p_ci exp[5.37 (1 + w_i)(1 - T_ci/T)]          (F_V = 0, p. 12)
+        p_d = 1 / SUM z_i / (p_ci exp[5.37 (1 + w_i)(1 - T_ci/T)])  (F_V = 1, p. 13)
+
+    -- the same sums as the ``Bpi`` and ``Dpi`` columns of the p. 14 sheet.  The
+    phase test of p. 8 is therefore exactly ``p_d < p < p_b``.  ``z`` is
+    ``(n, n_c)``, ``T`` is ``(n,)`` or a scalar; returns ``(p_b, p_d)``, each
+    ``(n,)``, in the units of ``pc``.
+    """
+    z = np.atleast_2d(np.asarray(z, float))
+    T = np.asarray(T, float).reshape(-1, 1)
+    a = np.asarray(pc, float) * np.exp(
+        5.37 * (1.0 + np.asarray(omega, float)) * (1.0 - np.asarray(Tc, float) / T))
+    return (z * a).sum(-1), 1.0 / (z / a).sum(-1)
+
+
+def window_position(p, p_bubble, p_dew):
+    """Position of ``p`` inside the two-phase pressure window, in log pressure.
+
+        xi = ln(p / p_d) / ln(p_b / p_d)
+
+    ``xi = 0`` at the dew point (``F_V = 1``) and ``xi = 1`` at the bubble point
+    (``F_V = 0``); it increases with pressure, from the all-vapour end of the
+    window to the all-liquid end.  Log pressure is used because Wilson ``K`` is
+    proportional to ``1/p`` and the windows span decades (the p. 14 mixture's
+    runs from 2.0 to 1590.9 psia).  Defined for ``p_d < p_b``.
+    """
+    p, pb, pd = (np.asarray(v, float) for v in (p, p_bubble, p_dew))
+    return np.log(p / pd) / np.log(pb / pd)
