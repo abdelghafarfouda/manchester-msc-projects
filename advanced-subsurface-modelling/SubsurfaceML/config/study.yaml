@@ -118,6 +118,11 @@ evaluation:
   screening_reservoirs_shift: 10
   screening_budget: 4                # simulator runs per reservoir and method
   screening_candidates: 4000
+  # Protocol addendum: fresh reservoirs (development prior) that re-calibrate
+  # the fixed design's intervals independently of every design choice
+  calibration_check_seed: 20261106
+  calibration_check_realisations: 41
+  calibration_check_id_offset: 30000
 
 # Discretisation error of the dataset targets (re-simulated development cases)
 numerics:

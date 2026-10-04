@@ -125,3 +125,48 @@ revised pressure surrogate's RMSE and worst under-prediction are both lower
 than those of the published approach retrained on the same reservoirs, with
 the bootstrap interval of the RMSE difference excluding zero. Whatever the
 outcome, all numbers are reported.
+
+## Addendum (2026-10-04, after the final evaluation): independence of the interval calibration
+
+Written and pushed **before** the reservoirs it describes were generated.
+
+**Finding.** The 41 calibration reservoirs are part of the 220 development
+reservoirs on which rules 1–3 were applied. The surrogates and the difficulty
+models were fitted without them. But their out-of-fold residuals entered the
+ablation RMSEs (rules 1–2) and the 200 random calibration/evaluation splits
+that chose the interval method (rule 3). The choice of score function —
+inputs, target form, interval construction — therefore depended on the
+outcomes of the reservoirs that later calibrated it. The split-conformal
+argument needs a score function fixed independently of the calibration data,
+so the original intervals carry **measured coverage only**, not a
+finite-sample guarantee. The final-test and shift sets are not affected: they
+were generated after every choice, so their numbers remain held-out
+measurements of the procedure as it was run.
+
+**Correction (fixed here, before the data exist).**
+
+* 41 fresh reservoirs, the *calibration check*: development prior, seed
+  20261106, ids 30000+, four schedules each from the same design; disjoint
+  from every other set (asserted).
+* Nothing is refitted or re-selected. The saved surrogates (fitted on the 179
+  training reservoirs) and difficulty models (fitted on their out-of-fold
+  residuals) are reused. Only the conformal quantile is recomputed from the
+  fresh reservoirs, for each target's selected method (`adaptive_conformal`).
+  The other three methods are recomputed on the same reservoirs for
+  comparison only.
+* Reported once on the final-test and shift sets, labelled as a subsequent
+  evaluation, next to the original results, which stay unchanged: case and
+  whole-reservoir coverage, mean width, and missed exceedances using the
+  upper edge.
+* The pipeline, its saved models and `subsurfaceml predict` keep the original
+  calibration.
+
+**What can then be claimed.** For a reservoir drawn from the development
+prior, with four schedules from the same design, the recalibrated interval
+covers all four schedules with probability at least 0.90. The probability is
+over the draw of the calibration reservoirs and the new reservoir. For one
+fixed set of 41 calibration reservoirs the coverage itself varies: it follows
+Beta(38, 4), with mean 0.905, and 90 % of calibration sets give between 0.82
+and 0.97. Measuring it on 100 test reservoirs adds about ±3 percentage points
+of binomial noise. Nothing is claimed for the shift set, or for the thousands
+of candidate schedules screened per reservoir.

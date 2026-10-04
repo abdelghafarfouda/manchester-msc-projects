@@ -56,6 +56,22 @@ def test_independent_sets_are_disjoint(cfg):
     assert min(r.k_median_mD for r in test) >= cfg.scenarios.k_median_mD[0]
 
 
+def test_calibration_check_set_is_fresh_and_from_the_development_prior(cfg):
+    dev = sample_realisations(cfg)
+    others = [eval_realisations(cfg, w)[1] for w in ("final_test", "shift")]
+    c_c, chk = eval_realisations(cfg, "calibration_check")
+    assert len(chk) == cfg.evaluation.calibration_check_realisations
+    assert c_c.scenarios.k_median_mD == cfg.scenarios.k_median_mD      # same prior
+    ids = set(r.realisation_id for r in chk)
+    seeds = set(r.seed for r in chk)
+    for x in [dev] + others:
+        assert not ids & set(r.realisation_id for r in x)
+        assert not seeds & set(r.seed for r in x)
+    frame = lambda rs: pd.DataFrame([r.to_dict() for r in rs])
+    d = check_disjoint(frame(dev), *(frame(x) for x in others), frame(chk))
+    assert d == {"overlapping_ids": 0, "overlapping_descriptions": 0}
+
+
 def test_split_roles_and_former_test_reservoirs(cfg):
     from subsurfaceml.pipeline import make_split
     rng = np.random.default_rng(0)

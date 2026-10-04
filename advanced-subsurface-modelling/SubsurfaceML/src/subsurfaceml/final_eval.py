@@ -36,17 +36,23 @@ from .features import FEATURES, FEATURES_BASELINE, ROCK_FEATURES, engineer
 from .scenarios import run_scenario, sample_realisations, sample_schedules
 
 SETS = ("final_test", "shift")
+#: generated after the final evaluation, for the check recorded in the
+#: protocol's addendum; not part of the pipeline
+CHECK_SETS = ("calibration_check",)
 
 
 def eval_config(cfg, which: str):
     """Config copy whose scenario prior and seed generate set ``which``."""
-    if which not in SETS:
-        raise ValueError(f"which must be one of {SETS}")
+    if which not in SETS + CHECK_SETS:
+        raise ValueError(f"which must be one of {SETS + CHECK_SETS}")
     e = cfg.evaluation
     c = copy.deepcopy(cfg)
     if which == "final_test":
         c.scenarios.seed = e.final_test_seed
         c.scenarios.n_realisations = e.final_test_realisations
+    elif which == "calibration_check":         # development prior, fresh seed
+        c.scenarios.seed = e.calibration_check_seed
+        c.scenarios.n_realisations = e.calibration_check_realisations
     else:
         c.scenarios.seed = e.shift_seed
         c.scenarios.n_realisations = e.shift_realisations
@@ -56,7 +62,8 @@ def eval_config(cfg, which: str):
 
 def eval_realisations(cfg, which: str):
     e = cfg.evaluation
-    off = e.final_test_id_offset if which == "final_test" else e.shift_id_offset
+    off = {"final_test": e.final_test_id_offset, "shift": e.shift_id_offset,
+           "calibration_check": e.calibration_check_id_offset}[which]
     c = eval_config(cfg, which)
     return c, [dataclasses.replace(r, realisation_id=off + r.realisation_id)
                for r in sample_realisations(c)]

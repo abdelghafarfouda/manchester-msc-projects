@@ -187,6 +187,12 @@ class EvaluationConfig:
     screening_reservoirs_shift: int = 10
     screening_budget: int = 4      # simulator runs per reservoir and method
     screening_candidates: int = 4000
+    #: fresh reservoirs from the development prior, used only to re-calibrate
+    #: the fixed design's intervals independently of every design choice
+    #: (protocol addendum, ``scripts/run_experiments.py --only calibration_check``)
+    calibration_check_seed: int = 20261006
+    calibration_check_realisations: int = 41
+    calibration_check_id_offset: int = 30000
 
 
 @dataclass
@@ -273,6 +279,10 @@ def validate_config(cfg: "Config") -> "Config":
     need(e.final_test_id_offset >= sc.n_realisations and e.shift_id_offset >= sc.n_realisations
          and e.final_test_id_offset != e.shift_id_offset,
          "evaluation realisation ids must not overlap the development ids")
+    need(e.calibration_check_seed not in (sc.seed, e.final_test_seed, e.shift_seed)
+         and e.calibration_check_id_offset >= sc.n_realisations
+         and e.calibration_check_id_offset not in (e.final_test_id_offset, e.shift_id_offset),
+         "the calibration-check set needs its own seed and id range")
     return cfg
 
 
