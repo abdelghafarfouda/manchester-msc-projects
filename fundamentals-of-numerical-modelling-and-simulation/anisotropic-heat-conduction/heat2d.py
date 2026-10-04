@@ -217,6 +217,16 @@ def stored_energy(op: Operator, T_free: np.ndarray, rho_cp: float) -> float:
     return float(rho_cp * g.dx * g.dy * np.sum(w * T_free))
 
 
+def fixed_node_energy(op: Operator, rho_cp: float, T_ref: float) -> np.ndarray:
+    """rho*cp * (T - T_ref) over each prescribed node's own control volume (J per
+    metre of depth).  These half-cells (quarter-cells at corners) lie on the edge
+    and hold the boundary temperature; their area is proportional to the grid
+    spacing normal to the edge."""
+    g = op.grid
+    w = g.weights().ravel()[op.fixed]
+    return rho_cp * g.dx * g.dy * w * (op.T_fixed - T_ref)
+
+
 # -------------------------------------------------------------- error norms
 def rms(e) -> float:
     """Root-mean-square norm (two-norm divided by sqrt(N)), so grids of

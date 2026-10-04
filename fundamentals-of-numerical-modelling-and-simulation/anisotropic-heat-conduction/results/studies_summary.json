@@ -1,0 +1,349 @@
+{
+  "purpose": "October 2026 revision: heat-input accounting, spatial and temporal sensitivity measured separately, and grid differences near the heated-segment ends",
+  "units": "temperatures in K; energies in MJ per metre of out-of-plane depth (MJ/m)",
+  "settings": {
+    "grids": [
+      [
+        13,
+        12
+      ],
+      [
+        25,
+        23
+      ],
+      [
+        49,
+        45
+      ],
+      [
+        97,
+        89
+      ],
+      [
+        193,
+        177
+      ]
+    ],
+    "fixed_fine_steps": 3403,
+    "fixed_fine_dt_s": 5.289450484866294,
+    "coarse_steps": 14,
+    "coarse_dt_s": 1285.7142857142858,
+    "temporal_steps": [
+      14,
+      28,
+      56,
+      112,
+      224,
+      448,
+      896,
+      1792,
+      3403,
+      6806
+    ],
+    "temporal_grids": [
+      [
+        193,
+        177
+      ],
+      [
+        13,
+        12
+      ]
+    ],
+    "near_end_m": 0.1,
+    "segment_interval_edges_m": [
+      0.25,
+      0.29166666666666663,
+      0.375,
+      0.4583333333333333,
+      0.5416666666666666,
+      0.625,
+      0.7083333333333334,
+      0.75
+    ]
+  },
+  "heat_accounting_13x12_vs_193x177": {
+    "boundary_flux_heat_input": {
+      "grid_13x12_MJ_per_m": 507.3349250677495,
+      "grid_193x177_MJ_per_m": 537.1342071064715,
+      "difference_MJ_per_m": -29.799282038722037,
+      "difference_percent_of_193x177": -5.547828018485365
+    },
+    "segment_half_cell_energy": {
+      "grid_13x12_MJ_per_m": 57.95983237253231,
+      "grid_193x177_MJ_per_m": 3.187715841074737,
+      "difference_MJ_per_m": 54.77211653145757,
+      "difference_percent_of_193x177": 1718.2245614775745
+    },
+    "stored_energy_increase": {
+      "grid_13x12_MJ_per_m": 565.2947574402773,
+      "grid_193x177_MJ_per_m": 540.3219229447562,
+      "difference_MJ_per_m": 24.97283449552107,
+      "difference_percent_of_193x177": 4.621843651913851
+    }
+  },
+  "half_cell_energy_ratio_per_halving": [
+    2.1355973535586985,
+    2.0711928067488814,
+    2.036495142721307,
+    2.018479013926812
+  ],
+  "spatial_study_T_avg_changes_K": [
+    -4.5742249728360775,
+    -2.132260378486876,
+    -1.0227090210388496,
+    -0.49997426477727913
+  ],
+  "spatial_study_change_ratios": [
+    2.145246902764334,
+    2.08491402209493,
+    2.045523326074454
+  ],
+  "temporal_study_193x177_T_avg_changes_K": [
+    0.8363472755309544,
+    0.4224956901296082,
+    0.21237063941481438,
+    0.10647191461373495,
+    0.05330837991959925,
+    0.026672394478168826,
+    0.013340760777452942,
+    0.006316656112346664,
+    0.003513470091320414
+  ],
+  "temporal_study_193x177_change_ratios": [
+    1.9795403718186801,
+    1.9894260868347515,
+    1.994616516339215,
+    1.9972828807462917,
+    1.998634954324472,
+    1.9993158503559645
+  ],
+  "time_step_effect_by_grid_K": {
+    "13 x 12": -1.825877740851638,
+    "25 x 23": -1.7531427337099785,
+    "49 x 45": -1.7109980706836154,
+    "97 x 89": -1.6887289390068077,
+    "193 x 177": -1.6773237109766796
+  },
+  "coarse_grid_difference": {
+    "T_avg_5h_K": {
+      "coarse": 444.9473737026352,
+      "reference": 438.5440828063478,
+      "total": 6.403290896287444,
+      "grid_effect_at_fine_dt": 8.229168637139082,
+      "time_step_effect_on_coarse_grid": -1.825877740851638,
+      "grid_effect_at_coarse_dt": 8.080614607264124,
+      "time_step_effect_on_fine_grid": -1.6773237109766796,
+      "interaction": -0.14855402987495836
+    },
+    "T_bottom_corners_K": {
+      "coarse": 465.88176435188535,
+      "reference": 453.7568826340114,
+      "total": 12.124881717873961,
+      "grid_effect_at_fine_dt": 15.149640958391387,
+      "time_step_effect_on_coarse_grid": -3.024759240517426,
+      "grid_effect_at_coarse_dt": 15.060319632748246,
+      "time_step_effect_on_fine_grid": -2.935437914874285,
+      "interaction": -0.08932132564314088
+    },
+    "T_top_corners_K": {
+      "coarse": 406.5915790193463,
+      "reference": 395.05028161287277,
+      "total": 11.541297406473518,
+      "grid_effect_at_fine_dt": 12.818155036851351,
+      "time_step_effect_on_coarse_grid": -1.2768576303778332,
+      "grid_effect_at_coarse_dt": 12.6085708173851,
+      "time_step_effect_on_fine_grid": -1.0672734109115822,
+      "interaction": -0.20958421946625094
+    },
+    "boundary_flux_heat_input_MJ_per_m": {
+      "coarse": 507.3349250677495,
+      "reference": 537.1342071064715,
+      "total": -29.799282038722026,
+      "grid_effect_at_fine_dt": -22.678358849781375,
+      "time_step_effect_on_coarse_grid": -7.120923188940651,
+      "grid_effect_at_coarse_dt": -23.25771956423398,
+      "time_step_effect_on_fine_grid": -6.541562474488046,
+      "interaction": -0.579360714452605
+    },
+    "segment_half_cell_energy_MJ_per_m": {
+      "coarse": 57.95983237253231,
+      "reference": 3.187715841074737,
+      "total": 54.77211653145758,
+      "grid_effect_at_fine_dt": 54.77211653145758,
+      "time_step_effect_on_coarse_grid": 0.0,
+      "grid_effect_at_coarse_dt": 54.77211653145758,
+      "time_step_effect_on_fine_grid": 0.0,
+      "interaction": 0.0
+    },
+    "stored_energy_increase_MJ_per_m": {
+      "coarse": 565.2947574402773,
+      "reference": 540.3219229447562,
+      "total": 24.972834495521056,
+      "grid_effect_at_fine_dt": 32.093757684842444,
+      "time_step_effect_on_coarse_grid": -7.120923189321388,
+      "grid_effect_at_coarse_dt": 31.51439696833006,
+      "time_step_effect_on_fine_grid": -6.541562472809005,
+      "interaction": -0.5793607165123831
+    }
+  },
+  "segment_end_temperature_differences_vs_193x177": [
+    {
+      "mismatch": 0.0,
+      "nodes": 156,
+      "near_nodes": 16,
+      "max_abs": 19.714363501469848,
+      "x_at_max": 0.8333333333333333,
+      "y_at_max": 0.0,
+      "diff_at_max": 19.714363501469848,
+      "max_abs_near": 19.714363501469848,
+      "max_abs_elsewhere": 16.10400535065736,
+      "rms_elsewhere": 8.200459971108776,
+      "mean": 7.537348687446326
+    },
+    {
+      "mismatch": 0.0,
+      "nodes": 575,
+      "near_nodes": 44,
+      "max_abs": 11.676235091064996,
+      "x_at_max": 0.7916666666666666,
+      "y_at_max": 0.0,
+      "diff_at_max": 11.676235091064996,
+      "max_abs_near": 11.676235091064996,
+      "max_abs_elsewhere": 7.59971813917889,
+      "rms_elsewhere": 3.7070667220606714,
+      "mean": 3.5120103587951568
+    },
+    {
+      "mismatch": 0.0,
+      "nodes": 2205,
+      "near_nodes": 148,
+      "max_abs": 6.734134114552376,
+      "x_at_max": 0.7708333333333333,
+      "y_at_max": 0.0,
+      "diff_at_max": 6.734134114552376,
+      "max_abs_near": 6.734134114552376,
+      "max_abs_elsewhere": 3.3258681153253065,
+      "rms_elsewhere": 1.55780376132618,
+      "mean": 1.4935050735237037
+    },
+    {
+      "mismatch": 0.0,
+      "nodes": 8633,
+      "near_nodes": 564,
+      "max_abs": 3.0669062764798127,
+      "x_at_max": 0.7604166666666666,
+      "y_at_max": 0.0,
+      "diff_at_max": 3.0669062764798127,
+      "max_abs_near": 3.0669062764798127,
+      "max_abs_elsewhere": 1.0913594638510062,
+      "rms_elsewhere": 0.5131423612145963,
+      "mean": 0.49453231110172835
+    }
+  ],
+  "segment_heat_input_differences_vs_193x177": {
+    "bottom": [
+      {
+        "grid": "13 x 12",
+        "end_intervals_MJ_per_m": 30.64898354042235,
+        "other_intervals_MJ_per_m": -47.5930534867415,
+        "end_interval_each_MJ_per_m": 15.324491770211324,
+        "largest_other_interval_MJ_per_m": -10.832782216421082
+      },
+      {
+        "grid": "25 x 23",
+        "end_intervals_MJ_per_m": 15.973830184116236,
+        "other_intervals_MJ_per_m": -23.439914619344627,
+        "end_interval_each_MJ_per_m": 7.986915092059254,
+        "largest_other_interval_MJ_per_m": -5.365718051765755
+      },
+      {
+        "grid": "49 x 45",
+        "end_intervals_MJ_per_m": 7.000773271994598,
+        "other_intervals_MJ_per_m": -10.111879481066383,
+        "end_interval_each_MJ_per_m": 3.500386635999091,
+        "largest_other_interval_MJ_per_m": -2.3014394324854166
+      },
+      {
+        "grid": "97 x 89",
+        "end_intervals_MJ_per_m": 2.360141553204082,
+        "other_intervals_MJ_per_m": -3.382812587275125,
+        "end_interval_each_MJ_per_m": 1.1800707766024694,
+        "largest_other_interval_MJ_per_m": -0.7676888268469796
+      }
+    ],
+    "top": [
+      {
+        "grid": "13 x 12",
+        "end_intervals_MJ_per_m": 17.282094160236415,
+        "other_intervals_MJ_per_m": -23.016383063698814,
+        "end_interval_each_MJ_per_m": 8.64104708011787,
+        "largest_other_interval_MJ_per_m": -6.19271836370606
+      },
+      {
+        "grid": "25 x 23",
+        "end_intervals_MJ_per_m": 8.227582173450795,
+        "other_intervals_MJ_per_m": -10.459370589992323,
+        "end_interval_each_MJ_per_m": 4.113791086725395,
+        "largest_other_interval_MJ_per_m": -2.8254672626671904
+      },
+      {
+        "grid": "49 x 45",
+        "end_intervals_MJ_per_m": 3.5802606838131066,
+        "other_intervals_MJ_per_m": -4.4464709436618755,
+        "end_interval_each_MJ_per_m": 1.790130341907423,
+        "largest_other_interval_MJ_per_m": -1.186339280048117
+      },
+      {
+        "grid": "97 x 89",
+        "end_intervals_MJ_per_m": 1.2076479804371707,
+        "other_intervals_MJ_per_m": -1.481699002243288,
+        "end_interval_each_MJ_per_m": 0.6038239902183897,
+        "largest_other_interval_MJ_per_m": -0.39342061377483234
+      }
+    ]
+  },
+  "end_node_share_of_boundary_flux_heat_input": {
+    "13 x 12": 0.3881928752295036,
+    "25 x 23": 0.2639796046078423,
+    "49 x 45": 0.18088471190973368,
+    "97 x 89": 0.12507488786389825,
+    "193 x 177": 0.08711621146749664
+  },
+  "checks": [
+    {
+      "check": "S3 fixed time step of the spatial study",
+      "value": "halving dt to 2.6447 s on 193 x 177 changes T_avg by 3.51e-03 K, 0.70 % of the smallest grid-to-grid change (0.5000 K)",
+      "tolerance": "< 1 %",
+      "passed": true,
+      "establishes": "the spatial study's differences are not set by its time step; the same halving changes the boundary-flux heat input by 1.06 % of its smallest grid-to-grid change"
+    },
+    {
+      "check": "S1 heat accounting (every run of this script)",
+      "value": "worst |dE - (Q + E)| / dE = 5.8e-12; worst V3-type closure 5.8e-12; 29 runs",
+      "tolerance": "<= 1e-10 for both",
+      "passed": true,
+      "establishes": "the stored-energy increase measured by the mean temperature equals the boundary-flux heat input plus the heated-segment half-cell energy, so the two heat-input figures differ only by the half-cells"
+    },
+    {
+      "check": "S2 matching locations on the nested grids",
+      "value": "largest node-coordinate mismatch 0.0e+00 m; interval sums vs segment totals 1.2e-15 relative; segment ends on nodes at x = L/4 and 3L/4: True",
+      "tolerance": "<= 1e-12 m, <= 1e-12, True",
+      "passed": true,
+      "establishes": "grid comparisons are made at the same physical points and boundary intervals, and the interval values account for all of each segment's heat input"
+    }
+  ],
+  "environment": {
+    "started_utc": "2026-10-04T18:56:50+00:00",
+    "command": "python run_studies.py",
+    "python": "3.11.15",
+    "implementation": "CPython",
+    "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "numpy": "2.2.6",
+    "scipy": "1.15.3",
+    "matplotlib": "3.10.9",
+    "finished_utc": "2026-10-04T18:58:26+00:00",
+    "wall_time_s": 96.3
+  }
+}

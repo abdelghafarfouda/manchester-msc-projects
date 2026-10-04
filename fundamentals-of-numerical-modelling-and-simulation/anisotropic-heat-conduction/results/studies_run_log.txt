@@ -1,0 +1,91 @@
+Anisotropic plate (course Assignment (3)): October 2026 revision studies
+started 2026-10-04T18:56:50+00:00 on Linux-6.18.44-fc-v64-x86_64-with-glibc2.39
+Python 3.11.15, numpy 2.2.6, scipy 1.15.3, matplotlib 3.10.9
+Same plate, boundary conditions and solver as run_project.py; only grids and time steps vary.
+
+A. HEAT-INPUT ACCOUNTING (five nested grids, Equation 3 time step; MJ per m of depth)
+      solved  13 x  12,    14 steps of 1285.7143 s: T_avg = 444.9474 K (0.0 s)
+      solved  25 x  23,    54 steps of  333.3333 s: T_avg = 441.7450 K (0.0 s)
+      solved  49 x  45,   213 steps of   84.5070 s: T_avg = 439.9595 K (0.1 s)
+      solved  97 x  89,   851 steps of   21.1516 s: T_avg = 439.0228 K (1.4 s)
+      solved 193 x 177,  3403 steps of    5.2895 s: T_avg = 438.5441 K (18.9 s)
+    13 x  12: boundary-flux heat input Q =  507.335, half-cell energy E =  57.960, stored-energy increase dE =  565.295 (= rho cp A (T_avg - 300 K), T_avg = 444.9474 K)
+    25 x  23: boundary-flux heat input Q =  525.666, half-cell energy E =  27.140, stored-energy increase dE =  552.805 (= rho cp A (T_avg - 300 K), T_avg = 441.7450 K)
+    49 x  45: boundary-flux heat input Q =  532.738, half-cell energy E =  13.103, stored-energy increase dE =  545.842 (= rho cp A (T_avg - 300 K), T_avg = 439.9595 K)
+    97 x  89: boundary-flux heat input Q =  535.755, half-cell energy E =   6.434, stored-energy increase dE =  542.189 (= rho cp A (T_avg - 300 K), T_avg = 439.0228 K)
+   193 x 177: boundary-flux heat input Q =  537.134, half-cell energy E =   3.188, stored-energy increase dE =  540.322 (= rho cp A (T_avg - 300 K), T_avg = 438.5441 K)
+   13 x 12 vs 193 x 177, boundary flux heat input: 507.3 vs 537.1 MJ/m, difference -29.8 MJ/m (-5.5 %)
+   13 x 12 vs 193 x 177, segment half cell energy: 58.0 vs 3.2 MJ/m, difference +54.8 MJ/m (+1718.2 %)
+   13 x 12 vs 193 x 177, stored energy increase: 565.3 vs 540.3 MJ/m, difference +25.0 MJ/m (+4.6 %)
+   half-cell energy ratio per halving of dx and dy: 2.14, 2.07, 2.04, 2.02 (it is proportional to dy)
+
+B. SPACE AND TIME SEPARATED
+   (a) spatial study: nested grids at fixed dt = 5.2895 s (3403 steps), and at fixed dt = 1285.71 s (14 steps)
+      solved  13 x  12,  3403 steps of    5.2895 s: T_avg = 446.7733 K (1.2 s)
+      solved  25 x  23,  3403 steps of    5.2895 s: T_avg = 442.1990 K (1.2 s)
+      solved  49 x  45,  3403 steps of    5.2895 s: T_avg = 440.0668 K (2.0 s)
+      solved  97 x  89,  3403 steps of    5.2895 s: T_avg = 439.0441 K (5.5 s)
+      solved  25 x  23,    14 steps of 1285.7143 s: T_avg = 440.4459 K (0.0 s)
+      solved  49 x  45,    14 steps of 1285.7143 s: T_avg = 438.3558 K (0.0 s)
+      solved  97 x  89,    14 steps of 1285.7143 s: T_avg = 437.3553 K (0.1 s)
+      solved 193 x 177,    14 steps of 1285.7143 s: T_avg = 436.8668 K (0.2 s)
+   (b) temporal study: dt halved from 1285.71 s on the 193 x 177 grid (and on 13 x 12 for contrast)
+      solved 193 x 177,    28 steps of  642.8571 s: T_avg = 437.7031 K (0.4 s)
+      solved 193 x 177,    56 steps of  321.4286 s: T_avg = 438.1256 K (0.6 s)
+      solved 193 x 177,   112 steps of  160.7143 s: T_avg = 438.3380 K (0.7 s)
+      solved 193 x 177,   224 steps of   80.3571 s: T_avg = 438.4444 K (1.5 s)
+      solved 193 x 177,   448 steps of   40.1786 s: T_avg = 438.4978 K (2.9 s)
+      solved 193 x 177,   896 steps of   20.0893 s: T_avg = 438.5244 K (5.7 s)
+      solved 193 x 177,  1792 steps of   10.0446 s: T_avg = 438.5378 K (9.7 s)
+      solved 193 x 177,  6806 steps of    2.6447 s: T_avg = 438.5476 K (38.5 s)
+      solved  13 x  12,    28 steps of  642.8571 s: T_avg = 445.8571 K (0.0 s)
+      solved  13 x  12,    56 steps of  321.4286 s: T_avg = 446.3172 K (0.0 s)
+      solved  13 x  12,   112 steps of  160.7143 s: T_avg = 446.5486 K (0.1 s)
+      solved  13 x  12,   224 steps of   80.3571 s: T_avg = 446.6646 K (0.1 s)
+      solved  13 x  12,   448 steps of   40.1786 s: T_avg = 446.7228 K (0.1 s)
+      solved  13 x  12,   896 steps of   20.0893 s: T_avg = 446.7518 K (0.3 s)
+      solved  13 x  12,  1792 steps of   10.0446 s: T_avg = 446.7664 K (0.6 s)
+      solved  13 x  12,  6806 steps of    2.6447 s: T_avg = 446.7771 K (2.1 s)
+   spatial, fixed dt = 5.2895 s: T_avg changes (K) -4.5742, -2.1323, -1.0227, -0.5000
+      ratios of successive changes 2.15, 2.08, 2.05
+   spatial, fixed dt = 1285.71 s: T_avg changes (K) -4.5015, -2.0901, -1.0004, -0.4886
+      ratios of successive changes 2.15, 2.09, 2.05
+   temporal, 193 x 177: T_avg changes (K) +0.8363, +0.4225, +0.2124, +0.1065, +0.0533, +0.0267, +0.0133, +0.0063, +0.0035
+      ratios of successive changes 1.98, 1.99, 1.99, 2.00, 2.00, 2.00
+   temporal, 13 x 12: T_avg changes (K) +0.9098, +0.4601, +0.2314, +0.1160, +0.0581, +0.0291, +0.0145, +0.0069, +0.0038
+      ratios of successive changes 1.98, 1.99, 1.99, 2.00, 2.00, 2.00
+   time-step effect T_avg(dt = 1285.71 s) - T_avg(dt = 5.2895 s) by grid: 13 x 12 -1.8259 K, 25 x 23 -1.7531 K, 49 x 45 -1.7110 K, 97 x 89 -1.6887 K, 193 x 177 -1.6773 K
+   (c) 13 x 12 (dt 1285.71 s) minus 193 x 177 (dt 5.2895 s), mean temperature: +6.4033 K
+       = grid effect at the fine dt +8.2292 K + time-step effect on 13 x 12 -1.8259 K
+       = grid effect at the coarse dt +8.0806 K + time-step effect on 193 x 177 -1.6773 K
+       interaction (difference between the two orders) -0.1486 K
+       boundary_flux_heat_input_MJ_per_m: total -29.799 = grid -22.678 + time step -7.121
+       segment_half_cell_energy_MJ_per_m: total +54.772 = grid +54.772 + time step +0.000
+       stored_energy_increase_MJ_per_m: total +24.973 = grid +32.094 + time step -7.121
+   [PASS] S3 fixed time step of the spatial study: halving dt to 2.6447 s on 193 x 177 changes T_avg by 3.51e-03 K, 0.70 % of the smallest grid-to-grid change (0.5000 K)  (tolerance < 1 %)
+
+C. SEGMENT ENDS (dt = 5.2895 s; differences between grids at matching locations, not errors)
+   T(13 x 12) - T(193 x 177) at 156 shared nodes: max |d| 19.714 K at (x, y) = (0.833, 0.000) m; within 0.1 m of an end 19.714 K, elsewhere 16.104 K (RMS 8.200 K)
+   T(25 x 23) - T(193 x 177) at 575 shared nodes: max |d| 11.676 K at (x, y) = (0.792, 0.000) m; within 0.1 m of an end 11.676 K, elsewhere 7.600 K (RMS 3.707 K)
+   T(49 x 45) - T(193 x 177) at 2205 shared nodes: max |d| 6.734 K at (x, y) = (0.771, 0.000) m; within 0.1 m of an end 6.734 K, elsewhere 3.326 K (RMS 1.558 K)
+   T(97 x 89) - T(193 x 177) at 8633 shared nodes: max |d| 3.067 K at (x, y) = (0.760, 0.000) m; within 0.1 m of an end 3.067 K, elsewhere 1.091 K (RMS 0.513 K)
+   T(13 x 12) - T(25 x 23): max |d| within 0.1 m of an end 10.856 K, elsewhere 9.101 K
+   T(25 x 23) - T(49 x 45): max |d| within 0.1 m of an end 6.754 K, elsewhere 4.459 K
+   T(49 x 45) - T(97 x 89): max |d| within 0.1 m of an end 4.480 K, elsewhere 2.235 K
+   T(97 x 89) - T(193 x 177): max |d| within 0.1 m of an end 3.067 K, elsewhere 1.091 K
+   bottom segment, 13 x 12 minus 193 x 177: end intervals +15.324 MJ/m each (length 0.0417 m), other intervals -10.833 to -8.530 MJ/m (length 0.0833 m)
+   bottom segment, 25 x 23 minus 193 x 177: end intervals +7.987 MJ/m each (length 0.0417 m), other intervals -5.366 to -4.197 MJ/m (length 0.0833 m)
+   bottom segment, 49 x 45 minus 193 x 177: end intervals +3.500 MJ/m each (length 0.0417 m), other intervals -2.301 to -1.820 MJ/m (length 0.0833 m)
+   bottom segment, 97 x 89 minus 193 x 177: end intervals +1.180 MJ/m each (length 0.0417 m), other intervals -0.768 to -0.610 MJ/m (length 0.0833 m)
+   top segment, 13 x 12 minus 193 x 177: end intervals +8.641 MJ/m each (length 0.0417 m), other intervals -6.193 to -3.311 MJ/m (length 0.0833 m)
+   top segment, 25 x 23 minus 193 x 177: end intervals +4.114 MJ/m each (length 0.0417 m), other intervals -2.825 to -1.514 MJ/m (length 0.0833 m)
+   top segment, 49 x 45 minus 193 x 177: end intervals +1.790 MJ/m each (length 0.0417 m), other intervals -1.186 to -0.654 MJ/m (length 0.0833 m)
+   top segment, 97 x 89 minus 193 x 177: end intervals +0.604 MJ/m each (length 0.0417 m), other intervals -0.393 to -0.219 MJ/m (length 0.0833 m)
+   share of the boundary-flux heat input supplied by the four end nodes: 13 x 12 38.8 %, 25 x 23 26.4 %, 49 x 45 18.1 %, 97 x 89 12.5 %, 193 x 177 8.7 %
+
+D. STUDY CHECKS
+   [PASS] S1 heat accounting (every run of this script): worst |dE - (Q + E)| / dE = 5.8e-12; worst V3-type closure 5.8e-12; 29 runs  (tolerance <= 1e-10 for both)
+   [PASS] S2 matching locations on the nested grids: largest node-coordinate mismatch 0.0e+00 m; interval sums vs segment totals 1.2e-15 relative; segment ends on nodes at x = L/4 and 3L/4: True  (tolerance <= 1e-12 m, <= 1e-12, True)
+
+RESULTS written to results/: heat_accounting.csv, space_time_study.csv, coarse_grid_difference.csv, segment_end_temperatures.csv, segment_heat_input.csv, study_checks.csv, studies_summary.json, fig5, fig6
+   29 plate runs; study checks: 3 of 3 passed; wall time 96.3 s
