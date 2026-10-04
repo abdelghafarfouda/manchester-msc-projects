@@ -140,15 +140,15 @@ def apply_decision_rules(res: dict) -> dict:
         dec["pressure_variant"] = best
         dec["ml.feature_set"] = spec["features"]
         dec["ml.pressure_model"] = spec["mode"]
-    others = [res["targets"][k] for k in ("r_plume_m95_m", "sweep_efficiency")
-              if k in res["targets"]]
-    if others:
-        better = all(o["metrics"]["V2_plus_rock_and_rom_features"]["RMSE"]
-                     < o["metrics"]["V0_published_features"]["RMSE"] for o in others)
-        dec["ml.feature_set_other"] = "all" if better else "baseline"
-        dec["other_targets_rmse"] = {
-            k: {n: res["targets"][k]["metrics"][n]["RMSE"] for n in res["targets"][k]["metrics"]}
-            for k in ("r_plume_m95_m", "sweep_efficiency") if k in res["targets"]}
+    # rule 2, applied per target
+    for k, key in (("r_plume_m95_m", "ml.feature_set_plume"),
+                   ("sweep_efficiency", "ml.feature_set_sweep")):
+        if k in res["targets"]:
+            m = res["targets"][k]["metrics"]
+            better = (m["V2_plus_rock_and_rom_features"]["RMSE"]
+                      < m["V0_published_features"]["RMSE"])
+            dec[key] = "all" if better else "baseline"
+            dec.setdefault("other_targets_rmse", {})[k] = {n: m[n]["RMSE"] for n in m}
     sel = res.get("interval_selection")
     if sel:
         tab = sel["table"]

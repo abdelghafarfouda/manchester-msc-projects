@@ -7,29 +7,35 @@ the reasoning behind each choice. Equations and results are in
 ## 0. The one-sentence version
 
 We simulate CO₂ injection into many plausible (synthetic) layered reservoirs
-with a verified IMPES simulator, learn fast surrogates of the three outputs
-an operator cares about, measure honestly how well those surrogates work on
-reservoirs they have never seen, and use them to screen injection schedules
-that are then checked again with the simulator.
+with a verified IMPES simulator, learn fast surrogates of the outputs an
+operator cares about, measure how well they work on reservoirs generated
+*after* every modelling choice was fixed (including reservoirs from outside
+the training population), and use them only to *propose* injection schedules
+that the simulator must verify before anything is recommended.
 
 ```
-config/demo.yaml
+config/study.yaml
      │
      ▼
-validation.py ──(18 checks must pass)──► scenarios.py + dataset.py ──► scenarios.csv
-                                                   │  (simulate 300 cases)
-                                                   ▼
-                                        features.py  (the ONE feature path)
+validation.py ──(21 checks must pass)──► scenarios.py + dataset.py ──► development data (220 reservoirs)
                                                    │
-         ┌──────────────────────┬─────────────────┼──────────────────┬───────────────┐
-         ▼                      ▼                 ▼                  ▼               ▼
-   models.py (surrogates)  classify.py      interpret.py        studies.py     uncertainty.py
-         │                                                                          │
-         └──────────► artifacts.py (models + manifest) ◄───────────────────────────┘
-                                   │
-                    predict.py (Predictor) ──► cli.py · app/streamlit_app.py · notebooks
-                                   │
-                         optimise.py (screen) ──► re-simulate with impes.py
+                         final_eval.py ──► fresh test reservoirs (same prior) + shift reservoirs (10-30 mD)
+                                                   │
+                       features.py (the ONE feature path) + rom.py (analytical ROM)
+                                                   │
+       ┌───────────────┬────────────────┬─────────┼───────────┬──────────────┬─────────────┐
+       ▼               ▼                ▼         ▼           ▼              ▼             ▼
+  models.py +     intervals.py     domain.py  classify.py  interpret.py  studies.py   numerics.py
+  hybrid.py       (conformal)                                                         (dataset-case
+       │               │                │                                              discretisation)
+       └──► artifacts.py (models + manifest) ◄──┘
+                       │
+        predict.py (Predictor) ──► cli.py · app/streamlit_app.py · notebooks
+                       │
+        screening.py: surrogate proposes ──► impes.py verifies ──► recommendation or explicit "none"
+
+  experiments.py (scripts/run_experiments.py): nested grouped-CV ablation on development data only
+  rz.py (scripts/run_model_form.py): r-z model with gravity + crossflow, measures the model-form error
 ```
 
 ## 1. The simulator (`grid.py`, `fluids.py`, `impes.py`)
@@ -82,11 +88,15 @@ decisions listed in `ASSUMPTIONS.md`, not bugs.
 
 ## 2. Verification before any data (`validation.py`)
 
-The pipeline stops if any of 18 checks fails. They compare the code with
+The pipeline stops if any of 21 checks fails. They compare the code with
 results derived in the lectures (steady radial pressure, closed-tank
 material balance, Buckley–Leverett/Welge), with conservation (CO₂ mass
 balance, total well rate, common BHP), and with itself (grid, well-block and
-time-step convergence; strict vs relaxed stepping). *Why first:* a
+time-step convergence; strict vs relaxed stepping). Since 2026-10, V12 and
+V13 also check the *two-phase* simulator's bottom-hole pressure — the
+quantity the surrogates learn — against the pseudo-steady-state solution of
+a bounded reservoir, for one layer and for two commingled layers, and check
+the analytical ROM in the same limit. *Why first:* a
 surrogate can only be as good as the data; training on an unverified
 simulator would make every ML number meaningless.
 
@@ -126,27 +136,54 @@ capacity `kh`, pore volume, the rate relative to the reference rate, the
 fraction of mass delivered early, the radius the injected volume would fill
 (`4-CO2 BL.pdf` p.30: displaced brine volume = injected CO₂ volume).
 
-## 5. Learning (`splits.py`, `models.py`, `uncertainty.py`)
+## 5. Learning (`splits.py`, `models.py`, `rom.py`, `hybrid.py`)
 
-**Grouped splits.** All rows of a reservoir stay together — train (56
-reservoirs in the demo), calibration (19) and test (25). This is the
-geographic-splitting idea of `Lecture08` / `E03_geographicalspliting` with
-the reservoir as the "region". A random row split would let the model see
-another schedule on the same reservoir; the split-comparison study measures
-how optimistic that would be.
+**Data roles.** The 220 development reservoirs are split by whole reservoir
+into training (179) and calibration (41, used only for the intervals). The
+published run's 55 test reservoirs had been inspected while this revision was
+developed, so they are now training data; the test reservoirs are fresh
+(`final_eval.py`, seed 20261104), and a second fresh set comes from a
+lower-permeability prior to test behaviour under distribution shift. The
+order — decisions first, test data second — is fixed in
+`docs/EVALUATION_PROTOCOL.md`.
 
-**Model choice.** Twelve families from the course (mean baseline, linear,
-ridge, lasso, elastic net, KNN, SVR, decision tree, random forest, gradient
-boosting, AdaBoost, XGBoost), each inside a pipeline (imputer, scaler,
-model) and tuned by randomised search within grouped 4-fold CV on the
-training reservoirs only. The lowest CV error wins. The test reservoirs are
-used once. Pressure and plume radius are fitted on a log scale (their
-drivers act multiplicatively); all errors are reported in MPa, m and
-fraction.
+**Why the published surrogate failed where it did.** Its inputs described a
+reservoir by the *parameters of its sampling prior* (median permeability and
+target Dykstra–Parsons coefficient). The simulator, however, uses four
+*realised* layers drawn from that prior, and with only four draws the
+realised layers can be several times tighter (or more permeable) than the
+parameters suggest. The largest pressure errors were exactly those
+reservoirs. The realised layers are known before simulating, so they are
+legitimate inputs (`features.ROCK_FEATURES`).
 
-**Error band.** The spread of residuals on the calibration reservoirs
-(P5–P95) gives a band around each prediction; its coverage on the test
-reservoirs is measured and reported — not promised.
+**The analytical ROM.** `rom.py` treats each realised layer as a sealed tank
+in pseudo-steady state connected to one common bottom-hole pressure — the
+same well rule as the simulator, solved analytically in seconds for
+thousands of schedules. It is exact in the single-phase limit (V12, V13) and
+is already a strong predictor on its own.
+
+**The hybrid surrogate.** `hybrid.ROMOffsetRegressor` learns only the
+*correction factor* the ROM needs: `ln(Δp) = ln(Δp_ROM) + g(x)`. Every course
+family is tuned for `g` exactly as before (pipeline with imputer and scaler,
+randomised search inside grouped 4-fold CV on the training reservoirs,
+lowest CV error wins). The ablation (`scripts/run_experiments.py`) compares
+this with the published inputs, the realised-layer inputs, the ROM as an
+ordinary input, the ROM alone, and a three-times-larger search, with
+identical folds and budgets.
+
+## 5a. Intervals and the applicability domain (`intervals.py`, `domain.py`)
+
+**Intervals.** Four constructions are compared; the one used was chosen on
+development data by a pre-declared rule. The reservoir-level conformal
+interval takes one score per calibration reservoir (its worst schedule),
+which gives a statement about whole reservoirs drawn like the calibration
+reservoirs — and nothing more: it is not a guarantee for a reservoir from a
+different population (tested on the shift set) or for thousands of screened
+candidates.
+
+**Domain check.** A reservoir whose descriptors fall outside the training
+range (with a 2 % tolerance) or far from every training reservoir is flagged;
+the screening then does not use the surrogate for it.
 
 ## 6. Screening classifier (`classify.py`)
 
@@ -171,16 +208,33 @@ random vs Bayesian search, normal equation vs gradient descent, grouped vs
 random split, early stopping, ensembles). None of them touches the test
 reservoirs.
 
-## 8. Screening schedules (`optimise.py`)
+## 8. Screening schedules (`screening.py`)
 
-For each of five unseen reservoirs: draw 3000 candidate schedules from the
-training design, predict pressure build-up and plume radius, keep those whose
-**upper band edge** is below both stated limits, rank by injected mass
-(computed exactly from the rates), and do the same for constant-rate
-schedules as the baseline. Then **re-simulate** the best three and the
-baseline and report what the simulator says — including violations and any
-failed runs. *Why re-simulate:* the surrogate proposes; only the simulator
-decides.
+The surrogate proposes; only the simulator decides. `Recommendation` cannot
+hold a schedule that has not been simulated and found within both stated
+limits — its constructor raises — so an attractive *prediction* can never be
+presented as a feasible schedule. Each reservoir gets a simulation budget
+(4 runs). The revised method screens 4000 candidates with the upper edge of
+the interval, simulates the best proposal, and if it violates (or leaves
+margin) scales it along its own shape with further simulator runs. If the
+reservoir is out of domain, or if the interval upper edges exclude every
+candidate (`upper_bound_excludes_all`: the uncertainty is too large to
+decide), it falls back to a simulator search. The outcomes are explicit:
+`VERIFIED_FEASIBLE`, `NO_FEASIBLE_SCHEDULE_FOUND` or
+`NO_CANDIDATE_PREDICTED_FEASIBLE`, with flags saying why. The pipeline
+compares five methods at the same budget, including a simulator-only
+constant-rate search (the baseline) and a ROM-ranked control that isolates
+the learned correction. The 9 MPa build-up limit is a modelling assumption.
+
+## 8a. Numerical and model-form error (`numerics.py`, `rz.py`)
+
+`numerics.py` re-simulates a stratified sample of the *dataset* cases with
+the grid, the well block and the time step refined, one at a time and
+together, and reports how much each target and each pressure-limit label
+changes. `rz.py` is a separate 2-D radial–vertical model with buoyancy and
+vertical crossflow that reduces to the layered model when both are switched
+off; `scripts/run_model_form.py` uses it to measure how much the layered,
+no-gravity assumption changes the targets.
 
 ## 9. Using the trained models (`artifacts.py`, `predict.py`)
 
@@ -195,10 +249,13 @@ it.
 
 | Question | File |
 |---|---|
-| Did the simulator pass? | `results/demo/metrics/validation.json` |
-| How good are the surrogates? | `results/demo/reports/RESULTS.md`, `summary.json → ml.targets` |
-| Where do they fail? | `summary.json → ml.targets.<t>.difficult_cases`, `figures/08_errors_*.png` |
-| How fast? | `summary.json → speed` |
-| Did the screened schedules hold up? | `metrics/optimisation_resimulation.csv` |
-| Which course topics were used, and how? | `docs/COVERAGE_MATRIX.md` |
-| What was run, exactly? | `reports/run.log`, `models/manifest.json` |
+| Did the simulator pass? | `results/study/metrics/validation.json` |
+| How large is the discretisation error of the training data? | `results/study/metrics/numerics_summary.json` |
+| How good are the surrogates on fresh reservoirs, and under shift? | `results/study/reports/RESULTS.md`, `summary.json → ml.targets` |
+| Which change helped, by how much? | `results/study/experiments/ablation_summary.json` |
+| Do the intervals cover? | `summary.json → ml.targets.<t>.designs.revised.evaluation.<set>.intervals` |
+| Where do the surrogates fail? | `summary.json → ml.targets.<t>.difficult_cases`, `figures/08_errors_*.png` |
+| Did the screening recommend anything unverified? | `metrics/screening_recommendations.csv`, `metrics/screening_details.json` |
+| How much do gravity and crossflow matter? | `results/study/experiments/model_form_summary.json` |
+| What was decided before the test data existed? | `docs/EVALUATION_PROTOCOL.md` |
+| What was run, exactly? | `reports/run.log`, `models/manifest.json`, `experiments/experiments_run.json` |

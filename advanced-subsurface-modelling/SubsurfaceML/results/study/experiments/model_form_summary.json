@@ -1,0 +1,164 @@
+{
+  "command": "scripts/run_model_form.py --config config/study.yaml",
+  "environment": {
+    "python": "3.11.15",
+    "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "pandas": "3.0.2",
+    "scikit_learn": "1.8.0",
+    "xgboost": "3.2.0",
+    "git_commit": "e16362e"
+  },
+  "n_cases": 26,
+  "n_failed": 0,
+  "variants": {
+    "gravity_crossflow": {
+      "n_sub": 5,
+      "kv_over_kh": 0.1,
+      "gravity": 9.80665
+    },
+    "crossflow_only": {
+      "n_sub": 5,
+      "kv_over_kh": 0.1,
+      "gravity": 0.0
+    },
+    "gravity_fine": {
+      "n_sub": 10,
+      "kv_over_kh": 0.1,
+      "gravity": 9.80665
+    }
+  },
+  "kv_over_kh_status": "assumed value (0.1)",
+  "seconds": 947.1789985769997,
+  "targets": {
+    "gravity_crossflow": {
+      "dp_bh_max_MPa": {
+        "median_rel_change": -0.042524387743098246,
+        "p10_rel_change": -0.0973144404507579,
+        "p90_rel_change": -0.00464651968702628,
+        "min_rel_change": -0.1494835809070927,
+        "max_rel_change": -0.002473190405043796,
+        "n": 26
+      },
+      "r_plume_m95_m": {
+        "median_rel_change": 0.8828402589579979,
+        "p10_rel_change": 0.18550169493416913,
+        "p90_rel_change": 2.133508119862079,
+        "min_rel_change": 0.04002491708283948,
+        "max_rel_change": 2.7841450710111437,
+        "n": 26
+      },
+      "sweep_efficiency": {
+        "median_rel_change": 0.00019403937313262854,
+        "p10_rel_change": -0.2341520443988395,
+        "p90_rel_change": 0.23060030463975711,
+        "min_rel_change": -0.3333301612684168,
+        "max_rel_change": 0.4024324019563963,
+        "n": 26
+      },
+      "co2_fraction_in_top_quarter_median": 0.8976879030167666,
+      "max_mass_balance_error": 5.27996576844721e-08
+    },
+    "crossflow_only": {
+      "dp_bh_max_MPa": {
+        "median_rel_change": -0.023796186772038333,
+        "p10_rel_change": -0.06958609552718925,
+        "p90_rel_change": -0.0002799657944095562,
+        "min_rel_change": -0.1528446056611867,
+        "max_rel_change": -0.00015011623290124535,
+        "n": 26
+      },
+      "r_plume_m95_m": {
+        "median_rel_change": 0.10175047136585522,
+        "p10_rel_change": 0.01087059076624732,
+        "p90_rel_change": 0.3713332509870606,
+        "min_rel_change": 0.0012605401880269552,
+        "max_rel_change": 0.6750006770915125,
+        "n": 26
+      },
+      "sweep_efficiency": {
+        "median_rel_change": 0.0019212376018608514,
+        "p10_rel_change": -0.08130254769839293,
+        "p90_rel_change": 0.07683687951556432,
+        "min_rel_change": -0.11674235968549611,
+        "max_rel_change": 0.09435034653935033,
+        "n": 26
+      },
+      "co2_fraction_in_top_quarter_median": 0.24573368128255463,
+      "max_mass_balance_error": 6.054826835709913e-14
+    },
+    "gravity_fine": {
+      "dp_bh_max_MPa": {
+        "median_rel_change": -0.061402659432973454,
+        "p10_rel_change": -0.09397899716461872,
+        "p90_rel_change": -0.004999511810016641,
+        "min_rel_change": -0.1503083398123196,
+        "max_rel_change": -0.004703775616755078,
+        "n": 8
+      },
+      "r_plume_m95_m": {
+        "median_rel_change": 1.0123646203011702,
+        "p10_rel_change": 0.22576753920183731,
+        "p90_rel_change": 3.058627253826135,
+        "min_rel_change": 0.19574812048585408,
+        "max_rel_change": 3.646525686193567,
+        "n": 8
+      },
+      "sweep_efficiency": {
+        "median_rel_change": -0.005027773921525702,
+        "p10_rel_change": -0.2500032889954328,
+        "p90_rel_change": 0.3888729258984376,
+        "min_rel_change": -0.37167533636573374,
+        "max_rel_change": 0.5904803548158665,
+        "n": 8
+      },
+      "co2_fraction_in_top_quarter_median": 0.9236329542548702,
+      "max_mass_balance_error": 4.410557940580464e-09
+    }
+  },
+  "labels": {
+    "gravity_crossflow": {
+      "n_compared": 26,
+      "n_exceeding_layered": 8,
+      "n_exceeding_rz": 7,
+      "n_label_changes": 1
+    },
+    "crossflow_only": {
+      "n_compared": 26,
+      "n_exceeding_layered": 8,
+      "n_exceeding_rz": 7,
+      "n_label_changes": 1
+    },
+    "gravity_fine": {
+      "n_compared": 8,
+      "n_exceeding_layered": 0,
+      "n_exceeding_rz": 0,
+      "n_label_changes": 0
+    }
+  },
+  "plume_change_by_k_tercile": [
+    {
+      "k_group": "low k",
+      "median": 0.213168196031954,
+      "min": 0.04002491708283948,
+      "max": 1.3947029302159581,
+      "size": 9
+    },
+    {
+      "k_group": "mid k",
+      "median": 1.2080138027029852,
+      "min": 0.18742131193581446,
+      "max": 2.7841450710111437,
+      "size": 9
+    },
+    {
+      "k_group": "high k",
+      "median": 1.081909427423029,
+      "min": 0.6570831016863505,
+      "max": 2.4591399768987485,
+      "size": 8
+    }
+  ]
+}

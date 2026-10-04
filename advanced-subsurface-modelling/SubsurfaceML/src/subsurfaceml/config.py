@@ -136,9 +136,10 @@ class MLConfig:
     #: Revised design (2026-10), fixed by the development-set experiments of
     #: scripts/run_experiments.py before the independent test sets existed.
     feature_set: str = "all"       # baseline | rock | all  (features.py), pressure target
-    feature_set_other: str = "all" # the same for the plume and sweep targets
+    feature_set_plume: str = "all" # the same for the plume-radius target
+    feature_set_sweep: str = "baseline"  # the same for the sweep target
     pressure_model: str = "hybrid" # hybrid (ROM x learned factor) | log
-    interval_method: str = "reservoir_conformal"   # intervals.METHODS
+    interval_method: str = "adaptive_conformal"    # intervals.METHODS
     interval_alpha: float = 0.10   # nominal 90 % two-sided intervals
 
 
@@ -254,9 +255,9 @@ def validate_config(cfg: "Config") -> "Config":
          "ml.test_fraction and ml.calib_fraction in (0, 0.5)")
     need(0 <= ml.band_lower_pct < ml.band_upper_pct <= 100, "ml band percentiles")
     need(o.p_limit_MPa > s.p_init_MPa, "optim.p_limit_MPa must exceed solver.p_init_MPa")
-    need(ml.feature_set in ("baseline", "rock", "all")
-         and ml.feature_set_other in ("baseline", "rock", "all"),
-         "ml.feature_set / feature_set_other must be baseline, rock or all")
+    need(all(v in ("baseline", "rock", "all") for v in
+             (ml.feature_set, ml.feature_set_plume, ml.feature_set_sweep)),
+         "ml.feature_set / feature_set_plume / feature_set_sweep must be baseline, rock or all")
     need(ml.pressure_model in ("hybrid", "log"), "ml.pressure_model must be hybrid or log")
     need(ml.interval_method in ("empirical", "case_conformal", "reservoir_conformal",
                                 "adaptive_conformal"), "ml.interval_method unknown")

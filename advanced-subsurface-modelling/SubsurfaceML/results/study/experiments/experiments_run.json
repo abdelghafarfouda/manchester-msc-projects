@@ -1,0 +1,41 @@
+{
+  "ablation": {
+    "command": "scripts/run_experiments.py --config results/scratch/exp_dev.yaml --only ablation --n-iter 20 --outer 5",
+    "environment": {
+      "python": "3.11.15",
+      "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "numpy": "2.4.4",
+      "scipy": "1.17.1",
+      "pandas": "3.0.2",
+      "scikit_learn": "1.8.0",
+      "xgboost": "3.2.0",
+      "git_commit": "e16362e"
+    },
+    "started": "Sun Oct  4 04:26:17 2026",
+    "ablation_seconds": 4959.31719456,
+    "finished": "Sun Oct  4 05:48:56 2026",
+    "command_as_run": "scripts/run_experiments.py --config results/scratch/exp_dev.yaml --only ablation --n-iter 20 --outer 5",
+    "config_note": "run with results/scratch/exp_dev.yaml, a copy of config/study.yaml that differs only in its output paths (results/scratch/exp_dev/...) and reads the same development data results/study/data/scenarios.csv; outputs copied here. Equivalent command: python scripts/run_experiments.py --config config/study.yaml --only ablation",
+    "input_scenarios_csv_sha256": "23c187dc8a59adf11b891aeacaac6a5616e995a64958c046e21c90e35b7485f5",
+    "decisions_applied_with": "python scripts/run_experiments.py --config <same> --only decide (2026-10-04, same rules as in the script; the running process predated the decide code)",
+    "code_note": "environment.git_commit is the HEAD at the start of the run (e16362e, the published version); the code that ran was the uncommitted working tree of this revision, committed on 2026-10-04 as a376b9b..6472584 with the decision-rule code added afterwards."
+  },
+  "decide": {},
+  "model_form": {
+    "command": "scripts/run_model_form.py --config config/study.yaml",
+    "seconds": 947.1789985769997,
+    "environment": {
+      "python": "3.11.15",
+      "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "numpy": "2.4.4",
+      "scipy": "1.17.1",
+      "pandas": "3.0.2",
+      "scikit_learn": "1.8.0",
+      "xgboost": "3.2.0",
+      "git_commit": "e16362e"
+    },
+    "code_note": "environment.git_commit is the HEAD at the start of the run (e16362e, the published version); the code that ran was the uncommitted working tree of this revision, committed on 2026-10-04 as a376b9b..6472584 with the decision-rule code added afterwards."
+  }
+}

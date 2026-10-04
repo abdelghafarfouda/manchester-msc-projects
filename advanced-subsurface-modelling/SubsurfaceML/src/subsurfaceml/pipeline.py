@@ -53,14 +53,15 @@ LOG_TARGETS = {"dp_bh_max_MPa", "r_plume_m95_m"}
 
 #: The design of the 2026-09-20 release, re-run like for like.
 PUBLISHED_DESIGN = {"name": "published_approach", "feature_set": "baseline",
-                    "feature_set_other": "baseline", "pressure_model": "log",
-                    "interval_method": "empirical"}
+                    "feature_set_plume": "baseline", "feature_set_sweep": "baseline",
+                    "pressure_model": "log", "interval_method": "empirical"}
 PUBLISHED_MODELS_DIR = "results/published_2026-09-20/study_models"
 
 
 def revised_design(cfg) -> dict:
     return {"name": "revised", "feature_set": cfg.ml.feature_set,
-            "feature_set_other": cfg.ml.feature_set_other,
+            "feature_set_plume": cfg.ml.feature_set_plume,
+            "feature_set_sweep": cfg.ml.feature_set_sweep,
             "pressure_model": cfg.ml.pressure_model,
             "interval_method": cfg.ml.interval_method}
 
@@ -73,7 +74,8 @@ def target_mode(design: dict, target: str) -> str:
 
 def target_features(design: dict, target: str) -> list:
     from .final_eval import design_features
-    key = "feature_set" if target == "dp_bh_max_MPa" else "feature_set_other"
+    key = {"dp_bh_max_MPa": "feature_set", "r_plume_m95_m": "feature_set_plume",
+           "sweep_efficiency": "feature_set_sweep"}[target]
     return list(design_features(design[key]))
 
 

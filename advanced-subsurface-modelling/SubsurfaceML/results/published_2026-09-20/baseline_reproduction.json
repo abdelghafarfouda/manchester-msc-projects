@@ -1,0 +1,47 @@
+{
+  "what": "End-to-end re-run of the published study pipeline (commit e16362e) before any change",
+  "command": "python scripts/run_pipeline.py --config <copy of config/study.yaml writing to results/scratch/baseline_study>",
+  "date": "2026-10-04",
+  "machine": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
+  "python": "3.11.15",
+  "versions": {
+    "numpy": "2.4.4",
+    "scipy": "1.17.1",
+    "pandas": "3.0.2",
+    "scikit_learn": "1.8.0",
+    "xgboost": "3.2.0"
+  },
+  "total_wall_minutes": 27.9,
+  "stage_seconds": {
+    "validation": 383.9,
+    "dataset": 647.3,
+    "surrogates": 324.9,
+    "uncertainty": 0.3,
+    "classifier": 3.6,
+    "speed": 22.4,
+    "interpretation": 65.8,
+    "studies": 138.3,
+    "open_boundary": 11.5,
+    "screening": 78.8
+  },
+  "dataset_comparison": "all 880 scenarios: every numeric column identical to the published scenarios.csv (max relative difference 0.0); all saturation profiles identical",
+  "summary_comparison": "2961 values of the published summary.json compared (timings, environment, file hashes excluded): 0 differ",
+  "reproduced_headline_numbers": {
+    "verification": "18/18 checks pass",
+    "pressure_svr_test": {
+      "RMSE": 1.2372590379628867,
+      "MAE": 0.42034609901929965,
+      "R2": 0.9405976037311496,
+      "max_error": 14.839105234497733
+    },
+    "pressure_band_coverage_test": 0.8772727272727273,
+    "plume_test_RMSE_m": 10.510432457541793,
+    "sweep_test_RMSE": 0.0011576482039043633,
+    "screening": {
+      "n_screened_resimulated": 24,
+      "n_screened_violating": 3,
+      "median_improvement_pct": 1.411664697140792,
+      "n_baselines_violating": 1
+    }
+  }
+}
