@@ -21,10 +21,33 @@ from .config import ConfigError, load_config, project_root
 EXAMPLE = project_root() / "examples" / "worked_example_input.json"
 
 
-def _load_case(path):
-    d = json.loads(Path(path).read_text())
+class InputError(ValueError):
+    """An input file that cannot describe one reservoir and schedule."""
+
+
+def _load_case(path, n_periods: int):
+    """Read and check a case file (see ``examples/worked_example_input.json``)."""
     from .predict import realisation_from_dict
-    return realisation_from_dict(d["reservoir"]), d["rates_kg_s"]
+    p = Path(path)
+    if not p.is_file():
+        raise InputError(f"input file not found: {p}")
+    try:
+        d = json.loads(p.read_text())
+    except json.JSONDecodeError as exc:
+        raise InputError(f"{p} is not valid JSON ({exc})") from None
+    if not isinstance(d, dict) or "reservoir" not in d or "rates_kg_s" not in d:
+        raise InputError(f"{p} needs a 'reservoir' object and a 'rates_kg_s' list "
+                         f"(see {EXAMPLE.name})")
+    rates = d["rates_kg_s"]
+    if (not isinstance(rates, list) or len(rates) != n_periods
+            or not all(isinstance(q, (int, float)) and q > 0 for q in rates)):
+        raise InputError(f"'rates_kg_s' must be {n_periods} positive numbers "
+                         f"(one per injection period), got {rates!r}")
+    try:
+        r = realisation_from_dict(d["reservoir"])
+    except (ValueError, TypeError) as exc:
+        raise InputError(f"reservoir inputs: {exc}") from None
+    return r, [float(q) for q in rates]
 
 
 def main(argv=None) -> int:
@@ -67,11 +90,15 @@ def main(argv=None) -> int:
         from .artifacts import ArtifactError
         from .predict import Predictor
         try:
+            r, rates = _load_case(a.input, cfg.schedule.n_periods)
+        except InputError as exc:
+            print(f"input error: {exc}")
+            return 2
+        try:
             pr = Predictor(cfg)
         except ArtifactError as exc:
             print(f"model artifacts unavailable: {exc}")
             return 3
-        r, rates = _load_case(a.input)
         out = pr.predict(r, [rates])
         res = {t: {"prediction": float(v["pred"][0]),
                    "interval_low": float(v["band_low"][0]),
@@ -94,7 +121,11 @@ def main(argv=None) -> int:
     if a.cmd == "simulate":
         from .scenarios import make_schedule, run_scenario
         from .units import MPA
-        r, rates = _load_case(a.input)
+        try:
+            r, rates = _load_case(a.input, cfg.schedule.n_periods)
+        except InputError as exc:
+            print(f"input error: {exc}")
+            return 2
         o = run_scenario(cfg, r, make_schedule(cfg, r, rates), want_series=False)
         if o["status"] != "ok":
             print(json.dumps(o, indent=2, default=str))

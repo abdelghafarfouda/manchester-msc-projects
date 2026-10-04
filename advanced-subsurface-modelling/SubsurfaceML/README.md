@@ -11,7 +11,7 @@ rather than pore volume, usually limits storage (Zhou et al., 2008). A
 surrogate that fails silently on the reservoirs that matter can make an
 unsafe schedule look acceptable.
 
-**What is implemented** (105 tests):
+**What is implemented** (107 tests):
 * a radial IMPES CO₂–brine simulator for a sealed four-layer aquifer with one
   shared bottom-hole pressure, passing 21 verification checks, including the
   two-phase well pressure against the pseudo-steady-state solution;
@@ -343,7 +343,7 @@ machine (Intel Xeon 2.1 GHz, 15 GB RAM) using all cores.
 | 4. Screen of all 1,520 cases for transient peaks | `python scripts/run_experiments.py --config config/study.yaml --only peak_screen` | 7 min |
 | 5. Calibration check: the fixed design recalibrated on 41 fresh reservoirs (protocol addendum) | `python scripts/run_experiments.py --config config/study.yaml --only calibration_check` | 2 min |
 | 6. Notebooks (rebuild and execute) | `python scripts/make_notebooks.py --execute` | 36 s |
-| Tests | `pytest` (105 tests) | 2 min |
+| Tests | `pytest` (107 tests) | 2 min |
 | Small demo of the whole pipeline | `python scripts/run_pipeline.py --config config/demo.yaml` | 12 min |
 
 Step 1 needs the development data (`results/study/data/scenarios.csv`), which
@@ -373,7 +373,7 @@ config/                            study.yaml (reference run) · demo.yaml (smal
 results/study/                     data (development + fresh test + shift), figures, metrics, models, report, experiments/
 results/demo/                      the small run, same layout
 results/published_2026-09-20/      the published models (hash-checked) and the reproduction record of the published run
-tests/                             105 tests
+tests/                             107 tests
 app/streamlit_app.py               optional interface: predict, simulate, verified screening
 docs/                              REVIEW_CHECKLIST · EVALUATION_PROTOCOL · TECHNICAL_REPORT · WALKTHROUGH · SOURCE_MAP · ASSUMPTIONS ·
                                    MAPPING_TABLE · CHANGELOG · archive/ (2026-09-20 course-coverage record)
