@@ -1,0 +1,51 @@
+{
+  "_purpose": "Frozen configuration of the bounded network-capacity comparison. Written and committed on 2026-10-04 BEFORE any of its models was trained or scored on the test or extrapolation sets. Do not change it after scoring; a change means a new, separately reported comparison.",
+  "question": "Is the original 3 x 128 hidden-unit width a sensible capacity for the data-only network, compared with 3 x 64 and 3 x 192?",
+  "variant": "data-only loss (physics = 0); the physics-loss comparison stays tied to the 3 x 128 network it was run on",
+  "widths": [64, 128, 192],
+  "depth": 3,
+  "seeds": [0, 1, 2],
+  "training": {
+    "script": "scripts/train.py",
+    "epochs": 200,
+    "batch": 64,
+    "lr": 0.001,
+    "optimiser": "Adam",
+    "criterion": "nn.MSELoss",
+    "hidden_activation": "nn.ReLU",
+    "output_activation": "nn.Sigmoid",
+    "checkpoint_rule": "parameters at the epoch of lowest validation data MSE (as in the original runs)",
+    "data": "data/flash_dataset.npz, the same grouped split by mixture, standardisation fitted on the training rows only",
+    "torch_threads": 2
+  },
+  "reused_runs": {
+    "width": 128,
+    "checkpoints": ["results/checkpoints/ffn_phys0_s0.pt", "results/checkpoints/ffn_phys0_s1.pt", "results/checkpoints/ffn_phys0_s2.pt"],
+    "records": ["results/metrics/train_ffn_phys0_s0.json", "results/metrics/train_ffn_phys0_s1.json", "results/metrics/train_ffn_phys0_s2.json"],
+    "provenance_checked_by": "python scripts/capacity.py provenance (epochs, batch, lr, hidden, physics, lambda, rows, dataset hash, torch version and threads must match this file)"
+  },
+  "new_runs": [
+    "python scripts/train.py --physics 0 --seed 0 --epochs 200 --batch 64 --lr 0.001 --hidden 64 64 64 --threads 2 --out-dir results/capacity --tag ffn_h64_s0",
+    "python scripts/train.py --physics 0 --seed 1 --epochs 200 --batch 64 --lr 0.001 --hidden 64 64 64 --threads 2 --out-dir results/capacity --tag ffn_h64_s1",
+    "python scripts/train.py --physics 0 --seed 2 --epochs 200 --batch 64 --lr 0.001 --hidden 64 64 64 --threads 2 --out-dir results/capacity --tag ffn_h64_s2",
+    "python scripts/train.py --physics 0 --seed 0 --epochs 200 --batch 64 --lr 0.001 --hidden 192 192 192 --threads 2 --out-dir results/capacity --tag ffn_h192_s0",
+    "python scripts/train.py --physics 0 --seed 1 --epochs 200 --batch 64 --lr 0.001 --hidden 192 192 192 --threads 2 --out-dir results/capacity --tag ffn_h192_s1",
+    "python scripts/train.py --physics 0 --seed 2 --epochs 200 --batch 64 --lr 0.001 --hidden 192 192 192 --threads 2 --out-dir results/capacity --tag ffn_h192_s2"
+  ],
+  "selection_rule": {
+    "statistic": "for each width, the mean over seeds 0, 1, 2 of the best validation data MSE recorded during training (the checkpoint criterion)",
+    "rule": "select the smallest width whose statistic is no more than 10 % above the lowest statistic among the three widths",
+    "tolerance_relative": 0.10,
+    "why_10_percent": "10 % in MSE is about 5 % in RMSE. The seed-to-seed standard deviation of the best validation MSE of the original 3 x 128 runs is 0.15e-05 on a mean of 5.62e-05 (2.7 %, population std over seeds 0-2), so a 10 % difference is several times the training-run variability; a smaller difference is not treated as a benefit, and the smaller network is kept",
+    "test_data": "not used: test and extrapolation results are reported for every width after selection and play no part in it"
+  },
+  "test_set_status": "established benchmark: test-set results of the 3 x 128 models were already inspected and published (2026-09-21), so the test set is not a fresh holdout for this comparison; selection therefore uses validation data only",
+  "reported_for_every_width": [
+    "parameter count",
+    "training wall time of each run (machine and load recorded), and seconds per epoch measured for all widths on one machine in one session",
+    "inference time over the whole test set (median of 15 after 3 warm-ups, 2 threads)",
+    "training and validation MSE curves, best epoch, final training vs best validation MSE",
+    "test and extrapolation RMSE, MAE, R^2 and mean Rachford-Rice residual h^2"
+  ],
+  "outputs": "results/capacity/ (checkpoints, training records, capacity_results.json, capacity_table.csv, figure)"
+}

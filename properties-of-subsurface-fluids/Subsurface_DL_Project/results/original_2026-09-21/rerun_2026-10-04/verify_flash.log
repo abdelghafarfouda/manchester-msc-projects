@@ -1,0 +1,26 @@
+CASE A  p.14  seven-component mixture, 150 F (610 R)
+  z transcription max |diff| vs printed z : 5.0e-08
+  bubble point p_b =    1590.8767 psia   notes 1590.8769   rel err 1.32e-07
+  dew point    p_d =    1.9995763 psia   notes    1.9995691   rel err 3.58e-06
+  sum z_i K_i at p_b = 1.000000  (must be 1)
+  sum z_i/K_i at p_d = 1.000000  (must be 1)
+
+CASE B  p.15  same mixture, 796.43821 psia, 180 F (640 R)
+  K-values agree with the printed 5 d.p. to 1e-05
+  F_V bisection = 0.1916985   notes 0.1917145   diff -1.60e-05
+  residual at our root  -6.17e-13
+  residual at notes f_v -5.19e-05  (notes print Target = 9.89e-06)
+  max |x - x_notes| = 7.1e-06,  max |y - y_notes| = 3.9e-05
+
+CASE C  pp.16-18  C1/nC10 binary
+  (a) sum z_i K_i = 0.8920 (notes 0.89), sum z_i/K_i = 3.5055 (notes 3.50) -> liquid
+  (b) F_V bisection          = 0.4588879
+      notes' closed form 1   = 0.4588879
+      notes' closed form 2   = 0.4588879
+      same forms with K2 = 0 = 0.4571429  -> prints as 0.457
+      exact value would print as 0.459
+      x exact = (0.2626, 0.7374); x with K2 = 0 = (0.2632, 0.7368); notes (0.263, 0.737)
+      y1 from the notes' rounded x1: 0.263 x 3.8 = 0.9994 -> 0.999, so their y2 = 1 - 0.999 = 0.001
+
+PASS
+written: results/metrics/verify_flash.json

@@ -1,0 +1,95 @@
+{
+  "summary": {
+    "data_only": {
+      "test_rmse_mean": 0.006359232952567081,
+      "test_rmse_std": 0.0002567497686711177,
+      "test_mae_mean": 0.003309209638926027,
+      "test_mae_std": 0.00022787549977949957,
+      "test_r2_mean": 0.9994784705181439,
+      "test_r2_std": 4.239446928012491e-05,
+      "test_mean_h2_mean": 0.0005999001443652881,
+      "test_mean_h2_std": 9.785788065185264e-05,
+      "test_median_abs_h_mean": 0.006152115326653486,
+      "test_median_abs_h_std": 0.0004232710125324793,
+      "extrapolation_rmse_mean": 0.008350122639944906,
+      "extrapolation_rmse_std": 0.0019744339740888493,
+      "extrapolation_mae_mean": 0.005455929635567198,
+      "extrapolation_mae_std": 0.0013616494791869503,
+      "extrapolation_r2_mean": 0.9837629215015075,
+      "extrapolation_r2_std": 0.007877472859992662,
+      "extrapolation_mean_h2_mean": 0.00014970089525079063,
+      "extrapolation_mean_h2_std": 6.82257178956146e-05,
+      "extrapolation_median_abs_h_mean": 0.00725901389203842,
+      "extrapolation_median_abs_h_std": 0.0015321537790913475,
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    "physics": {
+      "test_rmse_mean": 0.005346233125407482,
+      "test_rmse_std": 0.00029499392132560203,
+      "test_mae_mean": 0.002997275583768252,
+      "test_mae_std": 0.0003032765739643296,
+      "test_r2_mean": 0.9996308710873635,
+      "test_r2_std": 4.138320024288468e-05,
+      "test_mean_h2_mean": 0.00033168822455556437,
+      "test_mean_h2_std": 3.431565277640643e-05,
+      "test_median_abs_h_mean": 0.006139465298759357,
+      "test_median_abs_h_std": 0.000951021343203907,
+      "extrapolation_rmse_mean": 0.009721386550038544,
+      "extrapolation_rmse_std": 0.001965649232835631,
+      "extrapolation_mae_mean": 0.005894833082533814,
+      "extrapolation_mae_std": 0.0006202631121921342,
+      "extrapolation_r2_mean": 0.9783053027785295,
+      "extrapolation_r2_std": 0.009031195561720053,
+      "extrapolation_mean_h2_mean": 0.0001837370032886981,
+      "extrapolation_mean_h2_std": 4.8817557758366135e-05,
+      "extrapolation_median_abs_h_mean": 0.007159170971676665,
+      "extrapolation_median_abs_h_std": 0.0015529247555961146,
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    }
+  },
+  "baseline": {
+    "test": {
+      "n": 12000,
+      "rmse": 0.27868906926099823,
+      "mae": 0.24155030509464961,
+      "max_abs_err": 0.6203031080855085,
+      "r2": -4.384597783957389e-06,
+      "mean_h2": 0.44154869048470985,
+      "median_abs_h": 0.5729307111208717
+    },
+    "extrapolation": {
+      "n": 7931,
+      "rmse": 0.5622161464876564,
+      "mae": 0.5581691030159047,
+      "max_abs_err": 0.6206435882955782,
+      "r2": -68.7110102109457,
+      "mean_h2": 1.0448857385423564,
+      "median_abs_h": 1.0296508077848008
+    }
+  },
+  "timing": {
+    "rows": 12000,
+    "bisection_solver_seconds_median": 0.03096006399999851,
+    "bisection_solver_seconds_min_max": [
+      0.02408688399998482,
+      0.03638939299997901
+    ],
+    "network_forward_seconds_median": 0.008380623999983072,
+    "network_forward_seconds_min_max": [
+      0.0076791179999986525,
+      0.014984050999998999
+    ],
+    "speedup_median": 3.6942432926308406,
+    "note": "median of 15 timed repetitions after 3 warm-up calls; both vectorised over all test rows on the same CPU; the solver is numpy bisection to 1e-12 (40 iterations), the network is a single float32 forward pass on 4 torch threads",
+    "device": "cpu",
+    "torch_version": "2.14.0+cu130"
+  }
+}

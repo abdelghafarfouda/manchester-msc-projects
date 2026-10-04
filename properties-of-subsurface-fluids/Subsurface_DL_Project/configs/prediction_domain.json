@@ -1,0 +1,124 @@
+{
+  "_purpose": "Training domain of the network and the default model of the guarded predictor (src/sfp/predict.py). Written by scripts/derive_domain.py from the training split; do not edit by hand.",
+  "units": {
+    "p": "psia",
+    "T": "degrees Rankine (T[F] + 460)",
+    "z": "mole fraction"
+  },
+  "components": [
+    "CO2",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C10"
+  ],
+  "limits": {
+    "p_psia": [
+      2.0,
+      2000.0
+    ],
+    "T_R": [
+      610.0,
+      680.0
+    ],
+    "z_min": [
+      0.006024096385542169,
+      0.0056179775280898875,
+      0.004878048780487805,
+      0.004830917874396135,
+      0.005291005291005291,
+      0.0058823529411764705,
+      0.005917159763313609
+    ],
+    "z_max": [
+      0.4523809523809524,
+      0.4358974358974359,
+      0.42696629213483145,
+      0.43103448275862066,
+      0.4358974358974359,
+      0.47560975609756095,
+      0.4634146341463415
+    ],
+    "p_max_tested_psia": 4000.0
+  },
+  "basis": {
+    "p_psia": "training band of the sampling window (log-uniform draw); the 2000-4000 psia band was used only for the extrapolation test",
+    "T_R": "sampling window (uniform draw), 150-220 F",
+    "z": "minimum and maximum of each mole fraction over the training rows. The checks are marginal: a state can pass every range and still be a combination the training data never covered"
+  },
+  "measured_on_training_rows": {
+    "rows": 36000,
+    "mixtures": 1800,
+    "p_psia_min_max": [
+      2.0950575576507857,
+      1999.5492610298245
+    ],
+    "T_R_min_max": [
+      610.001322103021,
+      679.9996750156272
+    ],
+    "z_min": [
+      0.006024096385542169,
+      0.0056179775280898875,
+      0.004878048780487805,
+      0.004830917874396135,
+      0.005291005291005291,
+      0.0058823529411764705,
+      0.005917159763313609
+    ],
+    "z_max": [
+      0.4523809523809524,
+      0.4358974358974359,
+      0.42696629213483145,
+      0.43103448275862066,
+      0.4358974358974359,
+      0.47560975609756095,
+      0.4634146341463415
+    ],
+    "moles_min_max": [
+      1,
+      40
+    ]
+  },
+  "configuration_implied_z_range": {
+    "z_min": 0.004149377593360996,
+    "z_max": 0.8695652173913043,
+    "rule": "integer mole charges 1-40: one component at the minimum with the other six at the maximum, and the reverse"
+  },
+  "review_limits_checked": {
+    "stated": {
+      "p_max_psia": 2000.0,
+      "T_R": [
+        610.0,
+        680.0
+      ],
+      "z": [
+        0.004,
+        0.87
+      ]
+    },
+    "pressure": "confirmed: training band ends at 2000 psia; the extrapolation test covers 2000-4000 psia",
+    "temperature": "confirmed: 610-680 R",
+    "composition": "the stated 0.004-0.87 is the range the configuration allows (0.00415-0.86957); the training rows contain only 0.0048-0.4756 (per component 0.427-0.476 at the top), so the realised ranges are used"
+  },
+  "rows_with_a_mole_fraction_outside_the_training_ranges": {
+    "validation": 120,
+    "test": 180,
+    "extrapolation": 100
+  },
+  "default_checkpoint": {
+    "path": "results/checkpoints/ffn_phys1_s2.pt",
+    "rule": "lowest best validation data MSE among the six reported models (results/metrics/train_*.json); no test data used",
+    "validation_mse": {
+      "ffn_phys0_s0": 5.822159158803212e-05,
+      "ffn_phys0_s1": 5.5957206277525985e-05,
+      "ffn_phys0_s2": 5.4553788863510516e-05,
+      "ffn_phys1_s0": 4.732232076154712e-05,
+      "ffn_phys1_s1": 4.544045195022288e-05,
+      "ffn_phys1_s2": 4.0481772070052104e-05
+    }
+  },
+  "dataset_sha256": "53741070ffa6bf73195cb4b03a5519f3344db955d184e02ee7eb3418293f6f1d"
+}

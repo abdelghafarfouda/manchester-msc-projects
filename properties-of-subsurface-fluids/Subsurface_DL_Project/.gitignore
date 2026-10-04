@@ -41,3 +41,6 @@ Thumbs.db
 #   results/figures/*.png         the figures quoted in README.md
 #   logs/*.log                    the run records behind those numbers
 # ---------------------------------------------------------------------------
+
+# CI working folder
+ci/

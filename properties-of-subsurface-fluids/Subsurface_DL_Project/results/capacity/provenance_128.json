@@ -1,0 +1,307 @@
+{
+  "reusable": true,
+  "checks": [
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "epochs",
+      "recorded": 200,
+      "required": 200,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "batch",
+      "recorded": 64,
+      "required": 64,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "lr",
+      "recorded": 0.001,
+      "required": 0.001,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "hidden",
+      "recorded": [
+        128,
+        128,
+        128
+      ],
+      "required": [
+        128,
+        128,
+        128
+      ],
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "checkpoint hidden",
+      "recorded": [
+        128,
+        128,
+        128
+      ],
+      "required": [
+        128,
+        128,
+        128
+      ],
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "physics",
+      "recorded": false,
+      "required": false,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "lambda",
+      "recorded": 0.0,
+      "required": 0.0,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "seed",
+      "recorded": 0,
+      "required": 0,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "training rows",
+      "recorded": 36000,
+      "required": 36000,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "validation rows",
+      "recorded": 12000,
+      "required": 12000,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "torch version",
+      "recorded": "2.14.0+cu130",
+      "required": "2.14.0+cu130",
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s0.pt",
+      "item": "torch threads (recorded run, environment.json)",
+      "recorded": 2,
+      "required": 2,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "epochs",
+      "recorded": 200,
+      "required": 200,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "batch",
+      "recorded": 64,
+      "required": 64,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "lr",
+      "recorded": 0.001,
+      "required": 0.001,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "hidden",
+      "recorded": [
+        128,
+        128,
+        128
+      ],
+      "required": [
+        128,
+        128,
+        128
+      ],
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "checkpoint hidden",
+      "recorded": [
+        128,
+        128,
+        128
+      ],
+      "required": [
+        128,
+        128,
+        128
+      ],
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "physics",
+      "recorded": false,
+      "required": false,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "lambda",
+      "recorded": 0.0,
+      "required": 0.0,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "seed",
+      "recorded": 1,
+      "required": 1,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "training rows",
+      "recorded": 36000,
+      "required": 36000,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "validation rows",
+      "recorded": 12000,
+      "required": 12000,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "torch version",
+      "recorded": "2.14.0+cu130",
+      "required": "2.14.0+cu130",
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s1.pt",
+      "item": "torch threads (recorded run, environment.json)",
+      "recorded": 2,
+      "required": 2,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "epochs",
+      "recorded": 200,
+      "required": 200,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "batch",
+      "recorded": 64,
+      "required": 64,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "lr",
+      "recorded": 0.001,
+      "required": 0.001,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "hidden",
+      "recorded": [
+        128,
+        128,
+        128
+      ],
+      "required": [
+        128,
+        128,
+        128
+      ],
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "checkpoint hidden",
+      "recorded": [
+        128,
+        128,
+        128
+      ],
+      "required": [
+        128,
+        128,
+        128
+      ],
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "physics",
+      "recorded": false,
+      "required": false,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "lambda",
+      "recorded": 0.0,
+      "required": 0.0,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "seed",
+      "recorded": 2,
+      "required": 2,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "training rows",
+      "recorded": 36000,
+      "required": 36000,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "validation rows",
+      "recorded": 12000,
+      "required": 12000,
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "torch version",
+      "recorded": "2.14.0+cu130",
+      "required": "2.14.0+cu130",
+      "match": true
+    },
+    {
+      "run": "ffn_phys0_s2.pt",
+      "item": "torch threads (recorded run, environment.json)",
+      "recorded": 2,
+      "required": 2,
+      "match": true
+    }
+  ],
+  "dataset_sha256": "53741070ffa6bf73195cb4b03a5519f3344db955d184e02ee7eb3418293f6f1d",
+  "note": "the original runs were selected on the same validation data MSE and saved the scaler fitted on the training rows; the new runs use the same script"
+}

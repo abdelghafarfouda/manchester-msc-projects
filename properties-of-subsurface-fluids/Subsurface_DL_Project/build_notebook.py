@@ -31,10 +31,15 @@ generated for this study. There are no measurements anywhere in it, and none
 of its numbers are a claim about real vapour–liquid equilibrium.
 
 **The question.** The taught calculation finds $F_V$ by iterating on
-Rachford-Rice. Can a small feed-forward network predict $F_V$ directly from
-composition, pressure and temperature for mixtures it has never seen, and does
-adding the Rachford-Rice equation itself to the loss function change the
-result?
+Rachford-Rice. Can a small feed-forward network reproduce it for mixtures it
+has never seen, **where does it fail**, and **when does adding the
+Rachford-Rice residual to the loss improve the prediction**?
+
+The project began as MSc coursework connecting the two modules. It was
+rebuilt and re-verified in September 2026 (the six models and the metrics in
+§4), then extended in October 2026: an error analysis across the two-phase
+window (§4.2), a bounded network-capacity comparison (§6) and a guarded
+prediction path (§7).
 
 **Scope.** Only the Wilson route is modelled. The equation-of-state route to
 $K$-values is named in the notes (p. 6) without an equation of state being
@@ -48,20 +53,25 @@ written down, and is outside the scope chosen here.
 | 2. dataset | `data/flash_dataset.npz`, `results/metrics/dataset.json` | the summary statistics and plots |
 | 3. network and losses | — | $\lambda$, a 20-epoch smoke test |
 | 4. results | the six checkpoints in `results/checkpoints/` | every metric, from those checkpoints |
+| 4.2 error across the two-phase window | the same six checkpoints | window positions, boundary bands, every share quoted |
 | 5. learning curve | `results/metrics/learning_curve.json` | the plot |
+| 6. network capacity | the selection record `results/capacity/capacity_results.json`; the capacity checkpoints | test and extrapolation errors, from those checkpoints |
+| 7. guarded prediction | `configs/prediction_domain.json`, the default checkpoint | every route and value shown |
 
-The six models were trained by `scripts/train.py` (200 epochs, three seeds per
-variant); training is not repeated here. Everything else is recomputed while
-the notebook runs.
+All models were trained by `scripts/train.py` (200 epochs, three seeds per
+variant and width); training is not repeated here. Everything else is
+recomputed while the notebook runs.
 
 ### Sections
 
 1. the physics, the component table, and the solver against the notes' worked examples
 2. the dataset, and the split by mixture
 3. the network and the two loss functions
-4. results
+4. results, and where in the two-phase window the error sits
 5. error against the number of training mixtures
-6. what this does and does not show
+6. network capacity: 3 x 64, 3 x 128, 3 x 192 hidden units
+7. guarded prediction: when the network is allowed to answer
+8. what this does and does not show
 """)
 
 code(r"""
@@ -496,13 +506,14 @@ Both variants sit far below the training-mean baseline, which is the sanity
 floor. Two findings, both reported:
 
 * **In range, the physics term improved the test result.** Test RMSE falls by
-  about a quarter, several times the seed-to-seed spread, and the
-  Rachford-Rice residual of the predictions falls with it.
+  about 16 % (printed above), about three times the seed-to-seed spread, and
+  the Rachford-Rice residual of the predictions falls with it.
 * **On the reported pressure-extrapolation set, it did not.** There the
-  physics-trained models are worse on average. That difference is about the
-  same size as the seed-to-seed spread on either variant, so it is a change of
-  sign rather than a firmly separated effect — but it is the measured result
-  and it is reported as such. Whatever the residual term buys in range,
+  physics-trained models are worse on average, and worse in two of the three
+  seeds (§4.2). The average difference is about the same size as the
+  seed-to-seed spread on either variant, so it is a change of sign rather
+  than a firmly separated effect — but it is the measured result and it is
+  reported as such. Whatever the residual term buys in range,
   robustness at 2000–4000 psia is not part of it in this benchmark.
 """)
 
@@ -585,6 +596,86 @@ machine is doing — repeated measurements on this container have spanned about
 speed is not the reason to build this surrogate.
 """)
 
+md(r"""
+### 4.2 Where in the two-phase window the error sits
+
+Wilson's $K_i$ is proportional to $1/p$, so the phase test of p. 8 reduces to
+$p_d < p < p_b$, with the bubble and dew points of pp. 12-13
+($p_b=\sum_i z_i p_{ci}e^{5.37(1+\omega_i)(1-T_{ci}/T)}$, $1/p_d=\sum_i z_i/(p_{ci}e^{\dots})$
+-- the `Bpi` and `Dpi` columns of the p. 14 sheet). Each row's position in its own
+window is
+
+$$\xi=\frac{\ln(p/p_d)}{\ln(p_b/p_d)}\qquad \xi=0 \text{ at the dew point } (F_V=1),\quad \xi=1 \text{ at the bubble point } (F_V=0).$$
+
+The 5 % of test rows with the smallest $\xi$ are the *dew band*, the 5 % with the
+largest the *bubble band*; the same $\xi$ limits are used for the extrapolation
+set. `scripts/analyse_errors.py` writes the full tables to `results/analysis/`;
+here the headline numbers are recomputed from the six checkpoints.
+""")
+
+code(r"""
+XI = {}
+for name, s_ in sets.items():
+    pb_, pd_ = flash.wilson_saturation_pressures(s_[2], s_[0][:, 8], C.TC_RANKINE, C.PC_PSIA, C.OMEGA)
+    XI[name] = flash.window_position(s_[0][:, 7], pb_, pd_)
+    assert ((XI[name] > 0) & (XI[name] < 1)).all()          # every row is two-phase
+""")
+
+code(r"""
+xs = np.sort(XI["test"]); k = int(round(0.05 * xs.size))
+dew_max, bub_min = xs[k - 1], xs[xs.size - k]
+print(f"dew band: xi <= {dew_max:.4f}   bubble band: xi >= {bub_min:.4f}   (5 % of test rows each)")
+print(f"extrapolation rows: xi from {XI['extrapolation'].min():.3f} to {XI['extrapolation'].max():.3f} "
+      f"-- all in the upper part of their windows\n")
+
+def band_share(err, xi_):
+    sse = (err**2).sum()
+    return ((err[xi_ <= dew_max]**2).sum() / sse, (err[xi_ >= bub_min]**2).sum() / sse)
+
+print(f"{'model':>14} | {'test: share of squared error':>30} | {'extrapolation':>24}")
+print(f"{'':>14} | {'dew band':>14} {'bubble band':>15} | {'dew band':>11} {'bubble band':>12}")
+for tag in sorted(rows):
+    t_ = band_share(preds[(tag, "test")] - sets["test"][1], XI["test"])
+    e_ = band_share(preds[(tag, "extrapolation")] - sets["extrapolation"][1], XI["extrapolation"])
+    print(f"{tag:>14} | {t_[0]:14.1%} {t_[1]:15.1%} | {e_[0]:11.1%} {e_[1]:12.1%}")
+
+print("\nphysics loss against data loss, same seed: RMSE change, and the share of the change in")
+print("squared error that falls in the dew band")
+for name in sets:
+    for seed in (0, 1, 2):
+        ea = preds[(f"ffn_phys0_s{seed}", name)] - sets[name][1]
+        eb = preds[(f"ffn_phys1_s{seed}", name)] - sets[name][1]
+        d_ = ea**2 - eb**2
+        ch = 100 * (np.sqrt((eb**2).mean()) / np.sqrt((ea**2).mean()) - 1)
+        print(f"  {name:>13} seed {seed}: RMSE {ch:+6.1f} %   dew-band share of the change "
+              f"{d_[XI[name] <= dew_max].sum() / d_.sum() + 0.0:6.1%}")
+""")
+
+code(r"""
+order = np.argsort(XI["test"]); groups = np.array_split(order, 20)
+fig, ax = plt.subplots(figsize=(7.0, 4.0))
+for tag in sorted(rows):
+    e_ = preds[(tag, "test")] - sets["test"][1]
+    ax.plot([np.median(XI["test"][g]) for g in groups], [np.sqrt((e_[g]**2).mean()) for g in groups],
+            "o-", ms=3, lw=1.2, color="C1" if rows[tag]["physics"] else "C0",
+            label=("data + physics loss" if rows[tag]["physics"] else "data loss only") if tag.endswith("s0") else None)
+for v in (dew_max, bub_min): ax.axvline(v, color="0.4", ls=":", lw=1)
+ax.set_yscale("log"); ax.set_xlim(0, 1)
+ax.set_xlabel(r"position in the two-phase window $\xi$  [-]   (0 = dew point, 1 = bubble point)")
+ax.set_ylabel(r"RMSE in $F_V$ per 5 % of test rows  [-]")
+ax.set_title("Test mixtures: error along the window, six models"); ax.grid(alpha=0.3, which="both"); ax.legend(fontsize=9)
+fig.tight_layout(); plt.show()
+""")
+
+md(r"""
+The error is concentrated next to the **dew point** -- where $F_V$ is close to 1
+-- and the bubble-point side is not a problem area. The physics term lowered
+the in-range error in every seed, but how much of that came from the dew band
+varies from seed to seed, and on the pressure-extrapolation set it made the
+error worse in two of the three seeds. `docs/ERROR_ANALYSIS.md` has the full
+tables, including the error quantiles and a mixture-resampling check.
+""")
+
 # ------------------------------------------------------------------ 5
 md(r"""
 ---
@@ -609,15 +700,126 @@ for n_, r_ in zip(lc["n_train_realisations"], lc["test_rmse"]):
 md(r"""
 Adding training mixtures reduced the test error at every step, and it was
 still falling at the largest size tried. That says more data would help at
-this architecture; it does not establish that capacity is unimportant, since
-only one width and depth were tried. Separating the two would need a second
-sweep over network size, which is outside the scope kept here.
+this architecture. On its own it does not say whether the width was right;
+§6 compares widths directly.
 """)
 
 # ------------------------------------------------------------------ 6
 md(r"""
 ---
-## 6. What this does and does not show
+## 6. Network capacity: 3 x 64, 3 x 128, 3 x 192 hidden units
+
+Was the original width a sensible choice? The data-only network was trained at
+three widths, three seeds each, with the same split, standardisation,
+optimiser, epoch budget and checkpoint rule (`configs/capacity.json`, frozen and
+committed before any of these models was scored on the test or extrapolation
+sets). The original 3 x 128 runs were reused after their provenance was
+checked; six new runs were added.
+
+**Selection uses validation data only:** the smallest width whose mean best
+validation MSE is within 10 % of the lowest. The test set is an *established
+benchmark* — its 3 x 128 results were published before this comparison — so it
+is reported, not used to choose. The physics-loss comparison of §4 was run at
+3 x 128 only and is not extended to other widths here.
+""")
+
+code(r"""
+cap = json.load(open(os.path.join(ROOT, "results", "capacity", "capacity_results.json")))   # loaded
+sel = cap["selection"]
+print("selection (training records, validation data only):")
+for w in (64, 128, 192):
+    s_ = cap["summary_by_width"][str(w)]
+    print(f"  3 x {w:3d}: {s_['n_parameters']:6d} parameters   mean best validation MSE "
+          f"{s_['mean_best_val_mse']:.3e} +/- {s_['std_best_val_mse']:.1e}")
+print(f"  threshold (lowest + 10 %): {sel['threshold']:.3e}  ->  selected 3 x {sel['selected_width']}"
+      f"   (original 3 x {sel['original_width']})")
+
+# test and extrapolation errors, recomputed now from the saved checkpoints
+print("\nrecomputed from the checkpoints:")
+cap_rmse = {}
+for key, r in sorted(cap["runs"].items(), key=lambda kv: (kv[1]["width"], kv[1]["seed"])):
+    ck = torch.load(os.path.join(ROOT, r["checkpoint"]), map_location="cpu", weights_only=False)
+    m = snn.simpleFFN(ck["n_inputs"], num_hidden=tuple(ck["hidden"])); m.load_state_dict(ck["model_state_dict"]); m.eval()
+    sc = sdata.Standardiser().load_state_dict(ck["scaler"])
+    cap_rmse[key] = {n: float(np.sqrt(((snn.predict(m, sc.transform(sets[n][0])) - sets[n][1])**2).mean()))
+                     for n in sets}
+for w in (64, 128, 192):
+    t_ = [cap_rmse[f"h{w}_s{s}"]["test"] for s in (0, 1, 2)]
+    e_ = [cap_rmse[f"h{w}_s{s}"]["extrapolation"] for s in (0, 1, 2)]
+    print(f"  3 x {w:3d}: test RMSE {np.mean(t_):.5f} +/- {np.std(t_):.5f}   "
+          f"extrapolation RMSE {np.mean(e_):.5f} +/- {np.std(e_):.5f}  [-]")
+""")
+
+code(r"""
+fig, axes = plt.subplots(1, 3, figsize=(13.5, 3.8))
+for ax, (lab, get) in zip(axes, (("best validation MSE  [-]", lambda k: cap["runs"][k]["best_val_mse"]),
+                                 ("test RMSE  [-]", lambda k: cap_rmse[k]["test"]),
+                                 ("extrapolation RMSE  [-]", lambda k: cap_rmse[k]["extrapolation"]))):
+    for seed, mk in zip((0, 1, 2), ("o", "s", "^")):
+        ax.plot((64, 128, 192), [get(f"h{w}_s{seed}") for w in (64, 128, 192)], mk + "-", color="0.55", lw=1,
+                label=f"seed {seed}")
+    ax.plot((64, 128, 192), [np.mean([get(f"h{w}_s{s}") for s in (0, 1, 2)]) for w in (64, 128, 192)],
+            "D-", color="C0", lw=2, label="mean")
+    ax.set_xticks((64, 128, 192)); ax.set_xlabel("hidden units per layer (3 layers)"); ax.set_ylabel(lab)
+    ax.grid(alpha=0.3)
+axes[0].legend(fontsize=8); fig.tight_layout(); plt.show()
+""")
+
+md(r"""
+`docs/CAPACITY.md` gives the parameter counts, training and inference times, the
+training and validation curves, and the reading of this comparison.
+""")
+
+# ------------------------------------------------------------------ 7
+md(r"""
+---
+## 7. Guarded prediction: when the network is allowed to answer
+
+The sigmoid output returns a plausible-looking fraction for *any* input,
+including single-phase states the network never saw. The public prediction
+path, `sfp.predict.FlashSurrogate`, therefore validates the input (seven
+components in the notes' order, finite, non-negative, summing to one, psia and
+degrees Rankine), applies the course phase test first, and calls the network
+only for two-phase states inside the training domain. Out-of-domain two-phase
+states go to the reference solver, labelled as such, unless the caller asks
+for an `unsupported` status or a marked extrapolation. `docs/GUARDED_PREDICTION.md`
+has the details.
+""")
+
+code(r"""
+from sfp.predict import FlashSurrogate, InputError
+surr = FlashSurrogate()
+print("default model:", surr.model_name, "(lowest validation MSE of the six reported models)\n")
+z_ex = C.EXAMPLE_MOLES / C.EXAMPLE_MOLES.sum()
+pb_ex, pd_ex = (float(v[0]) for v in flash.wilson_saturation_pressures(z_ex[None], 610.0, C.TC_RANKINE, C.PC_PSIA, C.OMEGA))
+cases = [("p. 15 flash, 796.4 psia, 640 R", z_ex, 796.43821, 640.0),
+         ("p. 14 mixture at its dew point", z_ex, pd_ex, 610.0),
+         ("p. 14 mixture at 1 psia (vapour)", z_ex, 1.0, 610.0),
+         ("p. 14 mixture at 2500 psia (liquid)", z_ex, 2500.0, 610.0),
+         ("p. 15 state at 700 R (outside 610-680 R)", z_ex, 796.43821, 700.0)]
+print(f"{'case':<42}{'phase':<14}{'method':<28}{'F_V':>7}{'bare network':>14}")
+for name, z_, p_, T_r in cases:
+    r = surr.predict(z_, p_, T_r)
+    bare = surr._network(z_[None], np.array([p_]), np.array([T_r]))[0]
+    print(f"{name:<42}{r.phase:<14}{r.method:<28}{r.FV:7.4f}{bare:14.4f}")
+try:
+    surr.predict([0.6, 0.4], 1000.0, 620.0)            # the notes' C1/nC10 binary
+except InputError as e:
+    print("\nbinary of pp. 16-18 ->", e)
+""")
+
+md(r"""
+The bare network calls an all-vapour state about 92 % vapour and misses the
+dew point by 0.10; the guarded path returns the phase test's answer and never
+consults the network for either. The notes' binary verifies the reference
+calculation (§1.3) but is not a seven-component state, so the network is not
+allowed to answer it.
+""")
+
+# ------------------------------------------------------------------ 8
+md(r"""
+---
+## 8. What this does and does not show
 
 **Does.**
 
@@ -628,9 +830,15 @@ md(r"""
 * A feed-forward network of the size taught in the course reproduces the
   taught flash calculation, on the module's own component table, for unseen
   compositions at the accuracy reported in §4, with the split done by mixture.
+* Its errors are concentrated next to the **dew point**: about half of the
+  squared error sits in the 5 % of test rows nearest it (§4.2).
 * Adding the Rachford-Rice residual to the loss improved the in-range test
-  result and did not improve the reported pressure-extrapolation result.
-* More training mixtures reduced the error at every size tried.
+  result in every seed, but on the pressure-extrapolation set it made the
+  error worse in two of the three seeds.
+* A network a quarter of the size (3 x 64) matches 3 x 128 on the test set and
+  is the one the frozen validation rule selects (§6).
+* The guarded prediction path applies the phase test first and calls the
+  network only inside its training domain (§7).
 
 **Does not.**
 
@@ -639,17 +847,17 @@ md(r"""
   The notes give Wilson's original validity as below 500 psia and then use it
   in their own examples up to 4000 psia; this project follows the notes.
 * Cover the equation-of-state route to $K$-values, which is outside the scope
-  chosen here.
+  chosen here (a separate future study).
 * Correct the component constants. They are used exactly as printed.
 * Transfer to another component set: one fixed set of seven components in
   varying proportions, with the network never told what the components are.
-* Decide whether a mixture splits — two-phase states only, with the phase test
-  of p. 8 applied beforehand.
+* Certify coverage: the guarded predictor's domain checks are marginal, one
+  variable at a time.
 * Give a random out-of-distribution sample: at 2000–4000 psia many mixtures
   have no two-phase state, so the extrapolation set is selected.
 * Establish significance. Three seeds show whether an effect exceeds seed
   scatter; the ± is a standard deviation over seeds and nothing more.
-* Separate data from capacity, as §5 notes.
+* Extend the physics-loss finding beyond the 3 x 128 network it was measured on.
 
 `docs/LIMITATIONS.md` carries the full list. `docs/SOURCE_MAP.md` traces every
 equation, property value, architecture and loss term to a page or a notebook

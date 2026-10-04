@@ -1,0 +1,392 @@
+{
+  "default_model": "ffn_phys1_s2",
+  "cases": [
+    {
+      "case": "notes p. 15 flash: 796.43821 psia, 180 F",
+      "inputs": {
+        "z": [
+          0.03875968992248062,
+          0.1937984496124031,
+          0.07751937984496124,
+          0.11627906976744186,
+          0.10852713178294573,
+          0.15503875968992248,
+          0.31007751937984496
+        ],
+        "p_psia": 796.43821,
+        "T_R": 640.0,
+        "options": {}
+      },
+      "FV": 0.19231373071670532,
+      "status": "ok",
+      "phase": "two_phase",
+      "method": "network",
+      "in_training_domain": true,
+      "domain_violations": [],
+      "model": "ffn_phys1_s2",
+      "message": "two-phase state inside the training domain: network prediction",
+      "p_bubble_psia": 1871.6468490296836,
+      "p_dew_psia": 3.8050837339195605,
+      "reference_solver_FV": 0.1916985022073076,
+      "bare_network_FV": 0.19231373071670532
+    },
+    {
+      "case": "notes p. 14 mixture at its bubble point, 150 F",
+      "inputs": {
+        "z": [
+          0.03875968992248062,
+          0.1937984496124031,
+          0.07751937984496124,
+          0.11627906976744186,
+          0.10852713178294573,
+          0.15503875968992248,
+          0.31007751937984496
+        ],
+        "p_psia": 1590.8766896618613,
+        "T_R": 610.0,
+        "options": {}
+      },
+      "FV": 0.0,
+      "status": "ok",
+      "phase": "bubble_point",
+      "method": "phase_boundary",
+      "in_training_domain": null,
+      "domain_violations": [],
+      "model": null,
+      "message": "on the bubble point (sum z_i K_i = 1): F_V = 0; the network was not used",
+      "p_bubble_psia": 1590.8766896618613,
+      "p_dew_psia": 1.9995762599391373,
+      "reference_solver_FV": null,
+      "bare_network_FV": 0.005225913133472204
+    },
+    {
+      "case": "notes p. 14 mixture at its dew point, 150 F",
+      "inputs": {
+        "z": [
+          0.03875968992248062,
+          0.1937984496124031,
+          0.07751937984496124,
+          0.11627906976744186,
+          0.10852713178294573,
+          0.15503875968992248,
+          0.31007751937984496
+        ],
+        "p_psia": 1.9995762599391373,
+        "T_R": 610.0,
+        "options": {}
+      },
+      "FV": 1.0,
+      "status": "ok",
+      "phase": "dew_point",
+      "method": "phase_boundary",
+      "in_training_domain": null,
+      "domain_violations": [],
+      "model": null,
+      "message": "on the dew point (sum z_i / K_i = 1): F_V = 1; the network was not used",
+      "p_bubble_psia": 1590.8766896618613,
+      "p_dew_psia": 1.9995762599391373,
+      "reference_solver_FV": null,
+      "bare_network_FV": 0.898807168006897
+    },
+    {
+      "case": "p. 14 mixture at 2500 psia, above its bubble point (liquid)",
+      "inputs": {
+        "z": [
+          0.03875968992248062,
+          0.1937984496124031,
+          0.07751937984496124,
+          0.11627906976744186,
+          0.10852713178294573,
+          0.15503875968992248,
+          0.31007751937984496
+        ],
+        "p_psia": 2500.0,
+        "T_R": 610.0,
+        "options": {}
+      },
+      "FV": 0.0,
+      "status": "ok",
+      "phase": "liquid",
+      "method": "single_phase",
+      "in_training_domain": null,
+      "domain_violations": [],
+      "model": null,
+      "message": "single phase (liquid): sum z_i K_i < 1, so F_V = 0 from the phase test; the network was not used",
+      "p_bubble_psia": 1590.8766896618613,
+      "p_dew_psia": 1.9995762599391373,
+      "reference_solver_FV": null,
+      "bare_network_FV": 8.833175857425601e-11
+    },
+    {
+      "case": "p. 14 mixture at 1 psia, below its dew point (vapour)",
+      "inputs": {
+        "z": [
+          0.03875968992248062,
+          0.1937984496124031,
+          0.07751937984496124,
+          0.11627906976744186,
+          0.10852713178294573,
+          0.15503875968992248,
+          0.31007751937984496
+        ],
+        "p_psia": 1.0,
+        "T_R": 610.0,
+        "options": {}
+      },
+      "FV": 1.0,
+      "status": "ok",
+      "phase": "vapour",
+      "method": "single_phase",
+      "in_training_domain": null,
+      "domain_violations": [],
+      "model": null,
+      "message": "single phase (vapour): sum z_i / K_i < 1, so F_V = 1 from the phase test; the network was not used",
+      "p_bubble_psia": 1590.8766896618613,
+      "p_dew_psia": 1.9995762599391373,
+      "reference_solver_FV": null,
+      "bare_network_FV": 0.9246372580528259
+    },
+    {
+      "case": "two-phase at 2667 psia (first extrapolation-set row), default",
+      "inputs": {
+        "z": [
+          0.08571428571428572,
+          0.2857142857142857,
+          0.014285714285714285,
+          0.21428571428571427,
+          0.11428571428571428,
+          0.02857142857142857,
+          0.2571428571428571
+        ],
+        "p_psia": 2666.926430357706,
+        "T_R": 665.3273050092724,
+        "options": {}
+      },
+      "FV": 0.06486660437208855,
+      "status": "ok",
+      "phase": "two_phase",
+      "method": "reference_solver_fallback",
+      "in_training_domain": false,
+      "domain_violations": [
+        "p = 2666.92643 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
+      ],
+      "model": null,
+      "message": "two-phase state outside the training domain: answered by the reference solver (bisection on Rachford-Rice), not the network",
+      "p_bubble_psia": 3029.813293724634,
+      "p_dew_psia": 7.575787032590831,
+      "reference_solver_FV": 0.06486660437208855,
+      "bare_network_FV": 0.05505567789077759
+    },
+    {
+      "case": "the same state, on_unsupported='status'",
+      "inputs": {
+        "z": [
+          0.08571428571428572,
+          0.2857142857142857,
+          0.014285714285714285,
+          0.21428571428571427,
+          0.11428571428571428,
+          0.02857142857142857,
+          0.2571428571428571
+        ],
+        "p_psia": 2666.926430357706,
+        "T_R": 665.3273050092724,
+        "options": {
+          "on_unsupported": "status"
+        }
+      },
+      "FV": null,
+      "status": "unsupported",
+      "phase": "two_phase",
+      "method": "none",
+      "in_training_domain": false,
+      "domain_violations": [
+        "p = 2666.92643 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
+      ],
+      "model": null,
+      "message": "two-phase state outside the training domain: no prediction returned",
+      "p_bubble_psia": 3029.813293724634,
+      "p_dew_psia": 7.575787032590831,
+      "reference_solver_FV": 0.06486660437208855,
+      "bare_network_FV": 0.05505567789077759
+    },
+    {
+      "case": "the same state, on_unsupported='extrapolate'",
+      "inputs": {
+        "z": [
+          0.08571428571428572,
+          0.2857142857142857,
+          0.014285714285714285,
+          0.21428571428571427,
+          0.11428571428571428,
+          0.02857142857142857,
+          0.2571428571428571
+        ],
+        "p_psia": 2666.926430357706,
+        "T_R": 665.3273050092724,
+        "options": {
+          "on_unsupported": "extrapolate"
+        }
+      },
+      "FV": 0.05505567789077759,
+      "status": "ok",
+      "phase": "two_phase",
+      "method": "network_extrapolation",
+      "in_training_domain": false,
+      "domain_violations": [
+        "p = 2666.92643 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
+      ],
+      "model": "ffn_phys1_s2",
+      "message": "EXTRAPOLATION: two-phase state outside the training domain; network answer returned on request, accuracy not established",
+      "p_bubble_psia": 3029.813293724634,
+      "p_dew_psia": 7.575787032590831,
+      "reference_solver_FV": 0.06486660437208855,
+      "bare_network_FV": 0.05505567789077759
+    },
+    {
+      "case": "p. 15 state at 700 R, above the training temperatures",
+      "inputs": {
+        "z": [
+          0.03875968992248062,
+          0.1937984496124031,
+          0.07751937984496124,
+          0.11627906976744186,
+          0.10852713178294573,
+          0.15503875968992248,
+          0.31007751937984496
+        ],
+        "p_psia": 796.43821,
+        "T_R": 700.0,
+        "options": {}
+      },
+      "FV": 0.2546646332603264,
+      "status": "ok",
+      "phase": "two_phase",
+      "method": "reference_solver_fallback",
+      "in_training_domain": false,
+      "domain_violations": [
+        "T = 700 R is outside the training range 610-680 R"
+      ],
+      "model": null,
+      "message": "two-phase state outside the training domain: answered by the reference solver (bisection on Rachford-Rice), not the network",
+      "p_bubble_psia": 2502.4260815030234,
+      "p_dew_psia": 11.648415286944843,
+      "reference_solver_FV": 0.2546646332603264,
+      "bare_network_FV": 0.2648976445198059
+    },
+    {
+      "case": "CO2-rich mixture, z_CO2 = 0.60 above the training range",
+      "inputs": {
+        "z": [
+          0.6,
+          0.1,
+          0.05,
+          0.05,
+          0.05,
+          0.05,
+          0.1
+        ],
+        "p_psia": 300.0,
+        "T_R": 640.0,
+        "options": {}
+      },
+      "FV": 0.8231080922285303,
+      "status": "ok",
+      "phase": "two_phase",
+      "method": "reference_solver_fallback",
+      "in_training_domain": false,
+      "domain_violations": [
+        "z_CO2 = 0.6 is outside the training range 0.0060241-0.452381"
+      ],
+      "model": null,
+      "message": "two-phase state outside the training domain: answered by the reference solver (bisection on Rachford-Rice), not the network",
+      "p_bubble_psia": 2631.027053011901,
+      "p_dew_psia": 11.730673157201348,
+      "reference_solver_FV": 0.8231080922285303,
+      "bare_network_FV": 0.8114523887634277
+    },
+    {
+      "case": "pure C1 at its Wilson vapour pressure, 640 R (degenerate)",
+      "inputs": {
+        "z": [
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "p_psia": 8242.219764146887,
+        "T_R": 640.0,
+        "options": {}
+      },
+      "FV": null,
+      "status": "unsupported",
+      "phase": "indeterminate",
+      "method": "none",
+      "in_training_domain": null,
+      "domain_violations": [],
+      "model": null,
+      "message": "the bubble and dew points coincide (both phase-test sums equal 1 within the tolerance): every K_i of a component present is 1, as for an effectively pure component at its own vapour pressure, so p and T do not fix a vapour fraction; the network was not used",
+      "p_bubble_psia": 8242.219764146887,
+      "p_dew_psia": 8242.219764146887,
+      "reference_solver_FV": null,
+      "bare_network_FV": 2.132155736689345e-11
+    },
+    {
+      "case": "C1/nC10 binary of notes pp. 16-18",
+      "inputs": {
+        "z": [
+          0.6,
+          0.4
+        ],
+        "p_psia": 1000.0,
+        "T_R": 620.0,
+        "options": {}
+      },
+      "status": "rejected",
+      "message": "composition has 2 mole fractions; the network covers only the seven-component set ['CO2', 'C1', 'C2', 'C3', 'C4', 'C5', 'C10'] of the notes (pp. 14-15). Other mixtures, such as the C1/nC10 binary of pp. 16-18, can be flashed directly with sfp.flash"
+    },
+    {
+      "case": "composition summing to 0.98",
+      "inputs": {
+        "z": [
+          0.03798449612403101,
+          0.18992248062015504,
+          0.07596899224806201,
+          0.11395348837209301,
+          0.10635658914728682,
+          0.15193798449612403,
+          0.30387596899224806
+        ],
+        "p_psia": 796.43821,
+        "T_R": 640.0,
+        "options": {}
+      },
+      "status": "rejected",
+      "message": "mole fractions must sum to 1 within 1e-06; row 0 sums to 0.98. They are not normalised automatically: use z_i = n_i / sum(n_j)"
+    },
+    {
+      "case": "temperature given in degrees F",
+      "inputs": {
+        "z": [
+          0.03875968992248062,
+          0.1937984496124031,
+          0.07751937984496124,
+          0.11627906976744186,
+          0.10852713178294573,
+          0.15503875968992248,
+          0.31007751937984496
+        ],
+        "p_psia": 796.43821,
+        "T_R": 180.0,
+        "options": {
+          "temperature_unit": "F"
+        }
+      },
+      "status": "rejected",
+      "message": "temperature must be given in degrees Rankine (got unit 'F'); convert it first: T[R] = T[degF] + 460 (the notes' convention)"
+    }
+  ]
+}

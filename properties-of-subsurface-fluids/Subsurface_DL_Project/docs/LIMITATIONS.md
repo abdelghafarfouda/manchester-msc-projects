@@ -48,8 +48,12 @@ What remains unsourced are **ordinary experiment settings**: the mole-charge
 range, the number of mixtures and states, the log-uniform pressure draw, the
 60/20/20 split proportions, the seeds, and the network width and depth. They
 are documented as project choices in `SOURCE_MAP.md` §5 and are not presented
-as anything the course prescribed. None of them is a property value, a
-physical law, a scientific method or a model architecture.
+as anything the course prescribed. None of them is a property value or a
+physical law. The October 2026 revision adds one statistical method from
+outside the course material, a resampling of whole test mixtures. It is used
+only to describe how a comparison of two trained models depends on which
+mixtures happen to be in the evaluation set (`ERROR_ANALYSIS.md` §3), and it
+adds no physics.
 
 ## 3. The component constants are used exactly as printed
 
@@ -75,9 +79,11 @@ precision the notes print (see `README.md` §"Verification").
   components are, it could not transfer to one.
 * Only **two-phase** states are in the dataset. States failing the module's
   own physical-root test (`Σ z_iK_i > 1` and `Σ z_i/K_i > 1`, pp. 8 and 11)
-  have no vapour fraction to predict and are discarded. The surrogate assumes
-  the phase test has already been applied; it does not decide whether a
-  mixture splits.
+  have no vapour fraction to predict and are discarded. The network itself
+  therefore never decides whether a mixture splits. The guarded prediction
+  path (`src/sfp/predict.py`, 2026 revision) applies the phase test *before*
+  the network and answers single-phase and saturated states without it
+  (`GUARDED_PREDICTION.md`).
 * The pressure-extrapolation set is **selected**: at 2000–4000 psia many
   mixtures have no two-phase state at all, so the mixtures that survive into
   it are not a random sample of the composition simplex, and their mean `F_V`
@@ -124,14 +130,19 @@ unchanged to validation, test and extrapolation
   significance test. Differences smaller than the reported spread are reported
   as "no measured effect", not as a result.
 
-## 6b. What the learning curve does and does not establish
+## 6b. What the learning curve and the capacity comparison establish
 
 Test error fell at every step as training mixtures were added — 225, 450, 900,
 1,800 — and was still falling at the largest size. That shows **more training
-mixtures reduced the error at this architecture**. It does **not** show that
-network capacity is unimportant: only one width and depth were tried, so the
-two effects are not separated. Doing so would need a second sweep over network
-size, which is outside the scope kept here.
+mixtures reduced the error at this architecture**.
+
+The October 2026 revision added a bounded width comparison (`CAPACITY.md`):
+3 × 64, 3 × 128 and 3 × 192, three seeds each, the data-only loss, selection by
+validation MSE under a rule fixed in advance. It selected 3 × 64. On the test
+set 3 × 64 and 3 × 128 are indistinguishable, and 3 × 192 is slightly worse,
+so a larger network offers no benefit here. It does **not** establish
+anything about depth, other architectures or other training settings. Nor
+does it extend the physics-loss comparison, which was run at 3 × 128 only.
 
 ## 7. Timing
 
@@ -144,11 +155,17 @@ A production flash also runs a stability test and a successive-substitution or
 Newton loop on the K-values, which this bisection does not, so the real cost
 being replaced would be higher. The measurement is also sensitive to what else
 is running on the box: for the final models `results/metrics/evaluation.json`
-records 31.1 ms against 10.0 ms (3.1×) and the executed notebook 28.9 ms
-against 11.1 ms (2.6×), and repeated measurements during the work ranged from
-about 1.2× to 3.1× with machine load.
+records 31.1 ms against 10.0 ms (3.1×), the executed notebook records its own
+measurement, and repeated measurements during the work ranged from about 1.2×
+to 3.1× with machine load. The capacity comparison's inference times (about
+3, 11 and 21 ms for 3 × 64, 128 and 192) show that the forward pass itself
+scales with width.
 
 ## 8. Where the numbers came from, and what was superseded
+
+*The October 2026 revision changed none of the numbers below. Its new results
+are in `results/analysis/`, `results/capacity/` and `results/guarded/`, and
+`results/original_2026-09-21/` records the reproduction of the originals.*
 
 Every number in `README.md` and in the notebook was produced by the run
 recorded in `results/metrics/*.json` and `logs/`, executed on
@@ -175,3 +192,30 @@ Only the current numbers should be quoted. The earlier runs, their metrics
 and the project's original CO2-storage version (which used external reference
 data) are not part of this repository and are not comparable with anything
 here.
+
+## 9. The October 2026 revision: what its additions do not establish
+
+* **Guarded prediction.** The training-domain checks are marginal: every
+  variable is compared with its own range in the training data. Passing them
+  does not show that a particular *combination* of composition, pressure and
+  temperature was covered. The composition ranges are the realised training
+  ranges (mole fractions up to 0.43–0.48), much narrower than the 0.004–0.87
+  the generator permits. The test rows outside them had no larger error, so
+  the check is conservative rather than calibrated.
+* **Error analysis.** It locates the errors — next to the dew point in range,
+  away from the bubble point in the extrapolation set — but does not explain
+  them. Its window coordinate is built from the same Wilson K-values that
+  define the labels.
+* **Physics loss.** It improved the in-range test error in all three seeds.
+  Where in the window that improvement came from differs by seed. It worsened
+  the pressure-extrapolation error in two of three seeds. Three seeds cannot
+  turn this into a probability. The mixture resampling describes only the
+  dependence on the evaluation mixtures, not training-run variability.
+* **Capacity.** One depth, three widths, three seeds, fixed training settings.
+  The test set had already been inspected for the 3 × 128 models, so it is
+  reported as an established benchmark and was not used to choose.
+* **Reproducibility.** The 185 original metrics were reproduced bit for bit
+  with the recorded thread count, and to 1.8e−9 relative with another.
+  CI compares them within measured float32 tolerances on GitHub's CPU-only
+  PyTorch build. The revision was run in a cloud Linux container, not on the
+  author's Windows machine.

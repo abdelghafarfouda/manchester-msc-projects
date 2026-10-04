@@ -3,7 +3,10 @@
 Run:  python scripts/train.py --physics 0 --seed 0
       python scripts/train.py --physics 1 --seed 0
 
-Writes results/checkpoints/<tag>.pt and results/metrics/train_<tag>.json
+Writes results/checkpoints/<tag>.pt and results/metrics/train_<tag>.json, or,
+with --out-dir DIR, DIR/checkpoints/<tag>.pt and DIR/metrics/train_<tag>.json.
+The capacity comparison (configs/capacity.json) uses --out-dir results/capacity,
+--tag and --threads 2, so the six reported models are never overwritten.
 """
 
 from __future__ import annotations
@@ -43,9 +46,17 @@ def main():
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--hidden", type=int, nargs="+", default=[64, 64])
+    ap.add_argument("--out-dir", default=os.path.join(HERE, "results"),
+                    help="folder that receives checkpoints/ and metrics/ (default: results/)")
+    ap.add_argument("--tag", default=None,
+                    help="run name (default: ffn_phys<physics>_s<seed>)")
+    ap.add_argument("--threads", type=int, default=None,
+                    help="torch CPU threads (default: torch's own choice)")
     args = ap.parse_args()
+    if args.threads:
+        torch.set_num_threads(args.threads)
 
-    tag = f"ffn_phys{args.physics}_s{args.seed}"
+    tag = args.tag or f"ffn_phys{args.physics}_s{args.seed}"
     blob = np.load(os.path.join(HERE, "data", "flash_dataset.npz"))
     itr, iva = blob["idx_train"], blob["idx_val"]
 
@@ -95,7 +106,7 @@ def main():
     wall = time.time() - t0
 
     model.load_state_dict(best["state"])
-    ck = os.path.join(HERE, "results", "checkpoints")
+    ck = os.path.join(args.out_dir, "checkpoints")
     os.makedirs(ck, exist_ok=True)
     torch.save(
         {"model_state_dict": model.state_dict(),
@@ -130,10 +141,12 @@ def main():
         "best_val_mse": best["val_data"],
         "wall_seconds": wall,
         "device": snn.device,
+        "torch_threads": torch.get_num_threads(),
         "torch_version": torch.__version__,
         "history": history,
     }
-    out = os.path.join(HERE, "results", "metrics", f"train_{tag}.json")
+    os.makedirs(os.path.join(args.out_dir, "metrics"), exist_ok=True)
+    out = os.path.join(args.out_dir, "metrics", f"train_{tag}.json")
     with open(out, "w") as fh:
         json.dump(report, fh, indent=2)
     print(f"{tag}: best val MSE {best['val_data']:.4e} at epoch {best['epoch']}, "

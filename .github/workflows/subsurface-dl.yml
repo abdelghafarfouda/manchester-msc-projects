@@ -1,0 +1,75 @@
+# Re-verifies the flash-surrogate project
+# (properties-of-subsurface-fluids/Subsurface_DL_Project) from the saved dataset and
+# the saved models, on a pinned CPU-only PyTorch environment, and compares every
+# recorded number with a fresh calculation.  No model is trained here.
+name: Subsurface DL flash surrogate
+
+on:
+  push:
+    paths:
+      - "properties-of-subsurface-fluids/Subsurface_DL_Project/**"
+      - ".github/workflows/subsurface-dl.yml"
+  pull_request:
+    paths:
+      - "properties-of-subsurface-fluids/Subsurface_DL_Project/**"
+      - ".github/workflows/subsurface-dl.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # the recorded run used two torch threads; the tolerances cover other counts too
+      OMP_NUM_THREADS: "2"
+    defaults:
+      run:
+        working-directory: properties-of-subsurface-fluids/Subsurface_DL_Project
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: properties-of-subsurface-fluids/Subsurface_DL_Project/requirements-ci.txt
+      - name: Install the pinned CPU-only environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ci.txt
+          python -c "import torch, numpy, matplotlib; assert torch.__version__.endswith('+cpu') and not torch.cuda.is_available(); print('torch', torch.__version__, 'numpy', numpy.__version__, 'matplotlib', matplotlib.__version__, 'threads', torch.get_num_threads())"
+      - name: Flash solver against the notes' worked examples
+        run: |
+          mkdir -p ci
+          cp results/metrics/verify_flash.json ci/verify_flash_recorded.json
+          python scripts/verify_flash.py
+          python scripts/compare_results.py ci/verify_flash_recorded.json results/metrics/verify_flash.json
+      - name: All tests (original 14 and the guarded-prediction tests)
+        run: python tests/run_tests.py
+      - name: Evaluate the six saved models; compare the 185 recorded metrics (timing excluded)
+        run: |
+          python scripts/evaluate.py --out-dir ci/metrics --fig-dir ci/figures
+          python scripts/compare_results.py results/metrics/evaluation.json ci/metrics/evaluation.json --expect-count 185
+      - name: Training domain of the guarded predictor is reproduced from the saved data
+        run: |
+          python scripts/derive_domain.py --out ci/prediction_domain.json
+          python scripts/compare_results.py configs/prediction_domain.json ci/prediction_domain.json
+      - name: Guarded predictions -- statuses, routes and values
+        run: |
+          python scripts/guarded_demo.py --out ci/guarded/demo_cases.json
+          python scripts/compare_results.py results/guarded/demo_cases.json ci/guarded/demo_cases.json
+      - name: Error analysis across the two-phase window
+        run: |
+          python scripts/analyse_errors.py --out-dir ci/analysis --fig-dir ci/figures
+          python scripts/compare_results.py results/analysis ci/analysis --profile derived
+      - name: Capacity comparison, scored from the saved checkpoints
+        run: |
+          python scripts/capacity.py score --out-dir ci/capacity --fig-dir ci/figures
+          python scripts/compare_results.py results/capacity/capacity_results.json ci/capacity/capacity_results.json
+          python scripts/compare_results.py results/capacity/capacity_table.csv ci/capacity/capacity_table.csv
+      - name: Keep the CI outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: subsurface-dl-ci-results
+          path: properties-of-subsurface-fluids/Subsurface_DL_Project/ci
+          retention-days: 14

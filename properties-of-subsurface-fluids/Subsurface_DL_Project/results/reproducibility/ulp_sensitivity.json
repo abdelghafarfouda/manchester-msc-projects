@@ -1,0 +1,225 @@
+{
+  "what": "Run:  python scripts/ulp_sensitivity.py Writes results/reproducibility/ulp_sensitivity.json.  No training.",
+  "perturbations": {
+    "1_ulp": {
+      "results/metrics/evaluation.json": {
+        "profile": "metrics",
+        "rtol": 1e-06,
+        "atol": 1e-06,
+        "max_abs": 1.7169075615386387e-07,
+        "max_rel": 0.00010461997446216193,
+        "where_abs": "models.ffn_phys1_s2.test.median_abs_h",
+        "where_rel": "summary.data_only.test_median_abs_h_std",
+        "changed": 112,
+        "largest_fraction_of_tolerance_used": 0.17070914974738458,
+        "within_tolerance": true
+      },
+      "results/guarded/demo_cases.json": {
+        "profile": "metrics",
+        "rtol": 1e-06,
+        "atol": 1e-06,
+        "max_abs": 5.960464477539063e-08,
+        "max_rel": 1.125050486640588e-07,
+        "where_abs": "cases.2.bare_network_FV",
+        "where_rel": "cases.8.bare_network_FV",
+        "changed": 13,
+        "largest_fraction_of_tolerance_used": 0.032904339713879655,
+        "within_tolerance": true
+      },
+      "results/capacity/capacity_results.json": {
+        "profile": "metrics",
+        "rtol": 1e-06,
+        "atol": 1e-06,
+        "max_abs": 1.2897460877070444e-09,
+        "max_rel": 4.032045263173591e-06,
+        "where_abs": "runs.h192_s2.extrapolation.r2",
+        "where_rel": "summary_by_width.64.test_mean_h2_std",
+        "changed": 165,
+        "largest_fraction_of_tolerance_used": 0.000975229617596203,
+        "within_tolerance": true
+      },
+      "results/capacity/capacity_table.csv": {
+        "profile": "metrics",
+        "rtol": 1e-06,
+        "atol": 1e-06,
+        "max_abs": 4.999999999536625e-10,
+        "max_rel": 1.8045421044918753e-06,
+        "where_abs": "0.test_rmse_std",
+        "where_rel": "0.test_rmse_std",
+        "changed": 6,
+        "largest_fraction_of_tolerance_used": 0.0004998614990293176,
+        "within_tolerance": true
+      },
+      "results/analysis/boundary_bands.csv": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 9.999999999940612e-09,
+        "max_rel": 1.9398353596673414e-06,
+        "where_abs": "34.rmse",
+        "where_rel": "13.mean_h2",
+        "changed": 32,
+        "largest_fraction_of_tolerance_used": 0.002915626152566148,
+        "within_tolerance": true
+      },
+      "results/analysis/error_analysis.json": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 2.0931464227658125e-05,
+        "max_rel": 3.189596487923951e-05,
+        "where_abs": "physics_vs_data_only.test.1.rmse_change_percent_by_band.bubble",
+        "where_rel": "models.ffn_phys0_s0.test.overall.abs_err_q50",
+        "changed": 892,
+        "largest_fraction_of_tolerance_used": 0.08344433917461284,
+        "within_tolerance": true
+      },
+      "results/analysis/metrics_by_model.csv": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 1.1000000000021409e-07,
+        "max_rel": 1.912987253074024e-05,
+        "where_abs": "5.median_abs_h",
+        "where_rel": "5.median_abs_h",
+        "changed": 54,
+        "largest_fraction_of_tolerance_used": 0.04271816623813774,
+        "within_tolerance": true
+      },
+      "results/analysis/physics_vs_data_only.csv": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 1.4999999999694077e-09,
+        "max_rel": 2.9799686507363285e-06,
+        "where_abs": "0.bootstrap_diff_q025",
+        "where_rel": "0.bootstrap_diff_q975",
+        "changed": 11,
+        "largest_fraction_of_tolerance_used": 0.0007156777620461558,
+        "within_tolerance": true
+      },
+      "results/analysis/window_profile.csv": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 1.000000000001e-06,
+        "max_rel": 8.895214374659895e-05,
+        "where_abs": "67.share_of_squared_error",
+        "where_rel": "35.share_of_squared_error",
+        "changed": 104,
+        "largest_fraction_of_tolerance_used": 0.32008194097665493,
+        "within_tolerance": true
+      }
+    },
+    "3_ulp": {
+      "results/metrics/evaluation.json": {
+        "profile": "metrics",
+        "rtol": 1e-06,
+        "atol": 1e-06,
+        "max_abs": 4.567111796388579e-07,
+        "max_rel": 7.942570121960473e-05,
+        "where_abs": "models.ffn_phys1_s2.test.median_abs_h",
+        "where_rel": "models.ffn_phys1_s2.test.median_abs_h",
+        "changed": 112,
+        "largest_fraction_of_tolerance_used": 0.45410002788038784,
+        "within_tolerance": true
+      },
+      "results/guarded/demo_cases.json": {
+        "profile": "metrics",
+        "rtol": 1e-06,
+        "atol": 1e-06,
+        "max_abs": 1.7881393432617188e-07,
+        "max_rel": 2.4408022070709877e-07,
+        "where_abs": "cases.9.bare_network_FV",
+        "where_rel": "cases.10.bare_network_FV",
+        "changed": 13,
+        "largest_fraction_of_tolerance_used": 0.09871301914163898,
+        "within_tolerance": true
+      },
+      "results/capacity/capacity_results.json": {
+        "profile": "metrics",
+        "rtol": 1e-06,
+        "atol": 1e-06,
+        "max_abs": 2.145456812208124e-09,
+        "max_rel": 7.4021539171208365e-06,
+        "where_abs": "runs.h192_s0.extrapolation.r2",
+        "where_rel": "summary_by_width.192.test_mae_std",
+        "changed": 165,
+        "largest_fraction_of_tolerance_used": 0.0016504795338193223,
+        "within_tolerance": true
+      },
+      "results/capacity/capacity_table.csv": {
+        "profile": "metrics",
+        "rtol": 1e-06,
+        "atol": 1e-06,
+        "max_abs": 1.0000000001241655e-09,
+        "max_rel": 7.799442028885745e-07,
+        "where_abs": "2.extrapolation_rmse_std",
+        "where_rel": "2.extrapolation_rmse_std",
+        "changed": 4,
+        "largest_fraction_of_tolerance_used": 0.000998719498909675,
+        "within_tolerance": true
+      },
+      "results/analysis/boundary_bands.csv": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 1.0000000000287557e-06,
+        "max_rel": 1.9398353598426056e-06,
+        "where_abs": "12.share_of_squared_error",
+        "where_rel": "13.mean_h2",
+        "changed": 42,
+        "largest_fraction_of_tolerance_used": 0.017127305549910776,
+        "within_tolerance": true
+      },
+      "results/analysis/error_analysis.json": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 2.4881333726689547e-05,
+        "max_rel": 7.01992546094964e-05,
+        "where_abs": "physics_vs_data_only.test.0.rmse_change_percent_by_band.bubble",
+        "where_rel": "models.ffn_phys1_s1.test.overall.abs_err_q50",
+        "changed": 894,
+        "largest_fraction_of_tolerance_used": 0.13633296284724428,
+        "within_tolerance": true
+      },
+      "results/analysis/metrics_by_model.csv": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 3.5499999999962645e-07,
+        "max_rel": 5.8651995406908787e-05,
+        "where_abs": "1.median_abs_h",
+        "where_rel": "1.median_abs_h",
+        "changed": 59,
+        "largest_fraction_of_tolerance_used": 0.13626252991523952,
+        "within_tolerance": true
+      },
+      "results/analysis/physics_vs_data_only.csv": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 9.999999999976694e-05,
+        "max_rel": 6.601793046976177e-06,
+        "where_abs": "1.rmse_change_percent",
+        "where_rel": "1.rmse_change_percent",
+        "changed": 15,
+        "largest_fraction_of_tolerance_used": 0.06593087806728044,
+        "within_tolerance": true
+      },
+      "results/analysis/window_profile.csv": {
+        "profile": "derived",
+        "rtol": 0.0001,
+        "atol": 2e-06,
+        "max_abs": 1.0000000000287557e-06,
+        "max_rel": 6.412311638340913e-05,
+        "where_abs": "80.share_of_squared_error",
+        "where_rel": "7.share_of_squared_error",
+        "changed": 131,
+        "largest_fraction_of_tolerance_used": 0.2809383340354728,
+        "within_tolerance": true
+      }
+    }
+  }
+}
