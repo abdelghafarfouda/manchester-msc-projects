@@ -34,7 +34,11 @@ chain, not a new method:
    not;
 3. honest uncertainty needs calibration **by reservoir**: residual bands
    calibrated on pooled cases under-cover whole reservoirs, and no
-   calibration survives a shift in the reservoir population;
+   calibration survives a shift in the reservoir population. A
+   finite-sample statement also needs calibration reservoirs that took no
+   part in choosing the design. The pipeline's did, so its coverage is
+   reported as measured, and a recalibration on fresh reservoirs is
+   reported separately (§10);
 4. a screening protocol in which the surrogate only proposes and the
    simulator must verify cannot present an unverified schedule as feasible,
    and states explicitly when it has no recommendation;
@@ -271,9 +275,10 @@ shut-in in a sealed compartment.
 | Role | Reservoirs | Cases | Seed / ids | Use |
 |---|---|---|---|---|
 | Development — training | 179 | 716 | 20260909, ids 0–219 | fitting, tuning, model selection, all development experiments |
-| Development — calibration | 41 | 164 | same | interval calibration only |
+| Development — calibration | 41 | 164 | same | interval calibration (and, with the training reservoirs, the pressure-limit classifier, the domain check's reference set, the permeability-tercile edges and the prior Monte Carlo); they also took part in the development experiments that chose the design |
 | **Final test** | **100** | **400** | 20261104, ids 10000+ | scored once |
 | **Distribution shift** | **60** | **240** | 20261105, ids 20000+; median permeability 10–30 mD (training: 30–1000 mD) | scored once |
+| Calibration check (after the evaluation; protocol addendum) | 41 | 164 | 20261106, ids 30000+; development prior | re-calibrating the fixed design's intervals only (§10) |
 
 The development calibration reservoirs are those of the published run (same
 split seed); its 55 former test reservoirs were inspected during development
@@ -424,9 +429,11 @@ shift reservoirs and 4 of the 100 test reservoirs.
 
 ## 10. Intervals
 
-Nominal 90 %, two-sided, calibrated on the 41 calibration reservoirs. The
-selected method (`adaptive_conformal`, chosen on development data) is shown
-first; the others are reported for comparison (peak build-up).
+Nominal 90 %, two-sided, calibrated on the 41 calibration reservoirs of the
+development set. The selected method (`adaptive_conformal`, chosen on
+development data) is shown first; the others are reported for comparison
+(peak build-up). These are the original results; the recalibration on fresh
+reservoirs follows below.
 
 | Model | Set | Method | Case coverage | Reservoirs fully covered | Mean width [MPa] | Missed exceedances with the upper edge |
 |---|---|---|---|---|---|---|
@@ -450,9 +457,9 @@ Readings:
   reservoirs entirely, because a reservoir's schedules share their errors.
   The reservoir-level constructions reach 85–86 %.
 * 86 % whole-reservoir coverage is below the nominal 90 %. With 100 test
-  reservoirs the binomial standard error is about 3 percentage points, so
-  this is within sampling variation of the nominal level — but it is the
-  measured value, and no stronger statement is made.
+  reservoirs the binomial standard error is about 3 percentage points. These
+  intervals carry no finite-sample guarantee (next subsection), so the
+  measured value is the claim.
 * **Under shift no construction holds its level** (47–80 % of cases). The
   adaptive interval degrades least because its width grows where the
   training residuals were large. The conformal argument applies to
@@ -462,6 +469,63 @@ Readings:
 Plume radius (test): adaptive conformal 98 % of cases, 97 % of reservoirs
 (mean width 20.8 m); shift 85 % / 78 %. Swept fraction (test): 92 % / 78 %
 (adaptive) against 88 % / 66 % for the empirical band with the same model.
+
+### Calibration independence (protocol addendum; `experiments/calibration_check.json`)
+
+The 41 calibration reservoirs belonged to the 220 development reservoirs on
+which the design and the interval method were chosen (rules 1–3 of
+`docs/EVALUATION_PROTOCOL.md`). Their out-of-fold residuals entered the
+ablation RMSEs and the 200 calibration/evaluation splits of rule 3. The
+surrogates and difficulty models never saw them, but the choice of score
+function depended on their outcomes. The split-conformal argument therefore
+does not apply to the intervals above: their coverage is **measured, not
+guaranteed**. The test and shift sets were generated after every choice, so
+the numbers above remain valid held-out measurements of the procedure as
+run.
+
+As fixed in the addendum before the data existed, 41 fresh reservoirs from
+the development prior re-calibrated the saved design (seed 20261106, ids
+30000+, 164 cases, all simulated, disjoint from every other set). Nothing was
+refitted or re-selected. Scored once on the same test and shift sets, with
+the selected method:
+
+| Target | Calibration | Test: cases / whole reservoirs covered | Test mean width | Shift: cases / whole reservoirs covered |
+|---|---|---|---|---|
+| Peak build-up | original (41 development reservoirs) | 95 % / 86 % | 0.55 MPa | 80 % / 70 % |
+| | **fresh (41 independent reservoirs)** | **97 % / 91 %** | 0.72 MPa | 84 % / 73 % |
+| Plume radius r95 | original | 98 % / 97 % | 20.8 m | 85 % / 78 % |
+| | fresh | 94 % / 88 % | 16.4 m | 78 % / 63 % |
+| Swept fraction | original | 92 % / 78 % | 0.0029 | 92 % / 80 % |
+| | fresh | 95 % / 84 % | 0.0033 | 93 % / 82 % |
+
+Using the recalibrated upper edge, no exceedance of the assumed limit is
+missed on the test set (0 of 90) and 2 of 51 are missed under shift, as
+before. Re-scoring the saved models reproduces the pipeline's original
+numbers exactly, which checks that the comparison is like for like.
+
+Readings:
+
+* **What the recalibrated intervals support.** Take a reservoir drawn from the
+  development prior with four schedules from the same design. All four
+  schedules are covered with probability at least 0.90, over the draw of the
+  calibration reservoirs and the new reservoir. For one fixed set of 41
+  calibration reservoirs the coverage varies: it follows Beta(38, 4), and 90 %
+  of calibration sets give 0.82–0.97. Measuring on 100 test reservoirs adds
+  about ±3 points. The measured 91 % (pressure), 88 % (plume) and 84 % (swept
+  fraction) are consistent with this.
+* **No evidence either way on bias.** The recalibrated pressure interval is
+  30 % wider, and the plume interval 21 % narrower. With one calibration draw
+  for each, these changes lie within the spread between calibration sets.
+  The check does not show whether the original selection made the original
+  calibration optimistic; it removes the dependence.
+* **Outside the training distribution no calibration helps.** Under shift,
+  63–82 % of reservoirs are fully covered whichever calibration is used. The
+  conformal argument needs reservoirs drawn like the calibration reservoirs,
+  and the shift set is not such a population.
+* **Which interval the tool reports.** The pipeline, its saved models and
+  `subsurfaceml predict` keep the original calibration (measured coverage
+  only). The fresh calibration is an evaluation record and does not replace
+  them.
 
 ## 11. Verification-gated schedule screening
 
@@ -483,7 +547,10 @@ same reservoir.
 What this shows, and what it does not:
 
 * **The gate works.** No method recommended a schedule that the simulator
-  had not verified; every "verified" schedule met both limits. The published
+  had not verified; every "verified" schedule met both limits. "Verified"
+  means that the layered simulator, with its stated assumptions, keeps the
+  schedule within the *assumed* 9 MPa and 400 m limits. It is not a check of
+  real fracture or caprock integrity. The published
   method returned no verified schedule for one test and one shift
   reservoir — under the old code those reservoirs would have been reported
   as shortlisted but not recommended; here they get the explicit outcome
@@ -568,6 +635,7 @@ All times were measured on one 4-core virtual machine (Intel Xeon 2.1 GHz,
 | Development experiments (§8) | nested CV, 5 outer × 4 inner folds, 20 settings per family (V5: 60), 10 variant–target pairs; 200 calibration resamples | 71 min (83 min in the original run, which shared the machine with other jobs) |
 | Model-form study (§5) | 26 cases × 2 r–z variants + 8 cases at double vertical resolution (60 r–z simulations) | 16 min |
 | Screen for transient peaks (§4) | all 1,520 cases screened; 640 re-simulated with series; 36 flagged cases × 4 levels | 7 min |
+| Calibration check (§10, protocol addendum) | 164 simulations (41 fresh reservoirs); intervals recalibrated, nothing refitted | 2 min |
 
 **Inference.** One simulation takes 5.0 s (mean of five, one core, serial);
 the surrogate pipeline takes 0.049 s for one case end to end (inputs,
@@ -593,11 +661,15 @@ evaluations per reservoir.
   low-permeability shift cases, 0.5 % of development cases, no test case):
   there it is 2–14 % too high.
 * **Limits.** The 9 MPa build-up and 400 m plume-radius limits are modelling
-  assumptions chosen to make the screening question bind; they are not
-  fracture-pressure or caprock criteria.
-* **Interval statements** hold only for reservoirs drawn like the
-  calibration reservoirs, and for their four sampled schedules; they do not
-  transfer to the shift set or to thousands of screened candidates.
+  assumptions chosen to make the screening question bind. They are not
+  validated fracture-pressure or caprock criteria, so a simulator-verified
+  schedule is verified only against these assumptions.
+* **Intervals.** The pipeline's intervals (also those `subsurfaceml
+  predict` reports) have measured coverage only (§10). The recalibrated
+  intervals' statement holds on average over calibration draws, only for
+  reservoirs drawn like the calibration reservoirs, and only for their four
+  sampled schedules. It does not transfer to the shift set or to thousands
+  of screened candidates.
 * **Domain check** sees only the reservoir descriptors it is given.
 * **Tail.** The most extreme build-up case remains under-predicted by about
   15 %; the ROM's residual there is not learnable from one case.

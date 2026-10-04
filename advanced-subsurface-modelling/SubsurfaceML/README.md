@@ -4,84 +4,86 @@
 
 **Question and why it matters.** In a sealed, layered saline aquifer, can a
 surrogate trained on simulations predict the peak bottom-hole pressure
-build-up of reservoirs it has never seen — accurately, and with honest
-uncertainty — well enough to screen injection schedules against a pressure
-limit, with the simulator confirming every recommendation? In closed
-aquifers, pressure rather than pore volume usually limits storage (Zhou et
-al., 2008), and a surrogate that fails silently on the reservoirs that matter
-can make an unsafe schedule look acceptable.
+build-up of unseen reservoirs well enough, and with honest enough
+uncertainty, to screen injection schedules against a pressure limit, with the
+simulator confirming every recommendation? In closed aquifers pressure,
+rather than pore volume, usually limits storage (Zhou et al., 2008). A
+surrogate that fails silently on the reservoirs that matter can make an
+unsafe schedule look acceptable.
 
-**What is implemented** (all tested; 103 tests). A radial IMPES CO₂–brine
-simulator for a sealed four-layer aquifer with one shared bottom-hole
-pressure, passing 21 verification checks, including the two-phase well
-pressure against the pseudo-steady-state solution; an analytical
-reduced-order model (ROM: one sealed tank per realised layer) and a **hybrid
-surrogate** that learns only the ROM's correction; prediction intervals
-calibrated by reservoir (split conformal) and an applicability-domain check;
-**screening that cannot recommend a schedule the simulator has not
-verified**; and measurements of the training data's discretisation error and
-of the **model-form error** of omitting gravity and vertical crossflow (a
-separate, verified radial–vertical model).
+**What is implemented** (105 tests):
+* a radial IMPES CO₂–brine simulator for a sealed four-layer aquifer with one
+  shared bottom-hole pressure, passing 21 verification checks, including the
+  two-phase well pressure against the pseudo-steady-state solution;
+* an analytical reduced-order model (ROM: one sealed tank per realised
+  layer), and a **hybrid surrogate** that learns only the ROM's correction;
+* reservoir-calibrated conformal intervals and an applicability-domain check;
+* **screening that cannot recommend a schedule the simulator has not
+  verified**;
+* measured discretisation error, and the **model-form error** of omitting
+  gravity and crossflow, from a separate radial–vertical model.
 
 **Data and evaluation.** Synthetic data only. Every choice was made on 220
 development reservoirs (880 cases) by nested, reservoir-grouped
-cross-validation and frozen in an
-[evaluation protocol](docs/EVALUATION_PROTOCOL.md) pushed as commit
-`561948e` *before* 100 fresh test reservoirs (400 cases) and 60
-lower-permeability shift reservoirs (240 cases) were generated and scored
-once.
+cross-validation. The choices were frozen in an
+[evaluation protocol](docs/EVALUATION_PROTOCOL.md), pushed as commit
+`561948e`, *before* 100 fresh test reservoirs and 60 lower-permeability
+shift reservoirs were generated and scored once.
 
 **Strongest verified results** (test reservoirs unless stated):
 
 * **Peak build-up RMSE 0.31 MPa**, against 0.70 MPa for the published
   approach retrained on the same reservoirs (ΔRMSE −0.40 MPa, 95 % CI
-  [−0.63, −0.18], reservoir bootstrap); worst under-prediction 2.7 against
-  6.7 MPa; no exceedance of the assumed limit missed (published approach:
-  2 of 90).
+  [−0.63, −0.18]). Worst under-prediction 2.7 against 6.7 MPa; no
+  exceedance of the assumed limit missed (published approach: 2 of 90).
 * The published surrogate's large failures had **one cause**: it saw each
-  reservoir through its sampling-prior parameters, not the realised layers
-  (in the worst cases the realised permeability was 0.3× what the
-  parameters imply). A three-times larger search did not help.
+  reservoir through its sampling-prior parameters, not the realised layers.
+  A three-times larger search did not help.
 * Intervals **three times narrower** than the published band (0.55 vs 1.50
-  MPa) at 95 % case and 86 % whole-reservoir coverage (nominal 90 %);
-  pooled calibration under-covers whole reservoirs (77–78 %). Under the
-  shift every interval loses coverage (best 80 % / 70 %); the domain check
-  flags all 60 shift reservoirs.
-* **Every recommended schedule is simulator-verified.** Shaped schedules
-  inject a median 3 % more than the best constant rate for four simulations;
-  the published screening loses 10 %. The ROM alone ranks schedules as well;
-  the surrogate's value is that its first proposal never broke a limit.
-* **Error budget.** Discretisation error of the peak build-up: median 0.06 %,
-  no label changes (41 cases re-simulated). A screen of all 1,520 cases finds
-  well-block start-up transients that over-state the peak by 2–14 % in 13 %
-  of the shift cases, 0.5 % of development cases and no test case. Omitting
-  gravity and crossflow changes the build-up by −4 % but the plume radius by
-  +88 % (medians).
+  MPa). **Measured coverage**: 95 % of test cases and 86 % of whole test
+  reservoirs (nominal 90 %). This is not a guarantee, because the
+  calibration reservoirs had helped choose the design. Recalibrated on 41
+  fresh reservoirs, by a protocol addendum fixed before the data existed:
+  97 % / 91 % at 0.72 MPa. Only for that version, and only for reservoirs
+  drawn like the calibration ones, does the conformal argument apply.
+* **Every recommendation is simulator-verified.** That is, the layered
+  simulator confirms the schedule stays within the *assumed* limits under
+  the model's own assumptions; this is not a field-safety check. Shaped
+  schedules inject a median 3 % more than the best constant rate for four
+  simulations; the published screening loses 10 %. The ROM alone ranks
+  schedules as well; the surrogate's value is that its first proposal never
+  broke a limit.
+* **Outside the training distribution** (60 lower-permeability reservoirs),
+  the pressure RMSE rises to 1.95 MPa and the worst under-prediction to
+  15.1 MPa. At most 73 % of reservoirs are fully covered by any interval.
+  The domain check flags all 60, and the screening falls back to the
+  simulator.
+* **Error budget.** Discretisation error of the peak build-up: median 0.06 %.
+  In 13 % of the shift cases, but in no test case, the recorded peak is a
+  well-block start-up transient, 2–14 % too high. Omitting gravity and
+  crossflow changes the build-up by −4 % and the plume radius by +88 %.
 
 **Contribution and connection to CO₂ storage.** A reproducible case study
 of reliable surrogate-assisted schedule screening: a physics-based ROM with
-a learned correction, calibrated by reservoir, tested on reservoirs
-generated after the design was frozen, gated by simulation, and placed in an
-error budget that separates numerical, model-form and surrogate error. No
-novelty is claimed for the components ([`docs/SOURCE_MAP.md`](docs/SOURCE_MAP.md)
-§4). Its questions — pressure management in closed aquifers, and how far a
-surrogate can be trusted outside its training population — are central to
-storage-site screening.
+a learned correction, calibrated by reservoir, tested on reservoirs generated
+after the design was frozen, gated by simulation, and set in an error budget
+that separates numerical, model-form and surrogate error. No novelty is
+claimed for the components ([`docs/SOURCE_MAP.md`](docs/SOURCE_MAP.md) §4).
 
-**Assumptions, limitations, unresolved questions.** Synthetic data from
-assumed priors; no field data or validation. The data have no gravity,
-crossflow, dissolution, residual trapping or capillary pressure, so plume
-results describe the layered model only; plume radius and swept fraction are
-grid-dependent (about 4 % and 17 %). The 9 MPa build-up and 400 m plume
-limits are modelling assumptions, not fracture or caprock criteria. Interval
-statements hold only for reservoirs drawn like the calibration reservoirs.
-The most extreme build-up case is still under-predicted by about 15 %.
+**Assumptions, limitations, unresolved questions.**
+* Synthetic data from assumed priors; no field validation.
+* No gravity, crossflow, dissolution, residual trapping or capillary pressure
+  in the data, so plume results describe the layered model only. Plume radius
+  and swept fraction are grid-dependent (about 4 % and 17 %).
+* The 9 MPa build-up and 400 m plume limits are modelling assumptions chosen
+  to make the screening bind. They are **not validated fracture-pressure or
+  caprock criteria**.
+* The most extreme build-up case is still under-predicted by about 15 %.
 
-**Proposed extensions** (not done): a ROM-ranked fallback for
-out-of-domain reservoirs (the ROM-ranked control found +11 % on the shift
-reservoirs); the hybrid approach on physics with gravity and crossflow; a
-finer well block or a two-phase near-well correction to the ROM; priors
-calibrated to a real formation.
+**Proposed extensions** (not done; [roadmap](docs/REVIEW_CHECKLIST.md#future-work-roadmap-not-started)):
+a ROM-ranked fallback for out-of-domain reservoirs; the hybrid on physics
+with gravity and crossflow; a finer well block; priors calibrated to a real
+formation.
 
 **Where to look.** Key figures:
 [ablation](results/study/figures/16_ablation_pressure.png) ·
@@ -91,7 +93,10 @@ calibrated to a real formation.
 [screening](results/study/figures/15_schedule_screening.png) ·
 [model-form error](results/study/figures/19_model_form_error.png).
 All numbers: [`results/study/reports/RESULTS.md`](results/study/reports/RESULTS.md).
-Walkthrough notebook: [`notebooks/00_START_HERE.ipynb`](notebooks/00_START_HERE.ipynb).
+Walkthrough notebook: [`notebooks/00_START_HERE.ipynb`](notebooks/00_START_HERE.ipynb)
+(install the pinned environment as in [Reproduce](#reproduce); it reads the
+saved results and runs in under a minute).
+Review recommendations and their status: [`docs/REVIEW_CHECKLIST.md`](docs/REVIEW_CHECKLIST.md).
 Full write-up: [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md).
 Reproduction: [below](#reproduce).
 
@@ -205,9 +210,10 @@ evaluation was not altered after the fact.
 | Role | Reservoirs | Cases | Use |
 |---|---|---|---|
 | Development — training | 179 | 716 | fitting, tuning, model selection, all development experiments |
-| Development — calibration | 41 | 164 | interval calibration only |
+| Development — calibration | 41 | 164 | interval calibration (and, with the training reservoirs, the pressure-limit classifier, the domain check's reference set, the permeability-tercile edges and the prior Monte Carlo); they also took part in the development experiments that chose the design |
 | **Final test** (fresh, seed 20261104) | **100** | **400** | scored once |
 | **Distribution shift** (fresh, seed 20261105; median permeability 10–30 mD instead of 30–1000 mD) | **60** | **240** | scored once |
+| Calibration check (fresh, seed 20261106, development prior; generated after the evaluation, protocol addendum) | 41 | 164 | re-calibrating the fixed design's intervals only |
 
 Every split and every cross-validation fold is by whole reservoir. The
 published run's 55 test reservoirs had been inspected while this revision
@@ -243,6 +249,15 @@ rules ([protocol](docs/EVALUATION_PROTOCOL.md)).
 | Swept fraction RMSE | test | 0.00092 (same model as the published approach) | 0.00092 | 0.00100 |
 | Interval, peak build-up: cases / whole reservoirs covered, mean width | test | **95 % / 86 %, 0.55 MPa** | 90 % / 85 %, 1.50 MPa | 90 % / 83 %, 1.50 MPa |
 | | shift | 80 % / 70 %, 1.15 MPa | 47 % / 23 %, 1.37 MPa | 47 % / 22 %, 1.36 MPa |
+| Same interval recalibrated on 41 fresh reservoirs (protocol addendum, subsequent evaluation) | test | 97 % / 91 %, 0.72 MPa | — | — |
+| | shift | 84 % / 73 %, 1.50 MPa | — | — |
+
+All coverages are measured on the independent sets. The original intervals'
+calibration reservoirs had taken part in choosing the design, so no
+finite-sample guarantee is claimed for them. The recalibration
+(`results/study/experiments/calibration_check.json`) refits nothing and
+leaves the original results and the saved models unchanged.
+`subsurfaceml predict` reports the original interval.
 
 Paired reservoir bootstrap, revised minus published approach (peak build-up
 RMSE): test −0.40 MPa [−0.63, −0.18]; shift −1.86 MPa [−2.75, −0.97]. In
@@ -284,11 +299,14 @@ assumed; doubling the vertical resolution makes the plume change larger.
   the low-permeability shift cases, 0.5 % of development cases): there it is
   2–14 % too high.
 * **Limits** (9 MPa build-up, 400 m plume radius) are modelling assumptions.
-* **Intervals**: coverage is measured; the conformal statement covers
-  reservoirs drawn like the calibration reservoirs and their four sampled
-  schedules, not a shifted population and not thousands of screened
-  candidates. Whole-reservoir coverage on the test set was 86 % for a
-  nominal 90 %.
+* **Intervals**: the pipeline's intervals (also the ones `subsurfaceml
+  predict` reports) have measured coverage only, 86 % of whole test
+  reservoirs for a nominal 90 %. Their calibration reservoirs took part in
+  choosing the design. After recalibration on 41 fresh reservoirs, the
+  conformal statement holds on average over calibration draws, for
+  reservoirs drawn like the calibration reservoirs, with their four sampled
+  schedules. It does not hold for a shifted population, or for the
+  thousands of screened candidates.
 * **Tail**: the most extreme build-up case (32 MPa) is under-predicted by
   about 15 % in development cross-validation; the ROM's residual there
   cannot be learned from one case.
@@ -314,7 +332,7 @@ python -m pip install -e . --no-deps
 
 The complete study, in the order it was run. Seeds are fixed in the
 configuration files: development data 20260909, final test 20261104, shift
-20261105, model selection 0. Runtimes were measured on a 4-core Linux virtual
+20261105, calibration check 20261106, model selection 0. Runtimes were measured on a 4-core Linux virtual
 machine (Intel Xeon 2.1 GHz, 15 GB RAM) using all cores.
 
 | Step | Command | Runtime |
@@ -323,8 +341,9 @@ machine (Intel Xeon 2.1 GHz, 15 GB RAM) using all cores.
 | 2. Full pipeline: verification → development data → fresh test sets → discretisation study → surrogates → evaluation → screening → report | `python scripts/run_pipeline.py --config config/study.yaml` | 66 min |
 | 3. Model-form error (r–z model) | `python scripts/run_model_form.py --config config/study.yaml` | 16 min |
 | 4. Screen of all 1,520 cases for transient peaks | `python scripts/run_experiments.py --config config/study.yaml --only peak_screen` | 7 min |
-| 5. Notebooks (rebuild and execute) | `python scripts/make_notebooks.py --execute` | 36 s |
-| Tests | `pytest` (103 tests) | 2 min |
+| 5. Calibration check: the fixed design recalibrated on 41 fresh reservoirs (protocol addendum) | `python scripts/run_experiments.py --config config/study.yaml --only calibration_check` | 2 min |
+| 6. Notebooks (rebuild and execute) | `python scripts/make_notebooks.py --execute` | 36 s |
+| Tests | `pytest` (105 tests) | 2 min |
 | Small demo of the whole pipeline | `python scripts/run_pipeline.py --config config/demo.yaml` | 12 min |
 
 Step 1 needs the development data (`results/study/data/scenarios.csv`), which
@@ -354,9 +373,9 @@ config/                            study.yaml (reference run) · demo.yaml (smal
 results/study/                     data (development + fresh test + shift), figures, metrics, models, report, experiments/
 results/demo/                      the small run, same layout
 results/published_2026-09-20/      the published models (hash-checked) and the reproduction record of the published run
-tests/                             103 tests
+tests/                             105 tests
 app/streamlit_app.py               optional interface: predict, simulate, verified screening
-docs/                              EVALUATION_PROTOCOL · TECHNICAL_REPORT · WALKTHROUGH · SOURCE_MAP · ASSUMPTIONS ·
+docs/                              REVIEW_CHECKLIST · EVALUATION_PROTOCOL · TECHNICAL_REPORT · WALKTHROUGH · SOURCE_MAP · ASSUMPTIONS ·
                                    MAPPING_TABLE · CHANGELOG · archive/ (2026-09-20 course-coverage record)
 ```
 
@@ -367,6 +386,7 @@ docs/                              EVALUATION_PROTOCOL · TECHNICAL_REPORT · WA
 | Module project | during the MSc (CHEN60482 *Advanced Subsurface Modelling*) | the original coursework project |
 | Corrected version | 2026-09-20, published 2026-09-27 | defects found and fixed, scoped to the course material, 880-case study run (`docs/CHANGELOG.md`) |
 | **This revision** | **2026-10-04** | extended and re-verified after two portfolio reviews: the analysis and results described above |
+| Completion pass | 2026-10-04 | calibration check on fresh reservoirs (protocol addendum), experiment inputs from one source, corrected coverage and data-role statements, review checklist; no pipeline result changed (`docs/CHANGELOG.md`) |
 
 The versions on GitHub were extended and re-verified in September and
 October 2026, after the module was completed. The published 2026-09-20 study

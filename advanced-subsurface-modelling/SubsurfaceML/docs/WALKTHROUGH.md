@@ -176,10 +176,14 @@ identical folds and budgets.
 **Intervals.** Four constructions are compared; the one used was chosen on
 development data by a pre-declared rule. The reservoir-level conformal
 interval takes one score per calibration reservoir (its worst schedule),
-which gives a statement about whole reservoirs drawn like the calibration
-reservoirs — and nothing more: it is not a guarantee for a reservoir from a
-different population (tested on the shift set) or for thousands of screened
-candidates.
+which supports a statement about whole reservoirs drawn like the
+calibration reservoirs — and nothing more. The statement needs calibration
+reservoirs that played no part in choosing the design. The pipeline's 41
+calibration reservoirs did, so its intervals have measured coverage only.
+`scripts/run_experiments.py --only calibration_check` recalibrates the fixed
+design on 41 fresh reservoirs (protocol addendum). Neither version covers a
+reservoir from a different population (tested on the shift set) or thousands
+of screened candidates.
 
 **Domain check.** A reservoir whose descriptors fall outside the training
 range (with a 2 % tolerance) or far from every training reservoir is flagged;
@@ -257,6 +261,7 @@ it.
 | How good are the surrogates on fresh reservoirs, and under shift? | `results/study/reports/RESULTS.md`, `summary.json → ml.targets` |
 | Which change helped, by how much? | `results/study/experiments/ablation_summary.json` |
 | Do the intervals cover? | `summary.json → ml.targets.<t>.designs.revised.evaluation.<set>.intervals` |
+| What changes with independent calibration? | `results/study/experiments/calibration_check.json` |
 | Where do the surrogates fail? | `summary.json → ml.targets.<t>.difficult_cases`, `figures/08_errors_*.png` |
 | Did the screening recommend anything unverified? | `metrics/screening_recommendations.csv`, `metrics/screening_details.json` |
 | How much do gravity and crossflow matter? | `results/study/experiments/model_form_summary.json` |

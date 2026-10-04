@@ -170,3 +170,29 @@ Beta(38, 4), with mean 0.905, and 90 % of calibration sets give between 0.82
 and 0.97. Measuring it on 100 test reservoirs adds about ±3 percentage points
 of binomial noise. Nothing is claimed for the shift set, or for the thousands
 of candidate schedules screened per reservoir.
+
+### Outcome of the addendum (added after the check was run)
+
+Run with `python scripts/run_experiments.py --config config/study.yaml
+--only calibration_check` (`results/study/experiments/calibration_check.json`).
+All 164 cases were simulated, and the set is disjoint from every other set.
+Re-scoring the saved models reproduces the pipeline's original numbers
+exactly. Selected method (`adaptive_conformal`), recalibrated on the fresh
+reservoirs:
+
+| Target | Test: cases / whole reservoirs covered (original → recalibrated) | Test mean width | Shift: whole reservoirs covered |
+|---|---|---|---|
+| Peak build-up | 95 % / 86 % → **97 % / 91 %** | 0.55 → 0.72 MPa | 70 % → 73 % |
+| Plume radius r95 | 98 % / 97 % → 94 % / 88 % | 20.8 → 16.4 m | 78 % → 63 % |
+| Swept fraction | 92 % / 78 % → 95 % / 84 % | 0.0029 → 0.0033 | 80 % → 82 % |
+
+The recalibrated results are consistent with the stated property (one
+calibration draw; Beta(38, 4) spread). The pipeline's intervals keep measured
+coverage only.
+
+**Correction to the data-roles table above.** "Interval calibration only"
+was inaccurate. Together with the training reservoirs, the calibration
+reservoirs also train the pressure-limit classifier and form the domain
+check's reference set, the permeability-tercile edges and the prior Monte
+Carlo sample. None of these uses their interval outcomes. The table is kept
+as written so that the record is unchanged.

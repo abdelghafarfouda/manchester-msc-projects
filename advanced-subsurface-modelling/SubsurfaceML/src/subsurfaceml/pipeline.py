@@ -10,7 +10,9 @@ Data roles (``docs/EVALUATION_PROTOCOL.md``)
 --------------------------------------------
 ``dev``         the development reservoirs (the study's 220 realisations);
                 split by reservoir into ``train`` (fitting, tuning, model
-                selection) and ``calib`` (interval calibration only)
+                selection) and ``calib`` (interval calibration; also part of
+                ``train_fit``, which trains the pressure-limit classifier and
+                is the reference set of the domain check)
 ``final_test``  fresh reservoirs from the same prior, generated with their
                 own seed -- untouched until the final scoring
 ``shift``       fresh reservoirs from a lower-permeability prior -- the

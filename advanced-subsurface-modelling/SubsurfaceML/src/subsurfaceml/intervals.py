@@ -12,10 +12,16 @@ the log scale for the strictly positive targets, i.e. relative intervals):
     data this is an approximation, reported as such.
 ``reservoir_conformal``  split-conformal on *reservoirs*: each calibration
     reservoir contributes one score, the largest of its schedules' scores.
-    If a new reservoir and its schedules are drawn exactly like the
-    calibration reservoirs (exchangeable reservoirs, same number of
-    schedules), then with probability at least ``1 - alpha`` *all* of its
-    schedules fall inside their intervals.  This is a statement about the
+    If the score function (fitted model, difficulty model and every design
+    choice) was fixed without using the calibration reservoirs, and a new
+    reservoir and its schedules are drawn exactly like them (exchangeable
+    reservoirs, same number of schedules), then with probability at least
+    ``1 - alpha`` *all* of its schedules fall inside their intervals.  The
+    probability is over the draw of calibration and new reservoirs; for one
+    fixed calibration set the coverage varies.  The study pipeline's
+    calibration reservoirs took part in choosing the design, so for its
+    intervals only measured coverage is claimed
+    (``docs/EVALUATION_PROTOCOL.md``, addendum).  This is a statement about the
     sampling design of this study only: it does not hold for a reservoir
     from a different distribution (tested on the distribution-shift set), and
     it does not cover the thousands of candidate schedules screened per
