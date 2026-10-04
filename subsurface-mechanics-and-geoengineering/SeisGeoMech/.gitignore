@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.DS_Store
+
+# The teaching folders are never part of this repository.
+Models/
+Seismic/
+*.zip
+
+# Superseded project work, kept locally only.
+_archive_superseded/

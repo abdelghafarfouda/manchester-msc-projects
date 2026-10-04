@@ -1,0 +1,29 @@
+Environment that produced the published results
+================================================
+generated   2026-09-27 (UTC)
+python      3.11.15  (Linux x86_64)
+numpy       2.4.6
+pandas      3.0.6
+scipy       1.17.1
+matplotlib  3.11.2
+lasio       0.32
+bruges      0.5.4
+pytest      9.1.1
+
+Built from requirements.txt alone in a fresh virtual environment:
+    python -m venv .venv && pip install -r requirements.txt
+Exact pinned versions of that environment: requirements-lock.txt
+
+Checks run in it
+------------------------------------------------
+  python scripts/run_all.py     12 tables, 6 figures
+  python -m pytest tests -q     126 passed
+  notebooks/SeisGeoMech.ipynb   executed end to end, 38 cells, 0 errors
+
+Cross-environment reproduction
+------------------------------------------------
+The workflow was also run on Python 3.10.12 (numpy 2.2.6, scipy 1.15.3,
+matplotlib 3.10.9). Every scalar in summary.json agreed to the last bit
+and all twelve CSV tables were byte-identical. PNG figures differ by a few
+pixels of bounding box between Matplotlib versions; that is a rendering
+detail, not a numerical one.

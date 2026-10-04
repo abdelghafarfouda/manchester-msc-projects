@@ -1,0 +1,12 @@
+# Runtime dependencies.  Pinned to lower bounds only; the workflow was run and
+# verified with the versions recorded in results/tables/environment.txt.
+numpy>=1.24
+pandas>=2.0
+scipy>=1.10
+matplotlib>=3.7
+lasio>=0.31
+bruges>=0.5.4
+
+# Testing and the notebook
+pytest>=7.4
+jupyterlab>=4.0

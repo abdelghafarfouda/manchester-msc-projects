@@ -1,0 +1,13 @@
+field_or_curve,meaning,value
+LMF,LOGS MEAS FROM,UNKNOWN
+EKB,KB ELEVATION,.0
+EDF,ELEV DRILL FLOOR,.0
+EPD,ELEV PERM DATUM,.0
+EGL,GROUND LEVEL,.0
+ELZ,ELEVATION LOG ZERO,.0
+WDMS,WATER DEPTH,.0 M
+TVD,true vertical depth curve,ABSENT
+TVDSS,TVD subsea curve,ABSENT
+DEVI,deviation / inclination curve,ABSENT
+INCL,inclination curve,ABSENT
+AZIM,azimuth curve,ABSENT
