@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """Run the whole workflow and write every table and figure.
 
-    python scripts/run_all.py
+    python scripts/run_all.py                 # into results/
+    python scripts/run_all.py --out-dir DIR   # somewhere else (CI compares DIR with results/)
+
+The original workflow writes the 12 tables and summary.json to <out>/tables and
+the six figures to <out>/figures.  The depth-block test of the October 2026
+revision writes to <out>/depth_blocks.
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 import time
 from pathlib import Path
@@ -13,14 +19,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from seisgeomech import analysis, figures  # noqa: E402
+from seisgeomech import analysis, depth_blocks, figures  # noqa: E402
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="Regenerate every table and figure.")
+    ap.add_argument("--out-dir", default=None,
+                    help="output folder (default: the project's results/)")
+    args = ap.parse_args(argv)
+    out = Path(args.out_dir) if args.out_dir else ROOT / "results"
+
     t0 = time.time()
     print("SeisGeoMech - running workflow")
-    res = analysis.run()
-    paths = figures.make_all(res)
+    res = analysis.run(results_root=out)
+    paths = figures.make_all(res, out / "figures")
 
     s = res.scalars
     print("\n--- headline results ---")
@@ -40,8 +52,18 @@ def main() -> int:
     print(f"Merivale E, nu            {res.arrays['merivale'].E_Pa/1e9:.2f} GPa, "
           f"{res.arrays['merivale'].nu:.3f}")
 
-    print(f"\n{len(res.tables)} tables -> results/tables")
-    print(f"{len(paths)} figures -> results/figures")
+    blocks = depth_blocks.run(out / "depth_blocks")
+    block_fig = figures.fig_depth_blocks(blocks, out / "depth_blocks")
+    print("\n--- depth-block test (configs/depth_blocks.json) ---")
+    for name, d in blocks["scores"]["directions"].items():
+        h, r = d["held_out_block_fit"], d["held_out_supplied_gardner"]
+        print(f"{name:6s} fit {d['fitted_coefficient_a']:.4f} Vp^{d['fitted_exponent_b']:.4f}: "
+              f"held-out RMSE {h['rmse_gcc']:.4f} g/cm3 (bias {h['bias_gcc']:+.4f}); "
+              f"supplied Gardner on the same samples {r['rmse_gcc']:.4f} ({r['bias_gcc']:+.4f})")
+
+    print(f"\n{len(res.tables)} tables -> {out / 'tables'}")
+    print(f"{len(paths)} figures -> {out / 'figures'}")
+    print(f"depth-block outputs and figure -> {block_fig.parent}")
     print(f"done in {time.time() - t0:.1f} s")
     return 0
 

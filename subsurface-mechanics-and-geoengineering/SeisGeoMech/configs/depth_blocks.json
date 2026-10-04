@@ -1,0 +1,48 @@
+{
+  "name": "two-direction depth-block test of the Gardner functional form",
+  "status": "frozen: committed with the derived split before any held-out prediction was scored",
+  "frozen_on": "2026-10-04",
+  "question": "Does the Gardner form, fitted on one contiguous depth block of the overlap, predict the other block better than the supplied relation does on exactly the same samples?",
+  "samples": {
+    "definition": "the paired samples of analysis.stage_load: rows of the supplied LAS with DT and RHOB both present after removing the header NULL, Vp = 1e6 * 0.3048 / DT finite and positive",
+    "expected_count": 1105,
+    "order": "ascending logged depth coordinate DEPT_M",
+    "identifier": "row index of the sample in the supplied LAS file (0-based, data section order) and its logged DEPT value in feet"
+  },
+  "coordinate": {
+    "name": "DEPT_M",
+    "definition": "logged DEPT (ft) * 0.3048",
+    "caveat": "the logged coordinate; the file does not establish whether it is vertical (README, 'Two things the numbers depend on'), so the gap is measured along this coordinate, not in true vertical depth"
+  },
+  "split": {
+    "midpoint_rule": "midpoint of the overlap's logged coordinate range, (first DEPT_M + last DEPT_M) / 2",
+    "exclusion_gap_m": 20.0,
+    "excluded_if": "abs(DEPT_M - midpoint) <= exclusion_gap_m / 2",
+    "block_A": "every remaining sample shallower than the gap (DEPT_M < midpoint - exclusion_gap_m / 2)",
+    "block_B": "every remaining sample deeper than the gap (DEPT_M > midpoint + exclusion_gap_m / 2)",
+    "gap_rationale": "An earlier review estimated how far along the log the Gardner residuals stay correlated, and that estimate motivated a gap of about 20 m. It is a design choice, not a guarantee that the two blocks are statistically independent.",
+    "not_tuned": "The midpoint, the gap and the two blocks are fixed here. No other split or gap is scored, and none will be chosen after seeing held-out results."
+  },
+  "directions": [
+    {"name": "A_to_B", "fit_on": "A", "evaluate_on": "B"},
+    {"name": "B_to_A", "fit_on": "B", "evaluate_on": "A"}
+  ],
+  "fit": {
+    "form": "rho = a * Vp ** b (the supplied Gardner form, Seismic/Ex1.ipynb markdown cell 35)",
+    "units": "Vp in m/s, rho in g/cm3",
+    "method": "numpy.polyfit(log(Vp), log(RHOB), 1) on the training block only; b = slope, a = exp(intercept). The method of the original in-sample refit (analysis.stage_gardner)"
+  },
+  "reference": {
+    "relation": "supplied Gardner, rho = 0.31 * Vp ** 0.25, coefficients fixed",
+    "evaluated_on": "exactly the evaluation samples of each direction"
+  },
+  "metrics": {
+    "residual": "predicted density - measured RHOB, g/cm3",
+    "reported": ["bias (mean residual)", "RMSE", "MAE", "n"],
+    "geomechanical_consequence": "mean rho g gradient over the evaluation block (stress.mean_rho_g_gradient along the logged coordinate) with measured, supplied-Gardner and block-fitted density; the one-dimensional qualification of the original gradients applies unchanged"
+  },
+  "outputs": {
+    "split": "results/depth_blocks/split.json and results/depth_blocks/split_samples.csv",
+    "scores": "results/depth_blocks/depth_block_results.json and depth_block_table.csv"
+  }
+}
