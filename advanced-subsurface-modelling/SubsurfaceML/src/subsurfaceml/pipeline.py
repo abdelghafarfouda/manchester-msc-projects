@@ -1,50 +1,80 @@
-"""End-to-end pipeline: validate -> simulate -> learn -> evaluate -> screen.
+"""End-to-end pipeline: verify -> simulate -> independent test sets -> learn
+-> evaluate -> screen.
 
-Run it with ``python scripts/run_pipeline.py --config config/demo.yaml``.
+Run it with ``python scripts/run_pipeline.py --config config/study.yaml``.
 Every stage writes machine-readable results under ``paths.metrics`` and
 figures under ``paths.figures``; the report is assembled from those files,
 never from numbers typed by hand.
+
+Data roles (``docs/EVALUATION_PROTOCOL.md``)
+--------------------------------------------
+``dev``         the development reservoirs (the study's 220 realisations);
+                split by reservoir into ``train`` (fitting, tuning, model
+                selection) and ``calib`` (interval calibration only)
+``final_test``  fresh reservoirs from the same prior, generated with their
+                own seed -- untouched until the final scoring
+``shift``       fresh reservoirs from a lower-permeability prior -- the
+                distribution-shift test
+
+Two designs are trained on the same ``train`` reservoirs, calibrated on the
+same ``calib`` reservoirs and scored on the same independent sets: the
+**published approach** (inputs, target forms and empirical band of the
+2026-09-20 release) and the **revised** design (realised-layer and ROM
+inputs, hybrid pressure surrogate, reservoir-level conformal intervals).
+The models published on 2026-09-20 are also scored as they are.
 """
 from __future__ import annotations
 
 import json
 import re
 import time
-import warnings
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from . import figures as F
 from . import validation as V
 from .config import Config
 from .dataset import generate_dataset
-from .features import FEATURES, engineer, features_for_schedules
+from .evaluation import paired_bootstrap, point_metrics
+from .features import FEATURES, FEATURES_BASELINE, engineer, features_for_schedules
 from .models import fit_and_select, regression_metrics
-from .splits import check_no_leakage, split_by_realisation
-from .uncertainty import (ErrorBand, UNMODELLED_PHYSICS, error_source_table,
-                          monte_carlo_propagate)
+from .splits import split_by_realisation
+from .uncertainty import UNMODELLED_PHYSICS, error_source_table, monte_carlo_propagate
 from .units import MPA, YEAR
 
 TARGET_UNITS = {"dp_bh_max_MPa": "MPa", "r_plume_m95_m": "m",
                 "sweep_efficiency": "-"}
 #: Strictly positive targets whose drivers act multiplicatively (rate,
 #: permeability, thickness): modelled as log(target), so errors and the
-#: error band are relative.  Metrics are always reported in physical units.
+#: intervals are relative.  Metrics are always reported in physical units.
 LOG_TARGETS = {"dp_bh_max_MPa", "r_plume_m95_m"}
 
-plt.rcParams.update({"figure.dpi": 120, "savefig.bbox": "tight",
-                     "axes.grid": True, "grid.alpha": 0.3, "font.size": 9})
+#: The design of the 2026-09-20 release, re-run like for like.
+PUBLISHED_DESIGN = {"name": "published_approach", "feature_set": "baseline",
+                    "feature_set_other": "baseline", "pressure_model": "log",
+                    "interval_method": "empirical"}
+PUBLISHED_MODELS_DIR = "results/published_2026-09-20/study_models"
 
 
-def _save(fig, path):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path)
-    plt.close(fig)
-    return str(path)
+def revised_design(cfg) -> dict:
+    return {"name": "revised", "feature_set": cfg.ml.feature_set,
+            "feature_set_other": cfg.ml.feature_set_other,
+            "pressure_model": cfg.ml.pressure_model,
+            "interval_method": cfg.ml.interval_method}
+
+
+def target_mode(design: dict, target: str) -> str:
+    if target == "dp_bh_max_MPa":
+        return design["pressure_model"]
+    return "log" if target in LOG_TARGETS else "linear"
+
+
+def target_features(design: dict, target: str) -> list:
+    from .final_eval import design_features
+    key = "feature_set" if target == "dp_bh_max_MPa" else "feature_set_other"
+    return list(design_features(design[key]))
 
 
 def _jdump(obj, path):
@@ -58,6 +88,8 @@ def _json_default(o):
         return int(o)
     if isinstance(o, (np.floating,)):
         return float(o)
+    if isinstance(o, np.bool_):
+        return bool(o)
     if isinstance(o, np.ndarray):
         return o.tolist()
     return str(o)
@@ -73,75 +105,24 @@ def _clean(d):
 
 
 # ==========================================================================
-# 1. VALIDATION
+# 1. VERIFICATION
 # ==========================================================================
 def stage_validate(cfg: Config) -> dict:
-    print("\n=== STAGE 1  numerical verification & validation ===")
+    print("\n=== STAGE 1  numerical verification ===")
     t0 = time.perf_counter()
     res = V.run_all(cfg, save=True)
+    n = sum(1 for k, v in res["verdict"].items() if k != "ALL_PASS" and v)
     print(f"  verdict: {'ALL PASS' if res['verdict']['ALL_PASS'] else 'FAILURES'}"
-          f"  ({time.perf_counter() - t0:.0f} s)")
+          f" ({n}/{len(res['verdict']) - 1} checks, {time.perf_counter() - t0:.0f} s)")
     for k, v in res["verdict"].items():
         if not v:
             print(f"    FAILED: {k}")
-    _figure_validation(cfg, res)
+    F.validation(cfg, res, cfg.paths.figures)
     return res
 
 
-def _figure_validation(cfg, res):
-    from .fluids import FluidProperties, RelPerm, RockProperties, bl_profile_1d
-    from .grid import CartesianGrid1D
-    from .impes import InjectionSchedule, TwoPhaseModel
-    from .units import md_to_m2
-    fl = FluidProperties(c_a=0.0, c_g=0.0)
-    rp, rk = RelPerm(), RockProperties(c_r=0.0)
-    L, A, phi, q_vol = 100.0, 10.0, 0.20, 1e-5
-    T = 0.4 * L * A * phi / q_vol
-    fig, ax = plt.subplots(1, 2, figsize=(9, 3.4))
-    for n, c in zip((100, 400), ("tab:orange", "tab:blue")):
-        g = CartesianGrid1D(n=n, L=L, area=A)
-        m = TwoPhaseModel([g], np.full((1, n), md_to_m2(100.0)),
-                          np.full((1, n), phi), fl, rp, rk, 15 * MPA,
-                          cfl=0.3, max_dS=0.05, dt_init=100.0, dt_max=T / 50)
-        r = m.run(InjectionSchedule([0.0, T], [q_vol * fl.rho_g]), np.array([T]))
-        ax[0].plot(g.centres, r.Sg[-1, 0], c, lw=1.2, label=f"IMPES n={n}")
-    xg = np.linspace(0, L, 2000)
-    ax[0].plot(xg, bl_profile_1d(rp, fl, xg, T, q_vol, A, phi, L=L), "k--",
-               lw=1.4, label="Buckley-Leverett (Welge)")
-    ax[0].set_xlabel("distance [m]"); ax[0].set_ylabel(r"$S_g$ [-]")
-    ax[0].set_title("V5 Buckley-Leverett, 0.4 PV injected"); ax[0].legend(fontsize=7)
-    bl = res["V5_buckley_leverett"]["grids"]
-    ns = np.array(sorted(int(k) for k in bl))
-    l1 = np.array([bl[str(n)]["L1_saturation_error"] for n in ns])
-    ax[1].loglog(ns, l1, "o-", label="IMPES $L_1$ error")
-    ax[1].loglog(ns, l1[0] * ns[0] / ns, "k--", lw=1, label="first order")
-    ax[1].set_xlabel("cells"); ax[1].set_ylabel(r"$L_1$ error in $S_g$")
-    ax[1].set_title("V5 convergence"); ax[1].legend(fontsize=7)
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "01_validation_buckley_leverett.png")
-
-    r7 = res["V6_V7_V8_radial_two_phase"]
-    fig, ax = plt.subplots(1, 3, figsize=(11, 3.2))
-    for a, key, xl in zip(ax, ("n_r", "r_near", "max_dS"),
-                          ("radial cells $n_r$", "well block $r_{near}$ [m]",
-                           r"max $\Delta S_g$ per step")):
-        ks = sorted(r7[key], key=float)
-        x = [float(k) for k in ks]
-        a.plot(x, [r7[key][k]["dp_bh_max_MPa"] for k in ks], "o-")
-        a2 = a.twinx()
-        a2.plot(x, [r7[key][k]["r_plume_end_m"] for k in ks], "s--", color="tab:red")
-        a2.grid(False)
-        a.set_xlabel(xl); a.set_ylabel(r"$\Delta p_{bh,max}$ [MPa]")
-        a2.set_ylabel("threshold plume radius [m]", color="tab:red")
-        if key != "n_r":
-            a.set_xscale("log")
-    ax[0].set_title("V7 discretisation convergence")
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "02_validation_convergence.png")
-
-
 # ==========================================================================
-# 2. DATASET, DATA QUALITY, EDA
+# 2. DEVELOPMENT DATASET, DATA QUALITY, EDA
 # ==========================================================================
 def _input_columns(df):
     return [c for c in df.columns if c in FEATURES or re.fullmatch(r"q\d+_kg_s", c)]
@@ -163,149 +144,275 @@ def data_quality(df: pd.DataFrame, failed: pd.DataFrame, cfg=None) -> dict:
     inp = _input_columns(df)
     num = df.select_dtypes("number")
     const = [c for c in num.columns if num[c].nunique() <= 1]
-    rep = {"n_rows": int(len(df)),
-           "n_failed_runs": int(len(failed)),
-           "duplicate_scenario_ids": int(df["scenario_id"].duplicated().sum()),
-           "duplicate_input_rows": int(df[inp].duplicated().sum()),
-           "missing_values_total": int(df[FEATURES].isna().sum().sum()),
-           "constant_columns_dropped_from_analysis": const,
-           "scenarios_with_a_rate_on_the_floor_or_ceiling": int(
-               ((df[[c for c in inp if c.endswith("_kg_s") and c[1].isdigit()]]
-                 <= (cfg.schedule.q_min_kg_s * 1.0001 if cfg else 0))
-                | (df[[c for c in inp if c.endswith("_kg_s") and c[1].isdigit()]]
-                   >= (cfg.schedule.q_max_kg_s * 0.9999 if cfg else np.inf))).any(axis=1).sum()),
-           "checks": {
-               "saturation_in_bounds": bool((df["sg_min"] >= -1e-9).all()
-                                            and (df["sg_max"] <= 1).all()),
-               "mass_balance_below_1e-9": bool((df["mass_balance_error"] < 1e-9).all()),
-               "no_clipping": bool((df["n_clipped"] == 0).all()),
-               "positive_buildup": bool((df["dp_bh_max_Pa"] > 0).all()),
-               "common_bhp_below_1Pa": bool((df["max_bhp_spread_Pa"] < 1.0).all())
-               if "max_bhp_spread_Pa" in df else None}}
-    return rep
+    rate_cols = [c for c in inp if re.fullmatch(r"q\d+_kg_s", c)]
+    lo = cfg.schedule.q_min_kg_s * 1.0001 if cfg else 0
+    hi = cfg.schedule.q_max_kg_s * 0.9999 if cfg else np.inf
+    feats = [f for f in FEATURES if f in df]
+    return {"n_rows": int(len(df)),
+            "n_failed_runs": int(len(failed)),
+            "duplicate_scenario_ids": int(df["scenario_id"].duplicated().sum()),
+            "duplicate_input_rows": int(df[inp].duplicated().sum()),
+            "missing_values_total": int(df[feats].isna().sum().sum()),
+            "constant_columns_dropped_from_analysis": const,
+            "scenarios_with_a_rate_on_the_floor_or_ceiling": int(
+                ((df[rate_cols] <= lo) | (df[rate_cols] >= hi)).any(axis=1).sum()),
+            "checks": {
+                "saturation_in_bounds": bool((df["sg_min"] >= -1e-9).all()
+                                             and (df["sg_max"] <= 1).all()),
+                "mass_balance_below_1e-9": bool((df["mass_balance_error"] < 1e-9).all()),
+                "no_clipping": bool((df["n_clipped"] == 0).all()),
+                "positive_buildup": bool((df["dp_bh_max_Pa"] > 0).all()),
+                "common_bhp_below_1Pa": bool((df["max_bhp_spread_Pa"] < 1.0).all())
+                if "max_bhp_spread_Pa" in df else None}}
 
 
 def stage_dataset(cfg: Config) -> dict:
-    print("\n=== STAGE 2  scenario dataset (SYNTHETIC, from the simulator) ===")
+    print("\n=== STAGE 2  development dataset (SYNTHETIC, from the simulator) ===")
     out = generate_dataset(cfg)
     df = engineer(out["scenarios"])
     dq = data_quality(df, out["failed"], cfg)
     df, n_dup = deduplicate(df)
+    df["set"] = "dev"
     dq["duplicate_rows_dropped"] = n_dup
     df.to_csv(Path(cfg.paths.data) / "scenarios_features.csv", index=False)
     print(f"  data quality: {dq['duplicate_scenario_ids']} duplicate ids, "
           f"{dq['missing_values_total']} missing, checks {dq['checks']}")
     _jdump(dq, Path(cfg.paths.metrics) / "data_quality.json")
-    _figure_eda(cfg, df)
+    F.eda(cfg, df, cfg.paths.figures, FEATURES)
     return {"df": df, "ts": out["timeseries"], "failed": out["failed"],
             "provenance": out["provenance"], "data_quality": dq}
 
 
-def _figure_eda(cfg, df):
-    tg = ["dp_bh_max_MPa", "r_plume_m95_m", "sweep_efficiency", "mass_retained_Mt"]
-    fig, ax = plt.subplots(1, 4, figsize=(13, 2.9))
-    for a, t in zip(ax, tg):
-        a.hist(df[t].dropna(), bins=30, color="tab:blue", alpha=.85)
-        a.set_xlabel(t); a.set_ylabel("count")
-    ax[0].axvline(cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa, color="r",
-                  ls="--", lw=1.2, label="stated limit")
-    ax[0].legend(fontsize=7)
-    ax[1].axvline(cfg.optim.r_plume_limit_m, color="r", ls="--", lw=1.2)
-    fig.suptitle("EDA - simulated QoI distributions (synthetic data)", y=1.04)
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "03_eda_targets.png")
-
-    feats = ["log10_k_mD", "V_DP", "phi_mean", "h_total_m", "r_e_m",
-             "log10_q_mult_mean", "q_front_load", "r_fill_over_re"]
-    fig, ax = plt.subplots(2, 4, figsize=(13, 5.4))
-    for a, f in zip(ax.ravel(), feats):
-        a.scatter(df[f], df["dp_bh_max_MPa"], s=8, alpha=.6)
-        a.set_xlabel(f); a.set_ylabel(r"$\Delta p_{bh,max}$ [MPa]")
-    fig.suptitle("EDA - pressure buildup vs inputs", y=1.01)
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "04_eda_scatter.png")
-
-    num = df[FEATURES + tg[:3]].corr()
-    fig, a = plt.subplots(figsize=(9, 8))
-    im = a.imshow(num.values, cmap="RdBu_r", vmin=-1, vmax=1)
-    a.set_xticks(range(len(num))); a.set_xticklabels(num.columns, rotation=90, fontsize=6)
-    a.set_yticks(range(len(num))); a.set_yticklabels(num.columns, fontsize=6)
-    a.grid(False); fig.colorbar(im, shrink=.7)
-    a.set_title("Feature / target correlation (Pearson)")
-    _save(fig, Path(cfg.paths.figures) / "05_eda_correlation.png")
+# ==========================================================================
+# 3. INDEPENDENT EVALUATION SETS
+# ==========================================================================
+def stage_eval_sets(cfg: Config, dev: pd.DataFrame, *, force=False) -> dict:
+    print("\n=== STAGE 3  independent evaluation sets (generated after the "
+          "design was fixed) ===")
+    from .final_eval import SETS, check_disjoint, load_or_generate
+    frames, prov = {}, {}
+    for which in SETS:
+        d, p = load_or_generate(cfg, which, force=force)
+        d, ndup = deduplicate(d)
+        d["set"] = which
+        frames[which], prov[which] = d, {**p, "duplicate_rows_dropped": ndup}
+        print(f"  {which}: {d.realisation_id.nunique()} reservoirs, {len(d)} cases")
+    disj = check_disjoint(dev, *frames.values())
+    assert disj["overlapping_ids"] == 0 and disj["overlapping_descriptions"] == 0, disj
+    print(f"  disjoint from development and from each other: {disj}")
+    return {"frames": frames, "provenance": prov, "disjoint": disj}
 
 
 # ==========================================================================
-# 3. SURROGATES
+# 4. NUMERICAL ERROR OF THE DATASET TARGETS
+# ==========================================================================
+def stage_numerics(cfg: Config, dev: pd.DataFrame) -> dict:
+    print("\n=== STAGE 4  discretisation error of the dataset targets ===")
+    from .numerics import refinement_study, select_cases, summarise
+    always = [s for s in ("R0172_S+00", "R0036_S+02", "R0039_S+03", "R0150_S+03",
+                          "R0149_S+00") if s in set(dev.scenario_id)]
+    cases = select_cases(dev, n_per_cell=cfg.numerics.cases_per_cell,
+                         seed=cfg.ml.random_state, always=always)
+    t0 = time.perf_counter()
+    runs = refinement_study(cfg, cases, n_jobs=cfg.n_jobs)
+    sub = cases.sort_values("k_median_mD").iloc[
+        np.unique(np.linspace(0, len(cases) - 1, cfg.numerics.finer_cases).astype(int))]
+    runs = pd.concat([runs, refinement_study(cfg, sub, levels=("finer",),
+                                             n_jobs=cfg.n_jobs)], ignore_index=True)
+    runs.to_csv(Path(cfg.paths.metrics) / "numerics_refinement_runs.csv", index=False)
+    dp_lim = cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa
+    rep = summarise(runs, cases, dp_lim)
+    prod = runs[(runs.level == "production") & (runs.status == "ok")].set_index("scenario_id")
+    ref = dev.set_index("scenario_id").loc[prod.index]
+    rep["production_level_reproduces_dataset_max_rel"] = float(
+        (np.abs(prod["dp_bh_max_MPa"] - ref["dp_bh_max_MPa"]) / ref["dp_bh_max_MPa"]).max())
+    rep["case_selection"] = {"strata": "k_median tercile x schedule-intensity quartile",
+                             "cases_per_cell": cfg.numerics.cases_per_cell,
+                             "always_included": always, "finer_subset": int(len(sub))}
+    rep["seconds"] = time.perf_counter() - t0
+    _jdump(rep, Path(cfg.paths.metrics) / "numerics_summary.json")
+    F.numerics(runs, cases, cfg.paths.figures, dp_lim)
+    t = rep["targets"]["dp_bh_max_MPa"]["production_minus_fine"]
+    print(f"  {rep['n_cases']} cases: build-up production vs fine median "
+          f"{100 * t['median_rel']:.2f} %, max {100 * t['max_rel']:.2f} %; label flips "
+          f"{rep['pressure_limit_label_flips']['n_flipped']}  ({rep['seconds']:.0f} s)")
+    return rep
+
+
+# ==========================================================================
+# 5. SURROGATES: two designs, three test populations
 # ==========================================================================
 def make_split(cfg, df):
-    sp = split_by_realisation(df, test_fraction=cfg.ml.test_fraction,
+    """Masks over the combined table (``df`` has a RangeIndex and a ``set``
+    column).  The development reservoirs are split exactly as in the
+    published run (same seed and fractions); its former test reservoirs have
+    been inspected during development, so they now join the training part,
+    and the untouched independent sets take their place."""
+    dev = (df["set"] == "dev").to_numpy()
+    sp = split_by_realisation(df.loc[dev], test_fraction=cfg.ml.test_fraction,
                               calib_fraction=cfg.ml.calib_fraction,
                               random_state=cfg.ml.random_state)
-    leak = check_no_leakage(df, sp["masks"])
-    assert max(leak["overlaps"].values()) == 0, leak
-    m = dict(sp["masks"])
+    idx = np.flatnonzero(dev)
+    n = len(df)
+    m = {k: np.zeros(n, bool) for k in ("train", "calib", "dev_former_test")}
+    m["train"][idx[sp["masks"]["train"] | sp["masks"]["test"]]] = True
+    m["calib"][idx[sp["masks"]["calib"]]] = True
+    m["dev_former_test"][idx[sp["masks"]["test"]]] = True
     m["train_fit"] = m["train"] | m["calib"]
+    m["test"] = (df["set"] == "final_test").to_numpy()
+    m["shift"] = (df["set"] == "shift").to_numpy()
+    ids = {k: set(df.loc[m[k], "realisation_id"]) for k in ("train", "calib", "test", "shift")}
+    keys = list(ids)
+    overlaps = {f"{a}_{b}": len(ids[a] & ids[b])
+                for i, a in enumerate(keys) for b in keys[i + 1:]}
+    leak = {"overlaps": overlaps, "reservoirs": {k: len(v) for k, v in ids.items()},
+            "rows": {k: int(m[k].sum()) for k in keys},
+            "former_test_reservoirs_now_in_training": int(len(sp["test_ids"]))}
+    assert max(overlaps.values()) == 0, leak
     return sp, leak, m
 
 
+def _fit_design(cfg, df, m, target, design):
+    from .final_eval import oof_abs_residuals
+    from .intervals import METHODS, IntervalModel, fit_difficulty_model
+    feats = target_features(design, target)
+    mode = target_mode(design, target)
+    tr, ca = m["train"], m["calib"]
+    y = df[target].to_numpy(float)
+    g = df["realisation_id"].to_numpy()
+    best, allres, fitted = fit_and_select(
+        df.loc[tr], y[tr], g[tr], feats, target, TARGET_UNITS.get(target, ""),
+        n_splits=cfg.ml.n_splits, n_iter=cfg.ml.n_iter_search,
+        random_state=cfg.ml.random_state, log_target=(mode == "log"),
+        hybrid=(mode == "hybrid"), families=cfg.ml.families)
+    log_space = mode in ("log", "hybrid")
+    abs_oof = oof_abs_residuals(best, df.loc[tr, feats], y[tr], g[tr],
+                                cfg.ml.n_splits, log_space)
+    diff = fit_difficulty_model(df.loc[tr, feats], abs_oof,
+                                random_state=cfg.ml.random_state)
+    ims = {}
+    for meth in METHODS:
+        ims[meth] = IntervalModel(best, meth, cfg.ml.interval_alpha, log_space=log_space,
+                                  difficulty=diff if meth == "adaptive_conformal" else None
+                                  ).calibrate(df.loc[ca], y[ca], g[ca])
+    return {"best": best, "allres": allres, "fitted": fitted, "intervals": ims,
+            "features": feats, "mode": mode,
+            "train_oof_abs_residual_median": float(np.median(abs_oof))}
+
+
 def stage_ml(cfg: Config, df: pd.DataFrame) -> dict:
-    print("\n=== STAGE 3  surrogates (grouped by reservoir realisation) ===")
+    print("\n=== STAGE 5  surrogates: published approach vs revised design ===")
+    from .domain import DomainCheck
+    from .final_eval import evaluate_on, load_published, published_interval
     sp, leak, m = make_split(cfg, df)
-    print("  rows:", leak["rows"], " realisations:", leak["sizes"],
-          " overlaps:", leak["overlaps"])
-    feats = list(FEATURES)
-    Xtr, Xca, Xte = (df.loc[m[k], feats] for k in ("train", "calib", "test"))
-    gtr = df.loc[m["train"], "realisation_id"].to_numpy()
+    print("  reservoirs:", leak["reservoirs"], " overlaps:", leak["overlaps"])
+    dp_lim = cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa
+    k_edges = list(np.quantile(df.loc[m["train_fit"]].drop_duplicates("realisation_id")
+                               ["k_median_mD"], [1 / 3, 2 / 3]))
+    domain = DomainCheck().fit(df.loc[m["train_fit"]])
+    pub_dir = Path(cfg.paths.root) / PUBLISHED_MODELS_DIR
+    published = (load_published(pub_dir, cfg.ml.targets)
+                 if cfg.name == "study" and pub_dir.exists() else {})
+    designs = [revised_design(cfg), PUBLISHED_DESIGN]
     out = {"split": {k: (v.tolist() if hasattr(v, "tolist") else v)
                      for k, v in sp.items() if k != "masks"},
-           "leakage": leak, "features": feats, "targets": {}}
-    surrogates, bands, fitted_all = {}, {}, {}
+           "leakage": leak, "designs": designs,
+           "features": {d["name"]: {t: target_features(d, t) for t in cfg.ml.targets}
+                        for d in designs},
+           "k_tercile_edges_mD": k_edges,
+           "domain_check": {"descriptors": domain.descriptors,
+                            "distance_threshold": domain.threshold_,
+                            "n_training_reservoirs": domain.n_train_reservoirs_},
+           "targets": {}}
+    surrogates, bands, fitted_rev, base_models = {}, {}, {}, {}
     for target in cfg.ml.targets:
         unit = TARGET_UNITS.get(target, "")
-        print(f"\n  --- target: {target} [{unit}] ---")
-        ytr, yca, yte = (df.loc[m[k], target].to_numpy(float)
-                         for k in ("train", "calib", "test"))
-        best, allres, fitted = fit_and_select(
-            Xtr, ytr, gtr, feats, target, unit, n_splits=cfg.ml.n_splits,
-            n_iter=cfg.ml.n_iter_search, random_state=cfg.ml.random_state,
-            log_target=target in LOG_TARGETS, families=cfg.ml.families)
-        print(f"    selected: {best.name}  (grouped-CV RMSE {best.cv_score_rmse:.4g} {unit}"
-              f"{'; fitted on log(target)' if best.log_target else ''})")
-        pte = best.predict(Xte)
-        te = regression_metrics(yte, pte, unit)
-        base = regression_metrics(yte, np.full(len(yte), ytr.mean()), unit)
-        # every family on the test set too -- reported, never used to choose
-        fam_test = {k: regression_metrics(yte, f.predict(Xte), unit)["RMSE"]
-                    for k, f in fitted.items()}
-        band = ErrorBand(best, cfg.ml.band_lower_pct, cfg.ml.band_upper_pct
-                         ).calibrate(Xca, yca)
-        cov = band.evaluate(Xte, yte)
-        print(f"    test MAE {te['MAE']:.4g} {unit} | RMSE {te['RMSE']:.4g} | "
-              f"R2 {te['R2']:.4f} | mean-baseline RMSE {base['RMSE']:.4g}")
-        print(f"    P{cfg.ml.band_lower_pct:g}-P{cfg.ml.band_upper_pct:g} error "
-              f"band: measured test coverage {cov['measured_coverage_test']*100:.1f}%"
-              f", mean width {cov['mean_width']:.4g} {unit}")
-        hard = difficult_cases(df, m, target, pte)
-        surrogates[target], bands[target], fitted_all[target] = best, band, fitted
-        out["targets"][target] = {
-            "unit": unit, "selected_model": best.name,
-            "log_target": best.log_target,
-            "best_params": best.best_params,
-            "cv_rmse_selected": best.cv_score_rmse,
-            "cv_rmse_units": unit,
-            "fitted_on": "log(target)" if best.log_target else "target",
-            "model_comparison_cv_rmse": {k: v["cv_rmse"] for k, v in allres.items()},
-            "model_comparison_test_rmse_physical_units": fam_test,
-            "model_fit_seconds": {k: v["fit_seconds"] for k, v in allres.items()},
-            "test": te, "mean_baseline_test": base,
-            "calib": regression_metrics(yca, best.predict(Xca), unit),
-            "error_band": cov, "difficult_cases": hard}
-        _figure_difficult(cfg, df, m, target, pte, unit)
-    _figure_parity(cfg, df, m, surrogates, bands)
-    _figure_model_comparison(cfg, out)
+        y = df[target].to_numpy(float)
+        res_t = {"unit": unit, "designs": {}}
+        fits = {}
+        for design in designs:
+            print(f"\n  --- {target} [{unit}] -- {design['name']} ---")
+            f = _fit_design(cfg, df, m, target, design)
+            fits[design["name"]] = f
+            best = f["best"]
+            print(f"    selected: {best.name} (grouped-CV RMSE {best.cv_score_rmse:.4g} {unit}"
+                  f"; {f['mode']} target; {len(f['features'])} inputs)")
+            ev = {}
+            for s in ("test", "shift"):
+                ev[s] = evaluate_on(design["name"], best, f["intervals"], df.loc[m[s]],
+                                    target, k_edges=k_edges, dp_limit=dp_lim,
+                                    domain=domain, selected_interval=design["interval_method"])
+                ev[s]["mean_baseline_rmse"] = float(np.sqrt(np.mean(
+                    (y[m[s]] - y[m["train"]].mean()) ** 2)))
+                sel = ev[s]["intervals"][design["interval_method"]]
+                print(f"    {s:5s}: RMSE {ev[s]['point']['RMSE']:.4g} | MAE "
+                      f"{ev[s]['point']['MAE']:.4g} | R2 {ev[s]['point']['R2']:.4f} | worst "
+                      f"under {ev[s]['point']['worst_underprediction']:.4g} {unit} | "
+                      f"{design['interval_method']} coverage {sel['case_coverage']:.3f} "
+                      f"(reservoirs {sel['reservoir_all_covered']:.3f})")
+            ev["calib"] = point_metrics(y[m["calib"]], best.predict(df.loc[m["calib"]]))
+            res_t["designs"][design["name"]] = {
+                "selected_model": best.name, "target_form": f["mode"],
+                "n_inputs": len(f["features"]), "best_params": best.best_params,
+                "cv_rmse_selected": best.cv_score_rmse,
+                "model_comparison_cv_rmse": {k: v["cv_rmse"] for k, v in f["allres"].items()},
+                "model_fit_seconds": {k: v["fit_seconds"] for k, v in f["allres"].items()},
+                "evaluation": ev}
+        if target in published:
+            sur, band = published[target]
+            im = published_interval(sur, band)
+            ev = {s: evaluate_on("published_2026_09_20", sur, {"empirical": im},
+                                 df.loc[m[s]], target, k_edges=k_edges, dp_limit=dp_lim,
+                                 selected_interval="empirical")
+                  for s in ("test", "shift")}
+            res_t["designs"]["published_models_as_released"] = {
+                "selected_model": sur.name, "target_form": "log" if sur.log_target else "linear",
+                "trained_on": "124 reservoirs of the 2026-09-20 split", "evaluation": ev}
+        rev, base = fits["revised"]["best"], fits["published_approach"]["best"]
+        boots = {}
+        for s in ("test", "shift"):
+            ys, g = y[m[s]], df.loc[m[s], "realisation_id"].to_numpy()
+            pr = rev.predict(df.loc[m[s]])
+            boots[f"revised_vs_published_approach_{s}"] = paired_bootstrap(
+                g, ys, base.predict(df.loc[m[s]]), pr, seed=cfg.ml.random_state)
+            if target in published:
+                boots[f"revised_vs_published_models_{s}"] = paired_bootstrap(
+                    g, ys, published[target][0].predict(df.loc[m[s]]), pr,
+                    seed=cfg.ml.random_state)
+        res_t["bootstrap"] = boots
+        # convenience keys used by the report and the notebooks
+        r_ev = res_t["designs"]["revised"]
+        res_t["selected_model"] = r_ev["selected_model"]
+        res_t["test"] = r_ev["evaluation"]["test"]["point"]
+        res_t["shift"] = r_ev["evaluation"]["shift"]["point"]
+        res_t["interval_test"] = r_ev["evaluation"]["test"]["intervals"][cfg.ml.interval_method]
+        res_t["interval_shift"] = r_ev["evaluation"]["shift"]["intervals"][cfg.ml.interval_method]
+        res_t["mean_baseline_test_rmse"] = r_ev["evaluation"]["test"]["mean_baseline_rmse"]
+        res_t["model_comparison_cv_rmse"] = r_ev["model_comparison_cv_rmse"]
+        res_t["difficult_cases"] = difficult_cases(df, m, target, rev.predict(df.loc[m["test"]]))
+        out["targets"][target] = res_t
+        surrogates[target] = rev
+        bands[target] = fits["revised"]["intervals"][cfg.ml.interval_method]
+        fitted_rev[target] = fits["revised"]["fitted"]
+        base_models[target] = (base, fits["published_approach"]["intervals"]["empirical"])
+        from .evaluation import add_subgroups
+        d = add_subgroups(df.loc[m["test"]], k_edges=k_edges)
+        F.errors_vs_inputs(d, target, rev.predict(d), base.predict(d), cfg.paths.figures)
+    # figures
+    preds, ivals = {}, {}
+    for t, s in surrogates.items():
+        X = df.loc[m["test"]]
+        lo, p, hi = bands[t].predict_interval(X)
+        preds[t], ivals[t] = (X[t].to_numpy(float), p), (lo, hi)
+    F.parity(df.loc[m["test"]], preds, ivals, cfg.paths.figures)
+    F.model_comparison(out["targets"], cfg.paths.figures)
+    if "dp_bh_max_MPa" in out["targets"]:
+        F.interval_coverage(out["targets"]["dp_bh_max_MPa"]["designs"]["revised"]["evaluation"],
+                            cfg.paths.figures)
     out["_surrogates"], out["_bands"], out["_fitted"], out["_masks"] = \
-        surrogates, bands, fitted_all, m
+        surrogates, bands, fitted_rev, m
+    out["_baseline"], out["_domain"] = base_models, domain
+    out["features_revised_pressure"] = target_features(designs[0], "dp_bh_max_MPa")
     return out
 
 
@@ -330,138 +437,83 @@ def difficult_cases(df, m, target, pred, n=5) -> dict:
             "share_of_total_abs_error_from_worst_10pct": share}
 
 
-def _figure_parity(cfg, df, m, surrogates, bands):
-    n = len(surrogates)
-    fig, ax = plt.subplots(1, n, figsize=(4 * n, 3.6))
-    ax = np.atleast_1d(ax)
-    for a, (t, s) in zip(ax, surrogates.items()):
-        X = df.loc[m["test"], s.features]
-        y = df.loc[m["test"], t].to_numpy()
-        lo, p, hi = bands[t].predict_interval(X)
-        a.vlines(y, lo, hi, color="tab:blue", lw=.6, alpha=.5)
-        a.plot(y, p, "o", ms=3, color="tab:blue")
-        lim = [min(y.min(), p.min()), max(y.max(), p.max())]
-        a.plot(lim, lim, "k--", lw=1)
-        a.set_xlabel(f"simulator {t}"); a.set_ylabel(f"surrogate {t}")
-        a.set_title(f"{s.name} (unseen reservoirs)", fontsize=9)
-    fig.suptitle("Surrogate parity with empirical P5-P95 error bands", y=1.04)
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "06_surrogate_parity.png")
-
-
-def _figure_model_comparison(cfg, out):
-    tg = list(out["targets"])
-    fig, ax = plt.subplots(1, len(tg), figsize=(4.4 * len(tg), 3.6))
-    ax = np.atleast_1d(ax)
-    for a, t in zip(ax, tg):
-        c = out["targets"][t]["model_comparison_test_rmse_physical_units"]
-        names = sorted(c, key=c.get)
-        a.barh(names, [c[k] for k in names], color="tab:blue")
-        a.set_xscale("log")
-        a.set_xlabel(f"test RMSE [{out['targets'][t]['unit']}] (log scale)")
-        a.set_title(f"{t} (selected: {out['targets'][t]['selected_model']})", fontsize=8)
-    fig.suptitle("Model families: test RMSE on unseen reservoirs "
-                 "(selection used grouped CV only)", y=1.03)
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "07_model_comparison.png")
-
-
-def _figure_difficult(cfg, df, m, target, pred, unit):
-    d = df.loc[m["test"]]
-    err = pred - d[target].to_numpy()
-    fig, ax = plt.subplots(1, 2, figsize=(9, 3.2))
-    ax[0].scatter(d["k_median_mD"], err, s=10); ax[0].set_xscale("log")
-    ax[0].axhline(0, color="k", lw=1)
-    ax[0].set_xlabel("median permeability [mD]"); ax[0].set_ylabel(f"error [{unit}]")
-    ax[1].scatter(d["q_mult_mean"], err, s=10, color="tab:orange"); ax[1].set_xscale("log")
-    ax[1].axhline(0, color="k", lw=1)
-    ax[1].set_xlabel("mean rate / reference rate [-]"); ax[1].set_ylabel(f"error [{unit}]")
-    fig.suptitle(f"Where the {target} surrogate errs (test realisations)", y=1.03)
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / f"08_errors_{target}.png")
-
-
 # ==========================================================================
-# 4. UNCERTAINTY
+# 6. UNCERTAINTY
 # ==========================================================================
-def stage_uncertainty(cfg, df, ml, validation) -> dict:
-    print("\n=== STAGE 4  Monte Carlo propagation and error sources ===")
+def stage_uncertainty(cfg, df, ml, validation, numerics=None) -> dict:
+    print("\n=== STAGE 6  Monte Carlo propagation and error sources ===")
     surr, m = ml["_surrogates"], ml["_masks"]
     v7 = validation["V6_V7_V8_radial_two_phase"]
 
     def _num(section, key, used):
-        """Relative difference between the level closest to the one used for
-        the dataset and the finest level of the V7 study."""
         ks = sorted(v7[section], key=float)
         fine = ks[0] if section == "r_near" else ks[-1]
         near = min(ks, key=lambda k: abs(float(k) - used))
         a, b = v7[section][near][key], v7[section][fine][key]
-        return abs(a - b) / max(abs(b), 1e-30), f"V7 {section}: {near} (closest to the dataset's {used:g}) vs finest {fine}"
-
-    num = {"dp_bh_max_MPa": _num("r_near", "dp_bh_max_MPa", cfg.grid.r_near_m),
-           "r_plume_m95_m": _num("n_r", "r_plume_m95_m", cfg.grid.n_r),
-           "sweep_efficiency": _num("n_r", "sweep_efficiency", cfg.grid.n_r)}
+        return abs(a - b) / max(abs(b), 1e-30), (f"V7 {section}: {near} (closest to the "
+                                                 f"dataset's {used:g}) vs finest {fine}")
+    num = {}
+    for t in surr:
+        if numerics is not None and t in numerics.get("targets", {}):
+            r = numerics["targets"][t]["production_minus_fine"]
+            num[t] = (r["median_rel"], f"dataset cases re-simulated with every "
+                      f"discretisation refined (median of {r['n']} cases; max "
+                      f"{100 * r['max_rel']:.2f} %)")
+        else:
+            num[t] = {"dp_bh_max_MPa": _num("r_near", "dp_bh_max_MPa", cfg.grid.r_near_m),
+                      "r_plume_m95_m": _num("n_r", "r_plume_m95_m", cfg.grid.n_r),
+                      "sweep_efficiency": _num("n_r", "sweep_efficiency", cfg.grid.n_r)
+                      }.get(t, (0.0, "n/a"))
     out = {"targets": {}, "prior_note": "Monte Carlo over the ASSUMED prior "
-           "(config scenarios ranges); P10/P90 follow 5-Uncertainty.pdf p.46"}
-    X_all = df[FEATURES]
+           "(development reservoirs); P10/P90 follow 5-Uncertainty.pdf p.46"}
+    X_all = df.loc[m["train_fit"]]
     for t, s in surr.items():
         mc = monte_carlo_propagate(s, X_all)
-        rel, src = num.get(t, (0.0, "n/a"))
-        tab = error_source_table(t, prior_std=float(df[t].std()),
+        rel, src = num[t]
+        tab = error_source_table(t, prior_std=float(X_all[t].std()),
                                  surrogate_rmse=ml["targets"][t]["test"]["RMSE"],
                                  numerical_rel_error=rel,
-                                 reference_value=float(df[t].median()),
+                                 reference_value=float(X_all[t].median()),
                                  unmodelled=UNMODELLED_PHYSICS)
         tab["numerical_error_source"] = src
         out["targets"][t] = {"monte_carlo_prior": mc, "error_sources": tab}
-        print(f"  {t}: P90(low) {mc['P90_low_case']:.4g} P50 {mc['P50']:.4g} "
-              f"P10(high) {mc['P10_high_case']:.4g} | shares input/surrogate/numerical "
-              f"{tab['share_input_pct']:.0f}/{tab['share_surrogate_pct']:.0f}/"
-              f"{tab['share_numerical_pct']:.0f}%")
-    fig, ax = plt.subplots(1, len(surr), figsize=(4.2 * len(surr), 3.2))
-    ax = np.atleast_1d(ax)
-    for a, t in zip(ax, surr):
-        d = out["targets"][t]["error_sources"]
-        a.bar(["input\n(assumed prior)", "surrogate", "numerical"],
-              [d["input_uncertainty_std"], d["surrogate_error_rmse"],
-               d["numerical_error_abs"]],
-              color=["tab:blue", "tab:orange", "tab:green"])
-        a.set_ylabel(TARGET_UNITS.get(t, "")); a.set_title(t, fontsize=9)
-    fig.suptitle("Sources of uncertainty (5-Uncertainty.pdf); model bias from "
-                 "omitted physics listed, not quantified", y=1.04)
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "09_uncertainty_sources.png")
+        print(f"  {t}: shares input/surrogate/numerical {tab['share_input_pct']:.0f}/"
+              f"{tab['share_surrogate_pct']:.0f}/{tab['share_numerical_pct']:.1f} %")
+    F.uncertainty_sources(out, cfg.paths.figures)
     return out
 
 
 # ==========================================================================
-# 5. CLASSIFICATION
+# 7. CLASSIFICATION
 # ==========================================================================
 def stage_classifier(cfg, df, ml) -> dict:
-    print("\n=== STAGE 5  pressure-limit screening (classification) ===")
+    print("\n=== STAGE 7  pressure-limit screening (classification) ===")
     from .classify import run_binary, run_multiclass, traffic_light
-    m, feats = ml["_masks"], ml["features"]
+    m, feats = ml["_masks"], ml["features_revised_pressure"]
     dp_lim = cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa
     dp = df["dp_bh_max_MPa"].to_numpy(float)
     y = (dp > dp_lim).astype(int)
-    reg_pred = ml["_surrogates"]["dp_bh_max_MPa"].predict(df.loc[m["test"], feats])
+    reg_pred = ml["_surrogates"]["dp_bh_max_MPa"].predict(df.loc[m["test"]])
     b = run_binary(df, feats, y, m, rs=cfg.ml.random_state, n_splits=cfg.ml.n_splits,
                    regression_pred=reg_pred, dp_limit=dp_lim)
     b["dp_limit_MPa"] = dp_lim
+    b["features"] = feats
+    up = ml["_bands"]["dp_bh_max_MPa"].predict_interval(df.loc[m["test"]])[2]
+    from .evaluation import limit_decisions
+    b["test_regression_upper_bound"] = limit_decisions(dp[m["test"]], up, dp_lim)
     ts, td = b["test_selected_threshold"], b["test_default_threshold"]
     print(f"  positives: train {b['positive_rate_train']*100:.0f}%, "
           f"test {b['positive_rate_test']*100:.0f}% | selected {b['selected']}")
-    print(f"  test ROC-AUC {ts.get('roc_auc', float('nan')):.3f} | default threshold: "
-          f"recall {td['recall']:.2f} precision {td['precision']:.2f} | "
-          f"high-recall threshold: recall {ts['recall']:.2f} precision {ts['precision']:.2f}")
+    print(f"  test ROC-AUC {ts.get('roc_auc', float('nan')):.3f} | high-recall threshold: "
+          f"recall {ts['recall']:.2f} precision {ts['precision']:.2f}")
     y3 = traffic_light(dp, dp_lim, cfg.ml.margin_warning_fraction)
     mc = run_multiclass(df, feats, y3, m, rs=cfg.ml.random_state,
                         n_splits=cfg.ml.n_splits, regression_pred=reg_pred,
                         dp_limit=dp_lim, warn_frac=cfg.ml.margin_warning_fraction)
     print(f"  traffic light ({mc['selected']}): test macro-F1 {mc['test']['macro_f1']:.3f}"
           f" | regression-surrogate banding {mc['test_regression_surrogate_banded']['macro_f1']:.3f}")
-    _figure_classifier(cfg, b, mc)
-    model = b.pop("_model"); curves = b.pop("_curves"); mc_model = mc.pop("_model")
+    F.classifier(b, mc, cfg.paths.figures)
+    model = b.pop("_model"); b.pop("_curves"); mc_model = mc.pop("_model")
     from sklearn.svm import SVC
     ml["_classifier"] = {"model": model, "threshold": b["threshold_selected"],
                          "uses_decision_function": isinstance(model[-1], SVC),
@@ -471,47 +523,17 @@ def stage_classifier(cfg, df, ml) -> dict:
     return {"binary": b, "traffic_light": mc}
 
 
-def _figure_classifier(cfg, b, mc):
-    c = b["_curves"]
-    fig, ax = plt.subplots(1, 3, figsize=(12.5, 3.4))
-    ax[0].plot(c["fpr"], c["tpr"]); ax[0].plot([0, 1], [0, 1], "k--", lw=1)
-    ax[0].set_xlabel("false positive rate"); ax[0].set_ylabel("true positive rate")
-    ax[0].set_title(f"ROC, test (AUC {b['test_selected_threshold'].get('roc_auc', 0):.3f})")
-    ax[1].plot(c["recall"], c["precision"])
-    ax[1].axvline(b["target_recall"], color="r", ls="--", lw=1, label="target recall")
-    ax[1].set_xlabel("recall"); ax[1].set_ylabel("precision")
-    ax[1].set_title("Precision-recall, test"); ax[1].legend(fontsize=7)
-    cm = np.array(mc["test"]["confusion_matrix"])
-    ax[2].imshow(cm, cmap="Blues"); ax[2].grid(False)
-    for i in range(3):
-        for j in range(3):
-            ax[2].text(j, i, cm[i, j], ha="center", va="center")
-    lab = ["green", "amber", "red"]
-    ax[2].set_xticks(range(3)); ax[2].set_xticklabels(lab)
-    ax[2].set_yticks(range(3)); ax[2].set_yticklabels(lab)
-    ax[2].set_xlabel("predicted"); ax[2].set_ylabel("simulated")
-    ax[2].set_title(f"Traffic light ({mc['selected']}), test")
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "10_classifier.png")
-
-
 # ==========================================================================
-# 6. COST AND SPEED
+# 8. COST AND SPEED
 # ==========================================================================
 def stage_speed(cfg, df, ml, n_sim: int = 5, repeats: int = 30) -> dict:
     """Inference cost vs simulator cost for the same outputs, measured in
-    this process on this machine (``time.perf_counter``).
-
-    * batch: all test rows in one call per surrogate, features pre-built;
-    * single: one row per call (median of ``repeats``), features pre-built;
-    * single end-to-end: raw reservoir + schedule -> features -> 3 surrogates;
-    * simulator: ``n_sim`` test scenarios re-run serially in this process.
-    Data generation and training are reported separately, not amortised.
-    """
-    print("\n=== STAGE 6  inference cost vs simulation cost ===")
-    from .scenarios import run_scenario, sample_realisations, make_schedule
+    this process on this machine (``time.perf_counter``)."""
+    print("\n=== STAGE 8  inference cost vs simulation cost ===")
+    from .final_eval import realisation_lookup
+    from .scenarios import make_schedule, run_scenario
     surr, m = ml["_surrogates"], ml["_masks"]
-    X = df.loc[m["test"], FEATURES]
+    X = df.loc[m["test"]]
     n = len(X)
     t0 = time.perf_counter()
     for s in surr.values():
@@ -525,120 +547,103 @@ def stage_speed(cfg, df, ml, n_sim: int = 5, repeats: int = 30) -> dict:
             s.predict(x1)
         ts.append(time.perf_counter() - t0)
     t_single = float(np.median(ts))
-    reals = {r.realisation_id: r for r in sample_realisations(cfg)}
+    look = realisation_lookup(cfg)
     rows = df.loc[m["test"]].head(n_sim)
     qcols = [f"q{i+1}_kg_s" for i in range(cfg.schedule.n_periods)]
     te2e, tsim = [], []
     for _, row in rows.iterrows():
-        r = reals[int(row["realisation_id"])]
+        c, r = look[int(row["realisation_id"])]
         rates = row[qcols].to_numpy(float)
         t0 = time.perf_counter()
-        Xe = features_for_schedules(cfg, r, rates[None, :])
+        Xe = features_for_schedules(c, r, rates[None, :])
         for s in surr.values():
             s.predict(Xe)
         te2e.append(time.perf_counter() - t0)
         t0 = time.perf_counter()
-        run_scenario(cfg, r, make_schedule(cfg, r, rates), want_series=False)
+        run_scenario(c, r, make_schedule(c, r, rates), want_series=False)
         tsim.append(time.perf_counter() - t0)
     sim = float(np.mean(tsim))
-    res = {
-        "hardware_note": "same machine, same process, 1 scenario at a time for "
-                         "the simulator; scikit-learn/XGBoost default threading",
-        "n_test_rows_batch": int(n),
-        "surrogate_batch_seconds_total": t_batch,
-        "surrogate_seconds_per_case_batched": t_batch / n,
-        "surrogate_seconds_single_call_median": t_single,
-        "surrogate_seconds_single_end_to_end_median": float(np.median(te2e)),
-        "simulator_seconds_per_case_mean_serial": sim,
-        "simulator_cases_timed": len(tsim),
-        "simulator_seconds_per_case_dataset_mean": float(df.loc[m["test"], "wall_time_s"].mean()),
-        "speedup_batched": sim / (t_batch / n),
-        "speedup_single_call": sim / t_single,
-        "speedup_single_end_to_end": sim / float(np.median(te2e)),
-        "outputs_compared": "the three scalar QoIs (dp_bh_max, r_plume_m95, "
-                            "sweep efficiency); the simulator also yields full "
-                            "fields and time series the surrogate does not",
-    }
-    print(f"  simulator {sim:.2f} s/case | surrogate batched {t_batch/n:.2e} s/case "
-          f"({res['speedup_batched']:.0f}x) | single call {t_single:.2e} s "
-          f"({res['speedup_single_call']:.0f}x) | end-to-end single "
-          f"{np.median(te2e):.2e} s ({res['speedup_single_end_to_end']:.0f}x)")
+    res = {"hardware_note": "same machine, same process, 1 scenario at a time for "
+                            "the simulator; scikit-learn/XGBoost default threading",
+           "n_test_rows_batch": int(n),
+           "surrogate_batch_seconds_total": t_batch,
+           "surrogate_seconds_per_case_batched": t_batch / n,
+           "surrogate_seconds_single_call_median": t_single,
+           "surrogate_seconds_single_end_to_end_median": float(np.median(te2e)),
+           "simulator_seconds_per_case_mean_serial": sim,
+           "simulator_cases_timed": len(tsim),
+           "speedup_batched": sim / (t_batch / n),
+           "speedup_single_call": sim / t_single,
+           "speedup_single_end_to_end": sim / float(np.median(te2e)),
+           "outputs_compared": "the three scalar QoIs; the end-to-end time includes "
+                               "building the inputs and the analytical ROM; the "
+                               "simulator also yields fields and time series"}
+    print(f"  simulator {sim:.2f} s/case | surrogate batched {t_batch/n:.2e} s/case | "
+          f"end-to-end single {np.median(te2e):.2e} s ({res['speedup_single_end_to_end']:.0f}x)")
     return res
 
 
 # ==========================================================================
-# 7. INTERPRETATION AND UNSUPERVISED STRUCTURE
+# 9. INTERPRETATION AND UNSUPERVISED STRUCTURE
 # ==========================================================================
 def stage_interpret(cfg, df, ml) -> dict:
-    print("\n=== STAGE 7  interpretation (model behaviour, not causality) ===")
+    print("\n=== STAGE 9  interpretation (model behaviour, not causality) ===")
+    from .classify import traffic_light
+    from .final_eval import realisation_lookup
     from .interpret import (cluster_regimes, describe_clusters, lime_explanation,
                             parse_profiles, pca_regimes, permutation_importances,
-                            profile_structure, shap_summary,
-                            tree_impurity_importance, what_if_rate_scaling)
-    from .classify import traffic_light
+                            profile_structure, shap_summary, tree_impurity_importance,
+                            what_if_rate_scaling)
     surr, m = ml["_surrogates"], ml["_masks"]
-    feats = ml["features"]
-    Xte = df.loc[m["test"], feats]
     out = {"disclaimer": "Permutation importance, SHAP and local explanations "
                          "describe how the fitted model uses its inputs; they "
                          "are not causal effects."}
+    Xte = df.loc[m["test"]]
     for t, s in surr.items():
-        imp = permutation_importances(s.estimator, Xte, df.loc[m["test"], t].to_numpy(),
-                                      feats, random_state=cfg.ml.random_state)
+        imp = permutation_importances(s.estimator, Xte[s.features], Xte[t].to_numpy(),
+                                      s.features, random_state=cfg.ml.random_state)
         imp.to_csv(Path(cfg.paths.metrics) / f"permutation_importance_{t}.csv", index=False)
         out[t] = {"permutation_top8": imp.head(8).to_dict("records")}
-        ti = tree_impurity_importance(s.estimator, feats)
+        ti = tree_impurity_importance(s.estimator, s.features)
         if ti is not None:
             out[t]["impurity_top8"] = ti.head(8).to_dict("records")
-    # SHAP on a tree ensemble for the pressure target (the selected model if
-    # it is a tree ensemble, otherwise the best tree family of the comparison)
     t = "dp_bh_max_MPa"
     fam = ml["_fitted"][t]
     tree_name = next((k for k in sorted(fam, key=lambda k: fam[k].cv_score_rmse)
                       if k in ("xgboost", "gradient_boosting", "random_forest")), None)
     if tree_name:
-        sv = shap_summary(fam[tree_name].estimator, Xte, feats)
+        feats = fam[tree_name].features
+        sv = shap_summary(fam[tree_name].estimator, Xte[feats], feats)
         if sv is not None:
             vals, _ = sv
             mean_abs = np.abs(vals).mean(axis=0)
             order = np.argsort(mean_abs)[::-1][:12]
-            out["shap"] = {"model": tree_name, "space": "log(dp)" if fam[tree_name].log_target else "dp",
+            kind = (fam[tree_name].meta or {}).get("kind", "log")
+            out["shap"] = {"model": tree_name,
+                           "space": "ln(dp / ROM)" if kind == "hybrid" else "log(dp)",
                            "top": [{"feature": feats[i], "mean_abs_shap": float(mean_abs[i])}
                                    for i in order]}
-            fig, a = plt.subplots(figsize=(5.4, 3.6))
-            a.barh([feats[i] for i in order][::-1], mean_abs[order][::-1], color="tab:green")
-            a.set_xlabel("mean |SHAP| (log dp space)"); a.set_title(f"SHAP - {tree_name}", fontsize=9)
-            fig.tight_layout(); _save(fig, Path(cfg.paths.figures) / "11_shap_dp.png")
-    # local explanation + what-if for one held-out case near the limit
+            F.shap_bar(feats, mean_abs, order, tree_name, cfg.paths.figures)
     s = surr[t]
     dp_lim = cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa
     d = df.loc[m["test"]]
     i0 = int(np.argmin(np.abs(d[t].to_numpy() - dp_lim)))
     case = d.iloc[i0]
     out["local_case"] = {"scenario_id": case["scenario_id"], "simulated_dp_MPa": float(case[t]),
-                         "predicted_dp_MPa": float(s.predict(d.iloc[[i0]][feats])[0])}
+                         "predicted_dp_MPa": float(s.predict(d.iloc[[i0]])[0])}
     out["local_case"]["lime_top6"] = lime_explanation(
-        s.predict, case[feats].astype(float), df.loc[m["train"], feats],
+        lambda Z: s.predict(Z), case[s.features].astype(float), df.loc[m["train"], s.features],
         random_state=cfg.ml.random_state).head(6).to_dict("records")
-    from .scenarios import sample_realisations
-    r = {x.realisation_id: x for x in sample_realisations(cfg)}[int(case["realisation_id"])]
+    c, r = realisation_lookup(cfg)[int(case["realisation_id"])]
     q0 = case[[f"q{i+1}_kg_s" for i in range(cfg.schedule.n_periods)]].to_numpy(float)
-    wi = what_if_rate_scaling(lambda R: s.predict(features_for_schedules(cfg, r, R)),
-                              q0, dp_lim)
+    wi = what_if_rate_scaling(lambda R: s.predict(features_for_schedules(c, r, R)), q0, dp_lim)
     out["local_case"]["what_if"] = {"largest_rate_factor_predicted_below_limit":
-                                    wi["largest_factor_below_limit"],
-                                    "limit_MPa": dp_lim}
-    fig, a = plt.subplots(figsize=(5, 3.2))
-    a.plot(wi["factors"], wi["predictions"]); a.axhline(dp_lim, color="r", ls="--")
-    a.axvline(1.0, color="grey", lw=1)
-    a.set_xlabel("schedule scaled by factor [-]"); a.set_ylabel("predicted dp_bh_max [MPa]")
-    a.set_title(f"What-if for {case['scenario_id']}", fontsize=9)
-    fig.tight_layout(); _save(fig, Path(cfg.paths.figures) / "12_what_if.png")
-
-    # reservoir-description regimes: PCA + k-means
+                                    wi["largest_factor_below_limit"], "limit_MPa": dp_lim}
+    F.what_if(wi, dp_lim, case["scenario_id"], cfg.paths.figures)
     res_feats = ["log10_k_mD", "V_DP", "phi_mean", "h_total_m", "r_e_m", "n_g",
                  "n_a", "krg0", "S_ar", "mu_g_cP", "rho_g", "log10_kh", "log10_pv"]
-    uniq = df.drop_duplicates("realisation_id")
+    dev = df.loc[m["train_fit"]]
+    uniq = dev.drop_duplicates("realisation_id")
     pc = pca_regimes(uniq[res_feats].to_numpy(), res_feats)
     cl = cluster_regimes(pc["scores"][:, :3], random_state=cfg.ml.random_state)
     desc = describe_clusters(uniq, cl["labels"], res_feats + ["dp_bh_max_MPa", "r_plume_m95_m"])
@@ -650,93 +655,35 @@ def stage_interpret(cfg, df, ml) -> dict:
                                     "property of the synthetic design"}
     out["reservoir_kmeans"] = {"k": cl["k"], "silhouette": cl["silhouette"],
                                "table": cl["table"].to_dict("records")}
-    # plume-shape analysis on the final saturation profiles
-    if "final_Sg_profile" in df.columns:
-        P = parse_profiles(df["final_Sg_profile"])
-        y3 = traffic_light(df["dp_bh_max_MPa"].to_numpy(), dp_lim,
+    if "final_Sg_profile" in dev.columns:
+        P = parse_profiles(dev["final_Sg_profile"])
+        y3 = traffic_light(dev["dp_bh_max_MPa"].to_numpy(), dp_lim,
                            cfg.ml.margin_warning_fraction)
         ps = profile_structure(P, labels_ref=y3, random_state=cfg.ml.random_state)
         out["plume_shapes"] = {k: v for k, v in ps.items() if not k.startswith("_")}
-        _figure_profiles(cfg, P, ps)
-        print(f"  plume shapes: {ps['n_components_95pct']} PCs for 95% variance; "
-              f"k-means k={ps['kmeans_on_pca']['k']} (silhouette "
-              f"{ps['kmeans_on_pca']['silhouette']:.2f}); DBSCAN noise "
-              f"{ps['dbscan']['n_noise']}")
+        F.profiles(P, ps, cfg.paths.figures)
     return out
 
 
-def _figure_profiles(cfg, P, ps):
-    rr = np.geomspace(1.0, 2000.0, P.shape[1])
-    fig, ax = plt.subplots(1, 4, figsize=(15, 3.4))
-    lab = ps["_labels"]
-    for k in np.unique(lab):
-        ax[0].plot(rr, P[lab == k].mean(axis=0), label=f"cluster {k} (n={int((lab == k).sum())})")
-    ax[0].set_xscale("log"); ax[0].set_xlabel("radius [m]")
-    ax[0].set_ylabel("mean final $S_g$"); ax[0].legend(fontsize=7)
-    ax[0].set_title("Plume-shape clusters (k-means on PCA)")
-    ax[1].scatter(ps["_kpca"][:, 0], ps["_kpca"][:, 1], c=lab, s=6, cmap="tab10")
-    ax[1].set_title("Kernel PCA (RBF)")
-    ax[2].scatter(ps["_tsne"][:, 0], ps["_tsne"][:, 1], c=lab, s=6, cmap="tab10")
-    ax[2].set_title("t-SNE (colour = k-means cluster)")
-    if "_umap" in ps:
-        ax[3].scatter(ps["_umap"][:, 0], ps["_umap"][:, 1], c=lab, s=6, cmap="tab10")
-        noise = ps["_dbscan_labels"] == -1
-        ax[3].scatter(ps["_umap"][noise, 0], ps["_umap"][noise, 1], s=18,
-                      facecolors="none", edgecolors="k", label="DBSCAN noise")
-        ax[3].legend(fontsize=7)
-    ax[3].set_title("UMAP (circles: DBSCAN noise)")
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "13_plume_shapes.png")
-
-
 # ==========================================================================
-# 8. ML-METHOD STUDIES
+# 10. ML-METHOD STUDIES
 # ==========================================================================
 def stage_studies(cfg, df, ml) -> dict:
-    print("\n=== STAGE 8  ML-method studies (training realisations only) ===")
+    print("\n=== STAGE 10  ML-method studies (development reservoirs only) ===")
     from .studies import run_all
     t = "dp_bh_max_MPa"
-    res = run_all(df, ml["features"], t, ml["_masks"], ml["_fitted"][t],
-                  ml["_surrogates"][t], n_splits=cfg.ml.n_splits,
-                  seed=cfg.ml.random_state)
-    _figure_studies(cfg, res)
+    s = ml["_surrogates"][t]
+    res = run_all(df, s.features, t, ml["_masks"], ml["_fitted"][t], s,
+                  n_splits=cfg.ml.n_splits, seed=cfg.ml.random_state)
+    F.studies(res, cfg.paths.figures)
     return res
 
 
-def _figure_studies(cfg, r):
-    fig, ax = plt.subplots(1, 3, figsize=(13, 3.4))
-    lc = r.get("learning_curve", {})
-    if "n_train_rows" in lc:
-        ax[0].plot(lc["n_train_rows"], lc["train_rmse"], "o-", label="training")
-        ax[0].plot(lc["n_train_rows"], lc["cv_rmse"], "s-", label="grouped CV")
-        ax[0].set_xlabel("training rows"); ax[0].set_ylabel("RMSE of log(dp)")
-        ax[0].set_title("Learning curve (gradient boosting)"); ax[0].legend(fontsize=7)
-    es = r.get("boosting_early_stopping", {})
-    if "train_rmse_curve" in es:
-        ax[1].plot(es["train_rmse_curve"], label="training")
-        ax[1].plot(es["valid_rmse_curve"], label="grouped validation")
-        ax[1].axvline(es["best_iteration"], color="r", ls="--", lw=1, label="early stop")
-        ax[1].set_yscale("log"); ax[1].set_xlabel("boosting round")
-        ax[1].set_ylabel("RMSE of log(dp)"); ax[1].set_title("XGBoost early stopping")
-        ax[1].legend(fontsize=7)
-    sc = r.get("scaler_comparison", {})
-    if sc and "knn" in sc:
-        names = list(sc["knn"])
-        w = 0.25
-        for i, mdl in enumerate(sc):
-            ax[2].bar(np.arange(len(names)) + i * w, [sc[mdl][n] for n in names], w, label=mdl)
-        ax[2].set_xticks(np.arange(len(names)) + w); ax[2].set_xticklabels(names)
-        ax[2].set_ylabel("grouped-CV RMSE of log(dp)"); ax[2].set_title("Scaler comparison")
-        ax[2].legend(fontsize=7)
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "14_ml_studies.png")
-
-
 # ==========================================================================
-# 9. CONSERVATION CHECK, OPEN BOUNDARY
+# 11. CONSERVATION CHECK, OPEN BOUNDARY
 # ==========================================================================
 def stage_conservation_check(cfg, df) -> dict:
-    print("\n=== STAGE 9a  conservation identity check ===")
+    print("\n=== STAGE 11a  conservation identity check ===")
     planned = df["planned_mass_kg"].to_numpy(float)
     retained = df["mass_retained_kg"].to_numpy(float)
     rel = np.abs(retained - planned) / np.maximum(planned, 1e-30)
@@ -752,7 +699,7 @@ def stage_boundary_comparison(cfg, n: int = 10) -> dict:
     """Injected vs retained mass with a constant-pressure outer boundary
     (``1-Transmissibility.pdf`` p.11 Dirichlet condition) and a compartment
     shrunk so that the plume reaches it."""
-    print("\n=== STAGE 9b  open-boundary variant: injected vs retained ===")
+    print("\n=== STAGE 11b  open-boundary variant: injected vs retained ===")
     import copy, dataclasses
     from .scenarios import run_scenario, sample_realisations, sample_schedules
     c2 = copy.deepcopy(cfg)
@@ -791,102 +738,132 @@ def stage_boundary_comparison(cfg, n: int = 10) -> dict:
 
 
 # ==========================================================================
-# 10. SCHEDULE SCREENING
+# 12. VERIFICATION-GATED SCHEDULE SCREENING
 # ==========================================================================
-def stage_optimise(cfg, df, ml) -> dict:
-    print("\n=== STAGE 10  schedule screening on unseen reservoirs ===")
-    from .optimise import SurrogateBundle, optimise_schedule, resimulate
-    from .scenarios import sample_realisations
-    surr, bands = ml["_surrogates"], ml["_bands"]
-    bundle = SurrogateBundle(features=ml["features"], pressure=surr["dp_bh_max_MPa"],
-                             plume=surr["r_plume_m95_m"],
-                             band_pressure=bands["dp_bh_max_MPa"],
-                             band_plume=bands["r_plume_m95_m"])
-    reals = {r.realisation_id: r for r in sample_realisations(cfg)}
-    test_ids = [int(i) for i in ml["split"]["test_ids"]][:cfg.optim.n_test_realisations]
-    print(f"  {len(test_ids)} test realisations: {test_ids}")
-    rows, searches, t_search = [], [], 0.0
-    for rid in test_ids:
-        r = reals[rid]
-        t0 = time.perf_counter()
-        s = optimise_schedule(cfg, r, bundle)
-        t_search += time.perf_counter() - t0
-        searches.append(s)
-        if s["baseline"] is not None:
-            rows.append(resimulate(cfg, r, s["baseline"]["rates_kg_s"], "baseline_constant"))
-        for j, c in enumerate(s["shortlist"][:3]):
-            rows.append(resimulate(cfg, r, c["rates_kg_s"], f"screened_{j}"))
-    sim = pd.DataFrame(rows)
-    sim.to_csv(Path(cfg.paths.metrics) / "optimisation_resimulation.csv", index=False)
-    ok = sim[sim.status == "ok"]
-    summary = []
-    for rid in test_ids:
-        g = ok[ok.realisation_id == rid]
-        b, o = g[g.label == "baseline_constant"], g[g.label != "baseline_constant"]
-        of = o[~o.violates_pressure & ~o.violates_plume]
-        bf = bool(len(b) and not b.violates_pressure.iloc[0] and not b.violates_plume.iloc[0])
-        best = of.loc[of.sim_mass_retained_Mt.idxmax()] if len(of) else None
-        row = {"realisation_id": rid,
-               "baseline_mass_Mt": float(b.sim_mass_retained_Mt.iloc[0]) if len(b) else np.nan,
-               "baseline_feasible_after_resimulation": bf,
-               "n_screened_resimulated": int(len(o)),
-               "n_screened_feasible": int(len(of)),
-               "best_screened_mass_Mt": float(best.sim_mass_retained_Mt) if best is not None else np.nan,
-               "best_dp_MPa": float(best.sim_dp_bh_max_MPa) if best is not None else np.nan,
-               "best_rplume_m": float(best.sim_r_plume_m95_m) if best is not None else np.nan}
-        row["improvement_pct"] = (100 * (row["best_screened_mass_Mt"] - row["baseline_mass_Mt"])
-                                  / row["baseline_mass_Mt"]
-                                  if bf and best is not None else np.nan)
-        summary.append(row)
-    sdf = pd.DataFrame(summary)
-    sdf.to_csv(Path(cfg.paths.metrics) / "optimisation_summary.csv", index=False)
-    prop = ok[ok.label != "baseline_constant"]
-    base = ok[ok.label == "baseline_constant"]
-    n_viol = int((prop.violates_pressure | prop.violates_plume).sum())
-    res = {"n_test_realisations": len(test_ids), "test_realisation_ids": test_ids,
-           "use_error_band": bool(cfg.optim.use_error_band),
-           "n_realisations_no_feasible_candidate": sum(1 for s in searches if s["n_feasible"] == 0),
-           "mean_feasible_fraction": float(np.mean([s["feasible_fraction"] for s in searches])),
-           "surrogate_screening_seconds_per_realisation": t_search / max(len(test_ids), 1),
-           "n_resimulations": int(len(sim)),
-           "n_failed_resimulations": int((sim.status != "ok").sum()),
-           "n_screened_resimulated": int(len(prop)),
-           "n_screened_violating": n_viol,
-           "screened_violation_rate": n_viol / max(len(prop), 1),
-           "n_baselines_violating": int((base.violates_pressure | base.violates_plume).sum()),
-           "median_improvement_pct": float(np.nanmedian(sdf["improvement_pct"]))
-           if sdf["improvement_pct"].notna().any() else None,
-           "n_realisations_improved": int(np.nansum(sdf["improvement_pct"] > 0)),
-           "n_realisations_compared": int(sdf["improvement_pct"].notna().sum()),
-           "per_realisation": sdf.to_dict("records"),
-           "searches": searches}
-    print(f"  re-simulated {len(prop)} screened schedules: {n_viol} violated a stated "
-          f"limit; baselines violating: {res['n_baselines_violating']}; failed runs: "
-          f"{res['n_failed_resimulations']}")
-    print(f"  median improvement over constant rate: {res['median_improvement_pct']}")
-    _figure_optimisation(cfg, ok, sdf)
-    return res
+def _band_predictor(cfg, r, pressure, plume):
+    """``predictor(R)`` for :mod:`screening` from (surrogate, interval) pairs."""
+    def pred(R):
+        X = features_for_schedules(cfg, r, R)
+        lo, p, hi = pressure[1].predict_interval(X)
+        lo2, p2, hi2 = plume[1].predict_interval(X)
+        return {"dp": p, "dp_hi": hi, "r95": p2, "r95_hi": hi2}
+    return pred
 
 
-def _figure_optimisation(cfg, sim, sdf):
-    fig, ax = plt.subplots(1, 2, figsize=(9.5, 3.4))
-    dp_lim = cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa
-    for lab, mk, c in (("baseline_constant", "s", "tab:grey"), ("screened", "o", "tab:blue")):
-        s = sim[sim.label == "baseline_constant"] if lab == "baseline_constant" \
-            else sim[sim.label != "baseline_constant"]
-        ax[0].scatter(s.sim_dp_bh_max_MPa, s.sim_mass_retained_Mt, marker=mk, s=26,
-                      alpha=.8, color=c, label=lab)
-    ax[0].axvline(dp_lim, color="r", ls="--", lw=1.2, label="stated dp limit")
-    ax[0].set_xlabel(r"simulated $\Delta p_{bh,max}$ [MPa]")
-    ax[0].set_ylabel("simulated retained CO$_2$ [Mt]")
-    ax[0].set_title("Re-simulated schedules vs the stated limit"); ax[0].legend(fontsize=7)
-    d = sdf.dropna(subset=["improvement_pct"])
-    ax[1].bar(d.realisation_id.astype(str), d.improvement_pct, color="tab:blue")
-    ax[1].axhline(0, color="k", lw=1)
-    ax[1].set_xlabel("unseen realisation"); ax[1].set_ylabel("mass vs constant rate [%]")
-    ax[1].set_title("Screened schedule vs constant-rate baseline")
-    fig.tight_layout()
-    _save(fig, Path(cfg.paths.figures) / "15_schedule_screening.png")
+def _rom_predictor(cfg, r, plume):
+    """Pressure from the analytical ROM alone (no learned correction, no
+    interval), plume radius from the revised surrogate and its interval --
+    the control that isolates the learned pressure correction."""
+    def pred(R):
+        X = features_for_schedules(cfg, r, R)
+        dp = 10.0 ** X["log10_rom_dp_MPa"].to_numpy(float)
+        lo2, p2, hi2 = plume[1].predict_interval(X)
+        return {"dp": dp, "dp_hi": dp, "r95": p2, "r95_hi": hi2}
+    return pred
+
+
+def _screen_one(cfg, c, r, which, rev, base, in_domain, budget, n_cand, seed):
+    from . import screening as S
+    from .optimise import sample_candidates
+    sim = S.make_simulator(c, r)
+    rng = np.random.default_rng(seed + int(r.realisation_id))
+    cands = sample_candidates(c, r, n_cand, rng)
+    recs = [S.recommend_constant_simulator(c, r, sim, budget),
+            S.recommend_constant_rom(c, r, sim, budget),
+            S.recommend_surrogate(c, r, sim, min(3, budget), _band_predictor(c, r, *base),
+                                  cands, repair=False, n_verify=3, fallback=None,
+                                  method="surrogate_published"),
+            S.recommend_surrogate(c, r, sim, budget, _rom_predictor(c, r, rev[1]), cands,
+                                  in_domain=True, repair=True, n_verify=1,
+                                  fallback="rom_constant", method="rom_shaped"),
+            S.recommend_surrogate(c, r, sim, budget, _band_predictor(c, r, *rev), cands,
+                                  in_domain=in_domain, repair=True, n_verify=1,
+                                  fallback="rom_constant", method="surrogate_verified")]
+    rows = []
+    for rec in recs:
+        d = rec.as_dict()
+        first = rec.checks[0] if rec.checks else None
+        rows.append({"realisation_id": r.realisation_id, "set": which,
+                     "method": rec.method, "status": rec.status,
+                     "mass_Mt": rec.mass_Mt, "n_simulations": rec.n_simulations,
+                     "flags": ";".join(rec.flags),
+                     "first_simulated_violates": (None if first is None or first.status != "ok"
+                                                  else not first.feasible),
+                     "verified_dp_MPa": d["verified"]["dp_MPa"] if d["verified"] else np.nan,
+                     "verified_r95_m": d["verified"]["r95_m"] if d["verified"] else np.nan,
+                     "recommended_rates_kg_s": rec.recommended_rates_kg_s,
+                     "in_domain": bool(in_domain), "k_median_mD": r.k_median_mD,
+                     "detail": d})
+    return rows
+
+
+def stage_screening(cfg, df, ml) -> dict:
+    print("\n=== STAGE 12  verification-gated schedule screening ===")
+    from joblib import Parallel, delayed
+    from .final_eval import realisation_lookup
+    m, e = ml["_masks"], cfg.evaluation
+    look = realisation_lookup(cfg)
+    dom = ml["_domain"]
+    rev_p = (ml["_surrogates"]["dp_bh_max_MPa"], ml["_bands"]["dp_bh_max_MPa"])
+    rev_r = (ml["_surrogates"]["r_plume_m95_m"], ml["_bands"]["r_plume_m95_m"])
+    base_p, base_r = ml["_baseline"]["dp_bh_max_MPa"], ml["_baseline"]["r_plume_m95_m"]
+    jobs = []
+    for which, mask, n in (("final_test", m["test"], e.screening_reservoirs_final_test),
+                           ("shift", m["shift"], e.screening_reservoirs_shift)):
+        ids = sorted(df.loc[mask, "realisation_id"].unique())[:n]
+        for rid in ids:
+            c, r = look[int(rid)]
+            row = df.loc[mask & (df.realisation_id == rid)].iloc[[0]]
+            in_dom = bool(dom.check(row)["in_domain"].iloc[0])
+            jobs.append((c, r, which, in_dom))
+    print(f"  {len(jobs)} reservoirs x 5 methods, budget {e.screening_budget} "
+          f"simulations per method")
+    t0 = time.perf_counter()
+    out_rows = Parallel(n_jobs=cfg.n_jobs, batch_size=1)(
+        delayed(_screen_one)(cfg, c, r, which, (rev_p, rev_r), (base_p, base_r), in_dom,
+                             e.screening_budget, e.screening_candidates, cfg.ml.random_state)
+        for c, r, which, in_dom in jobs)
+    rows = [x for rs in out_rows for x in rs]
+    rec = pd.DataFrame(rows)
+    base = rec[rec.method == "simulator_constant"].set_index("realisation_id")["mass_Mt"]
+    rec["constant_mass_Mt"] = rec["realisation_id"].map(base)
+    rec["mass_vs_constant_pct"] = 100 * (rec["mass_Mt"] - rec["constant_mass_Mt"]) / rec["constant_mass_Mt"]
+    rec.drop(columns=["detail"]).to_csv(Path(cfg.paths.metrics) / "screening_recommendations.csv",
+                                        index=False)
+    _jdump([r["detail"] for r in rows], Path(cfg.paths.metrics) / "screening_details.json")
+    summ = {"budget_simulations_per_method": e.screening_budget,
+            "n_candidates": e.screening_candidates,
+            "dp_limit_MPa": cfg.optim.p_limit_MPa - cfg.solver.p_init_MPa,
+            "r_plume_limit_m": cfg.optim.r_plume_limit_m,
+            "limit_status": "stated modelling assumptions, not fracture or caprock criteria",
+            "seconds": time.perf_counter() - t0, "by_set": {}}
+    for which in ("final_test", "shift"):
+        d = rec[rec.set == which]
+        if d.empty:
+            continue
+        s = {"n_reservoirs": int(d.realisation_id.nunique()),
+             "n_reservoirs_out_of_domain": int((~d.drop_duplicates("realisation_id").in_domain).sum()),
+             "methods": {}}
+        for meth, g in d.groupby("method"):
+            gain = g.mass_vs_constant_pct.dropna()
+            s["methods"][meth] = {
+                "n_verified": int((g.status == "VERIFIED_FEASIBLE").sum()),
+                "n_no_feasible_found": int((g.status == "NO_FEASIBLE_SCHEDULE_FOUND").sum()),
+                "n_no_candidate_predicted": int((g.status == "NO_CANDIDATE_PREDICTED_FEASIBLE").sum()),
+                "mean_simulations": float(g.n_simulations.mean()),
+                "first_simulated_schedule_violates": int(g.first_simulated_violates.fillna(False).sum()),
+                "median_mass_vs_constant_pct": float(gain.median()) if len(gain) else None,
+                "min_mass_vs_constant_pct": float(gain.min()) if len(gain) else None,
+                "max_mass_vs_constant_pct": float(gain.max()) if len(gain) else None,
+                "n_compared": int(len(gain)),
+                "flags": g["flags"][g["flags"] != ""].value_counts().to_dict()}
+        summ["by_set"][which] = s
+        for meth, v in s["methods"].items():
+            print(f"  {which:10s} {meth:22s} verified {v['n_verified']}/{s['n_reservoirs']} | "
+                  f"first proposal violated {v['first_simulated_schedule_violates']} | "
+                  f"median vs constant {v['median_mass_vs_constant_pct']}")
+    F.screening(cfg, rec, cfg.paths.figures)
+    return summ
 
 
 # ==========================================================================
@@ -894,11 +871,13 @@ def save_models(cfg, ml) -> dict:
     from .artifacts import save_bundle
     objs = {f"surrogate_{t}.joblib": s for t, s in ml["_surrogates"].items()}
     objs.update({f"band_{t}.joblib": b for t, b in ml["_bands"].items()})
+    objs["domain_check.joblib"] = ml["_domain"]
     if "_classifier" in ml:
         objs["pressure_classifier.joblib"] = ml["_classifier"]
     man = save_bundle(cfg, objs, dataset_file=Path(cfg.paths.data) / "scenarios.csv",
-                      extra={"test_realisation_ids": ml["split"]["test_ids"],
-                             "calib_realisation_ids": ml["split"]["calib_ids"],
-                             "selected_models": {t: s.name for t, s in ml["_surrogates"].items()}})
+                      extra={"calib_realisation_ids": ml["split"]["calib_ids"],
+                             "selected_models": {t: s.name for t, s in ml["_surrogates"].items()},
+                             "design": revised_design(cfg),
+                             "features_by_model": {t: s.features for t, s in ml["_surrogates"].items()}})
     print(f"\n  saved {len(objs)} model files + manifest to {cfg.paths.models}")
     return man

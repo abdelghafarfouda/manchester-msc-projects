@@ -6,7 +6,6 @@ Commands
 ``validate``   the numerical verification suite only
 ``predict``    surrogate predictions for one reservoir + schedule (JSON input)
 ``simulate``   run the simulator for the same JSON input and compare
-``coverage``   rebuild the ML-topic coverage matrix from executed evidence
 ``dashboard``  print the Streamlit command for this configuration
 """
 from __future__ import annotations
@@ -36,7 +35,7 @@ def main(argv=None) -> int:
     cfg_default = str(root / "config" / "demo.yaml")
     p = sub.add_parser("run", help="run the complete pipeline")
     p.add_argument("--config", default=cfg_default)
-    for f in ("validation", "dataset", "studies", "optimisation"):
+    for f in ("validation", "dataset", "numerics", "studies", "screening"):
         p.add_argument(f"--skip-{f}", action="store_true")
     p = sub.add_parser("validate", help="numerical verification only")
     p.add_argument("--config", default=cfg_default)
@@ -44,15 +43,13 @@ def main(argv=None) -> int:
         p = sub.add_parser(name, help=f"{name} one case from a JSON file")
         p.add_argument("--config", default=cfg_default)
         p.add_argument("--input", default=str(EXAMPLE))
-    p = sub.add_parser("coverage", help="rebuild docs/COVERAGE_MATRIX.md")
-    p.add_argument("--config", default=cfg_default)
     p = sub.add_parser("dashboard", help="print the Streamlit command")
     p.add_argument("--config", default=cfg_default)
     a = ap.parse_args(argv)
 
     if a.cmd == "run":
         cmd = [sys.executable, str(root / "scripts" / "run_pipeline.py"), "--config", a.config]
-        for f in ("validation", "dataset", "studies", "optimisation"):
+        for f in ("validation", "dataset", "numerics", "studies", "screening"):
             if getattr(a, f"skip_{f}"):
                 cmd.append(f"--skip-{f}")
         return subprocess.call(cmd)
@@ -76,9 +73,16 @@ def main(argv=None) -> int:
             return 3
         r, rates = _load_case(a.input)
         out = pr.predict(r, [rates])
-        res = {t: {"prediction": float(v["pred"][0]), "band_P5": float(v["band_low"][0]),
-                   "band_P95": float(v["band_high"][0]), "unit": v["unit"]}
+        res = {t: {"prediction": float(v["pred"][0]),
+                   "interval_low": float(v["band_low"][0]),
+                   "interval_high": float(v["band_high"][0]), "unit": v["unit"]}
                for t, v in out.items() if isinstance(v, dict) and "pred" in v}
+        res["status"] = ("UNVERIFIED surrogate prediction - simulate before relying on it "
+                         "(subsurfaceml simulate)")
+        if "in_training_domain" in out:
+            res["in_training_domain"] = bool(out["in_training_domain"][0])
+            if not res["in_training_domain"]:
+                res["domain_reasons"] = out["domain_reasons"][0]
         if "exceeds_pressure_limit" in out:
             e = out["exceeds_pressure_limit"]
             res["pressure_screen"] = {"flag_exceeds": bool(e["flag"][0]),
@@ -103,9 +107,6 @@ def main(argv=None) -> int:
                           "mass_balance_error": w["mass_balance_error"],
                           "wall_time_s": w["wall_time_s"]}, indent=2))
         return 0
-    if a.cmd == "coverage":
-        return subprocess.call([sys.executable, str(root / "scripts" / "build_coverage.py"),
-                                "--config", a.config])
     if a.cmd == "dashboard":
         print(f'streamlit run "{root / "app" / "streamlit_app.py"}" -- --config "{a.config}"')
         return 0
