@@ -2,9 +2,15 @@
 
 The project follows one line of reasoning: **question, equations and
 assumptions, numerical method, implementation, verification, results,
-limitations.** Numbers quoted here come from `results/run_log.txt` and the CSV
-files beside it. Source references (file, slide or notebook cell) are in
-[`SOURCE_MAP.md`](../SOURCE_MAP.md).
+limitations.** Numbers quoted here come from `results/run_log.txt`,
+`results/studies_run_log.txt` and the CSV files beside them. Source references
+(file, slide or notebook cell) are in [`SOURCE_MAP.md`](../SOURCE_MAP.md).
+Section 7 and the heat accounting in section 3.8 were added in the October 2026
+revision (`run_studies.py`); the rest describes the study as first published on
+2026-09-26 (`run_project.py`), whose results are unchanged.
+
+Energies are per metre of out-of-plane depth (J/m or MJ/m), because the plate is
+two-dimensional: 1 MJ/m is 1 MJ for each metre of plate thickness.
 
 ---
 
@@ -163,8 +169,8 @@ T_avg = sum(w[i,j] T[i,j]) dx dy / (L W)
 A plain average of nodal values would over-weight the boundary nodes, including
 the hot heated-segment nodes.
 
-**Heat input.** Take each unknown node's equation, multiply it by its control-volume
-area w dx dy and by rho cp, then sum over all unknown nodes.
+**Boundary-flux heat input.** Take each unknown node's equation, multiply it by its
+control-volume area w dx dy and by rho cp, then sum over all unknown nodes.
 
 * An exchange between two unknown nodes appears twice, with opposite signs and
   equal weights, so it cancels. This is the discrete version of the divergence
@@ -180,16 +186,38 @@ Backward Euler satisfies this balance exactly at every step:
 change in stored energy of the unknown nodes = dt * (heat flow in at the new time level)
 ```
 
-The run checks it in check V3, and sums the heat flows into the reported heat
-input.
+The run checks it in check V3, and sums the heat flows into the reported
+boundary-flux heat input, Q_b.
 
-**Why rho cp A (T_avg - 300 K) is slightly larger than the heat input.**
+**Heat-input accounting: three quantities** (revision of 2026-10-04). The heat
+flows above cross the *inner* faces of the heated-segment nodes' control volumes,
+half a cell inside the edge. The segment nodes' own control volumes - strips
+dx wide and dy/2 thick on the edge (`heat2d.fixed_node_energy`) - are not unknowns:
+they hold the boundary temperature from t = 0. So the energy in the plate has two
+parts:
 
-* On the finest grid, 3.9e6 x 138.5 = 540 MJ/m, against a heat input of 537 MJ/m.
-* The difference is the energy of the heated-segment nodes' own half-cells, which
-  jump to the boundary temperature at t = 0.
-* Their area is proportional to dy, so the gap shrinks as the grid is refined:
-  58 MJ/m on 13 x 12, 3 MJ/m on 193 x 177.
+```
+Q_b    boundary-flux heat input       = sum over time of dt x (heat flow from the segment nodes)
+E_seg  heated-segment half-cell energy = rho cp sum over segment nodes of w dx dy (T_b - 300 K)
+dE     stored-energy increase          = rho cp L W (T_avg - 300 K) = Q_b + E_seg
+```
+
+The last identity holds because the trapezoidal weights of the mean temperature are
+the control-volume areas of *all* nodes, unknown and prescribed. It is checked to
+round-off in every revision run (check S1). Since every other edge is insulated, dE
+is the total heat the discrete plate has taken in through the segments.
+
+* E_seg is proportional to dy. It is 58.0 MJ/m on 13 x 12 and 3.2 MJ/m on
+  193 x 177, halving with each refinement (ratios 2.14, 2.07, 2.04, 2.02).
+* So Q_b and dE converge towards each other from opposite sides: Q_b is 5.5 % low
+  on the 13 x 12 grid (507.3 against 537.1 MJ/m), while dE, and the mean
+  temperature with it, is 4.6 % high (565.3 against 540.3 MJ/m). The two
+  percentages describe different quantities; neither is "the" grid effect on the
+  heat taken in. The mean-temperature difference, +6.4 K, is the same +4.6 % of
+  the 138.5 K temperature rise.
+* The original version of this section said the gap between the two was "the
+  energy of the heated-segment nodes' own half-cells", which is right, but its
+  README compared only Q_b between grids. Section 7.1 gives the full table.
 
 ## 4. Implementation map
 
@@ -205,6 +233,13 @@ input.
 | one plate run and its diagnostics | `run_project.solve_plate` |
 | checks V1-V5, grid studies, figures, summary | `run_project.main` and the `verify_*` / `figure_*` functions |
 | V5 reference solution of the discrete scheme | `run_project.aniso_reference`, `run_project.verify_anisotropy` |
+| half-cell energy of the prescribed nodes | `heat2d.fixed_node_energy` |
+| runs with a fixed number of steps; per-node heat input | `run_project.solve_plate(..., n_steps=)` |
+| heat accounting (section 7.1) | `run_studies.accounting` |
+| spatial and temporal studies, split of the coarse-grid difference (7.2) | `run_studies.main` (part B), `run_studies.split_difference` |
+| nested-grid comparison and boundary intervals (7.3) | `run_studies.matched`, `run_studies.temperature_differences`, `run_studies.segment_heat` |
+| checks S1-S3, figures 5 and 6 | `run_studies.main`, `run_studies.figure_*` |
+| comparison with the recorded results (CI) | `compare_results.py` |
 
 ## 5. Verification
 
@@ -331,6 +366,16 @@ because V2's space and time studies are reported and judged separately.
   it compares the code with the exact solution of the discrete equations, not of
   the PDE. V2 covers that.
 
+**Study checks S1-S3 (revision).** `run_studies.py` adds three checks on its own
+calculations. S1: in all 29 of its runs the stored-energy increase equals Q_b +
+E_seg, and the V3 energy balance closes, to 5.8e-12 at worst (tolerance 1e-10).
+S2: the nested-grid comparisons use identical node coordinates (mismatch 0 m), the
+boundary-interval sums equal the segment totals (1.2e-15 relative) and the segment
+ends lie on nodes. S3: halving the spatial study's fixed time step changes the
+193 x 177 mean temperature by 0.0035 K, 0.70 % of the smallest grid-to-grid change
+(tolerance 1 %). These check bookkeeping and study design; they say nothing about
+the accuracy of the plate results.
+
 ## 6. Results
 
 ### Temperature field (figure 1)
@@ -345,7 +390,7 @@ x = L/2, as the boundary conditions are.
 | After 5 h | 13 x 12 nodes (14 steps) | 193 x 177 nodes (3403 steps) |
 |---|---|---|
 | mean temperature | 444.95 K | 438.54 K |
-| heat in, top / bottom / total | 181.9 / 325.4 / 507.3 MJ/m | 190.9 / 346.3 / 537.1 MJ/m |
+| boundary-flux heat input, top / bottom / total | 181.9 / 325.4 / 507.3 MJ/m | 190.9 / 346.3 / 537.1 MJ/m |
 | bottom corners (x = 0 and L, y = 0) | 465.88 K | 453.76 K |
 | top corners (x = 0 and L, y = W) | 406.59 K | 395.05 K |
 
@@ -370,12 +415,13 @@ Equation 3 (so quartered):
 |---|---|---|---|---|---|
 | mean temperature (K) | 444.947 | 441.745 | 439.959 | 439.023 | 438.544 |
 | change (Eq. 4, %) | – | 0.72 | 0.41 | 0.21 | 0.11 |
-| heat in (MJ/m) | 507.3 | 525.7 | 532.7 | 535.8 | 537.1 |
+| boundary-flux heat input (MJ/m) | 507.3 | 525.7 | 532.7 | 535.8 | 537.1 |
 
 Successive estimates first agree within 0.2 % at 193 x 177, whose values are the
 most refined numerical estimates, not exact answers. Compared with them, the
-13 x 12 run (dt = 1286 s) gives a mean temperature 6.4 K higher (1.5 % of 438.5 K)
-and a heat input 5.5 % lower.
+13 x 12 run (dt = 1286 s) gives a mean temperature 6.4 K higher (1.5 % of 438.5 K),
+a boundary-flux heat input 5.5 % lower and a stored-energy increase 4.6 % higher
+(section 3.8).
 
 **(c) Observed convergence rate.**
 
@@ -390,26 +436,212 @@ and a heat input 5.5 % lower.
   ratios for the mean temperature then become 3.64 and 3.87, approaching 4.
 * This is consistent with the segment ends causing the first-order behaviour of the
   mean temperature, but it does not prove it, because the extension also changes
-  the heated length and the boundary temperatures. No local error map was made. The
-  mechanism is not analysed here.
+  the heated length and the boundary temperatures. In the diagnostic, Q_b still
+  changes at first order (by 49.2, 23.4 and 11.3 MJ/m) while dE changes by 5.9, 1.6
+  and 0.4 MJ/m: the half-cell energy cancels the first-order part of Q_b. With the
+  partial segments that cancellation is incomplete.
+* Section 7.2 separates the grid and time-step parts of these changes, and section
+  7.3 maps where the grids differ.
 
 ### Centreline and history (figure 2)
 
 * **Centreline.** The profile at x = L/2 changes little with refinement. At the 12
   heights both grids share, it differs by at most 3.2 K between the 13 x 12 and
   193 x 177 grids, against 6.4 K for the mean temperature.
-* **Heat input.** Enters fastest at first, then more slowly: 231 MJ/m after 1.25 h
-  and 537 MJ/m after 5 h, roughly proportional to t^0.6.
+* **Boundary-flux heat input.** Enters fastest at first, then more slowly:
+  231 MJ/m after 1.25 h and 537 MJ/m after 5 h, roughly proportional to t^0.6.
 * **Mean temperature.** Rises from 300 K to 438.5 K.
 
-## 7. Limitations
+## 7. Revision studies (October 2026)
+
+`python run_studies.py` reruns the same plate - inputs, boundary conditions, solver -
+with chosen grids and time steps, and writes the tables named below. All
+comparisons are **differences between numerical results**, not errors: there is no
+exact solution of the plate problem, and the 193 x 177 grid is only the most
+refined one. Settings and their reasons are in `SOURCE_MAP.md` section 4.
+
+### 7.1 Heat-input accounting (`results/heat_accounting.csv`, figure 5 left)
+
+Nested grids, Equation 3 time step, MJ per metre of depth:
+
+| Grid | 13 x 12 | 25 x 23 | 49 x 45 | 97 x 89 | 193 x 177 |
+|---|---|---|---|---|---|
+| boundary-flux heat input Q_b | 507.3 | 525.7 | 532.7 | 535.8 | 537.1 |
+| heated-segment half-cell energy E_seg | 58.0 | 27.1 | 13.1 | 6.4 | 3.2 |
+| stored-energy increase dE = Q_b + E_seg | 565.3 | 552.8 | 545.8 | 542.2 | 540.3 |
+| mean temperature (K) | 444.95 | 441.74 | 439.96 | 439.02 | 438.54 |
+
+13 x 12 against 193 x 177: Q_b -29.8 MJ/m (-5.5 %), E_seg +54.8 MJ/m, dE +25.0 MJ/m
+(+4.6 %). The definitions and the reason for the difference are in section 3.8.
+
+### 7.2 Space and time separated (`results/space_time_study.csv`, `results/coarse_grid_difference.csv`, figure 5)
+
+**Design.**
+
+* *Spatial study.* The five nested grids at a fixed dt = 5.2895 s (3403 steps to
+  5 h). This is the 193 x 177 grid's Equation 3 step, the smallest in the original
+  study, so the finest member of the spatial study is the original 193 x 177 run,
+  reused. Check S3 confirms the step is small enough: halving it changes the
+  193 x 177 mean temperature by 0.0035 K, 0.70 % of the smallest grid-to-grid change
+  (0.50 K). The same halving changes Q_b by 1.06 % of its smallest grid-to-grid
+  change. The study is repeated at dt = 1285.71 s, the 13 x 12 grid's Equation 3
+  step (14 steps).
+* *Temporal study.* On the fixed 193 x 177 grid: dt = 1285.71 s halved seven times
+  to 10.04 s, then 5.29 s and 2.64 s (14, 28, ..., 1792, 3403 and 6806 steps). The
+  same steps on the 13 x 12 grid show how the time-step effect depends on the grid.
+  193 x 177 is the finest grid of the original study; the time-step effect at
+  dt = 1285.71 s differs by 0.011 K (0.7 %) between it and 97 x 89.
+
+**Spatial study, dt = 5.29 s.**
+
+| Grid | 13 x 12 | 25 x 23 | 49 x 45 | 97 x 89 | 193 x 177 |
+|---|---|---|---|---|---|
+| mean temperature (K) | 446.773 | 442.199 | 440.067 | 439.044 | 438.544 |
+| change from previous grid (K) | - | -4.574 | -2.132 | -1.023 | -0.500 |
+| ratio of successive changes | - | - | 2.15 | 2.08 | 2.05 |
+| bottom / top corners (K) | 468.91 / 407.87 | 460.39 / 400.72 | 456.53 / 397.42 | 454.67 / 395.83 | 453.76 / 395.05 |
+| Q_b (MJ/m) | 514.5 | 527.4 | 533.2 | 535.8 | 537.1 |
+| dE (MJ/m) | 572.4 | 554.6 | 546.3 | 542.3 | 540.3 |
+
+At dt = 1285.71 s the changes are -4.501, -2.090, -1.000 and -0.489 K (ratios 2.15,
+2.09, 2.05). Either way the mean temperature changes at about **first order in the
+grid spacing**. The first-order part is visible in both energy terms: E_seg halves
+with each refinement, and Q_b changes by 13.0, 5.7, 2.7 and 1.3 MJ/m.
+
+**Temporal study, 193 x 177.** Halving dt from 1285.71 s changes the mean
+temperature by +0.836, +0.422, +0.212, +0.106, +0.053, +0.027 and +0.013 K (ratios
+1.98-2.00): **first order in the time step**, as V2 found for backward Euler on the
+smooth problem. The next two steps (1792 -> 3403 -> 6806) change it by 0.0063 and
+0.0035 K. On 13 x 12 the changes are 9 % larger (+0.910, +0.460, ...), with the same
+ratios.
+
+**Why the original joint study shows ratios of 1.79-1.96.** Each joint step halves
+dx and quarters dt. The joint changes (-3.202, -1.786, -0.937, -0.479 K) are the
+spatial changes at a fixed dt plus a time-step part of the opposite sign, roughly
++1.37, +0.35, +0.09 and +0.02 K. That part shrinks four-fold per step, because it is
+first order in dt and dt is quartered. As it fades, the ratio approaches the spatial
+value of 2.
+
+**Splitting the coarse-grid difference.** For 13 x 12 at dt = 1285.71 s minus
+193 x 177 at dt = 5.2895 s, two exact identities hold:
+
+```
+total = grid effect at the fine dt   + time-step effect on the coarse grid
+      = grid effect at the coarse dt + time-step effect on the fine grid
+```
+
+| Quantity | total | grid at 5.29 s | time step on 13 x 12 | grid at 1286 s | time step on 193 x 177 | interaction |
+|---|---|---|---|---|---|---|
+| mean temperature (K) | +6.403 | +8.229 | -1.826 | +8.081 | -1.677 | -0.149 |
+| bottom corners (K) | +12.125 | +15.150 | -3.025 | +15.060 | -2.935 | -0.089 |
+| top corners (K) | +11.541 | +12.818 | -1.277 | +12.609 | -1.067 | -0.210 |
+| Q_b (MJ/m) | -29.80 | -22.68 | -7.12 | -23.26 | -6.54 | -0.58 |
+| E_seg (MJ/m) | +54.77 | +54.77 | 0 | +54.77 | 0 | 0 |
+| dE (MJ/m) | +24.97 | +32.09 | -7.12 | +31.51 | -6.54 | -0.58 |
+
+The interaction is the difference between the two orders: the time-step effect
+depends on the grid (for the mean temperature, -1.826, -1.753, -1.711, -1.689 and
+-1.677 K from 13 x 12 to 193 x 177). The grid and time-step effects are therefore not
+exactly additive. On this problem the interaction is small (2 % of the grid effect),
+but that is a measurement for these grids and steps, not a general property.
+
+### 7.3 Segment ends (`results/segment_end_temperatures.csv`, `results/segment_heat_input.csv`, figure 6)
+
+All five grids at dt = 5.2895 s, so the differences come from the grid. The grids are
+nested: each grid's nodes are nodes of every finer grid at exactly the same
+coordinates (check S2). Physical boundary locations are therefore the same on every
+grid; in particular the segment ends x = L/4 and 3L/4 are nodes on all of them.
+
+**Temperature at matching nodes.** T(grid) - T(193 x 177) at the grid's own nodes.
+"Near an end" means within 0.1 m of one of the four segment ends.
+
+| Grid | nodes | largest difference (x, y) | within 0.1 m of an end | elsewhere: largest / RMS | mean |
+|---|---|---|---|---|---|
+| 13 x 12 | 156 | +19.71 K (0.833, 0) | 19.71 K | 16.10 / 8.20 K | +7.54 K |
+| 25 x 23 | 575 | +11.68 K (0.792, 0) | 11.68 K | 7.60 / 3.71 K | +3.51 K |
+| 49 x 45 | 2205 | +6.73 K (0.771, 0) | 6.73 K | 3.33 / 1.56 K | +1.49 K |
+| 97 x 89 | 8633 | +3.07 K (0.760, 0) | 3.07 K | 1.09 / 0.51 K | +0.49 K |
+
+* On every grid the largest difference is at the first insulated node beyond the
+  end of the bottom segment, on the bottom edge (y = 0), where the segment
+  temperature is 612 K. The coarser grid is warmer there.
+* Between *successive* grids (each against the next finer one) the largest
+  difference more than 0.1 m from an end is 9.10, 4.46, 2.23 and 1.09 K: it halves
+  with each refinement. Within 0.1 m of an end it is 10.86, 6.75, 4.48 and 3.07 K,
+  falling by only 1.61, 1.51 and 1.46 times per refinement. The ends therefore
+  dominate more and more: between the two finest grids the largest near-end
+  difference is 2.8 times the largest elsewhere.
+* Figure 6 (left) shows T(97 x 89) - T(193 x 177) over the plate: up to 3.1 K at the
+  four ends, about 0.5 K over most of the plate. The middle panel shows the largest
+  difference in 0.05 m bands of distance from the nearest end.
+
+**Boundary heat input along the segments.** The heat each segment node supplies
+over 5 h (its share of Q_b) is summed over the same seven stretches of edge on every
+grid: one interval around each 13 x 12 segment node, so the two end intervals are
+L/24 = 0.042 m long and the others L/12 = 0.083 m. A node on the border between two
+intervals is shared equally (it occurs only on the finer grids).
+
+| Bottom segment, minus 193 x 177 (MJ/m) | 13 x 12 | 25 x 23 | 49 x 45 | 97 x 89 |
+|---|---|---|---|---|
+| each end interval | +15.32 | +7.99 | +3.50 | +1.18 |
+| other intervals | -8.53 to -10.83 | -4.20 to -5.37 | -1.82 to -2.30 | -0.61 to -0.77 |
+
+| Top segment, minus 193 x 177 (MJ/m) | 13 x 12 | 25 x 23 | 49 x 45 | 97 x 89 |
+|---|---|---|---|---|
+| each end interval | +8.64 | +4.11 | +1.79 | +0.60 |
+| other intervals | -3.31 to -6.19 | -1.51 to -2.83 | -0.65 to -1.19 | -0.22 to -0.39 |
+
+* Coarse grids put more heat in through the end intervals and less along the rest
+  of each segment. Per metre of edge, the end-interval difference is about three
+  times the largest elsewhere (bottom, 13 x 12: 368 against 130 MJ/m per m).
+* Between successive grids these interval differences shrink about two-fold per
+  refinement, in the end intervals and elsewhere.
+* The four end nodes supply 38.8 % of Q_b on 13 x 12 and 8.7 % on 193 x 177. Each
+  end node's control volume reaches half a cell beyond the segment end, over the
+  insulated part of the edge, and also exchanges heat sideways with its insulated
+  neighbour.
+* The interior intervals' first-order differences in Q_b are largely the
+  half-cell effect of section 3.8 (heat measured dy/2 inside the edge). Adding each
+  interval's half-cell energy reduces them by a factor of about 2 to 3, while the
+  end intervals' differences grow (bottom, 13 x 12: from +15.3 to +19.8 MJ/m).
+  `segment_heat_input.csv` gives both columns.
+
+**Interpretation.** At each segment end the boundary condition changes abruptly
+along a straight edge, from a prescribed temperature to zero heat flow, so the
+temperature need not be smooth there. The Taylor-series argument behind the
+second-order stencil, and V2's evidence, assume a smooth solution. The
+measurements agree with this picture: the largest differences sit at the ends and
+shrink more slowly there. Removing the ends (the full-edge diagnostic, section 6)
+restores near-second-order changes in the mean temperature. The local behaviour
+near an end is not analysed, and no exact local solution is used.
+
+### 7.4 Reproducibility and continuous integration
+
+* The unmodified 2026-09-26 code was re-run first, on Python 3.11.15 with the
+  original NumPy, SciPy and Matplotlib versions. It passed 6 of 6 checks and
+  reproduced its 12 numerical output files exactly and its four figures byte for
+  byte (`results/published_2026-09-26/rerun_2026-10-04/`).
+* `compare_results.py` compares two result folders value by value: relative
+  tolerance 1e-9, absolute tolerance 1e-9 in each value's unit, text exactly. Its
+  docstring gives the reasons for the tolerances. Logs, environment records,
+  timestamps, run times and figure pixels are excluded.
+* `.github/workflows/heat-conduction.yml` runs on changes to this project only. It
+  installs `requirements-lock.txt` on Python 3.11, runs both scripts (V1-V5 and
+  S1-S3 must pass), compares the outputs with `results/` and checks that the
+  original outputs are still reproduced.
+
+## 8. Limitations
 
 See the README. In short:
 
 * conduction only, with the assignment's properties, in 2-D;
-* first-order convergence of the mean temperature under the combined grid and
-  time-step refinement, with a possible but unproven link to the segment ends;
-* no separate study of the time resolution just after the sudden heating;
+* first-order changes of the mean temperature in the grid spacing at a fixed time
+  step, and in the time step on a fixed grid; second-order accuracy is shown only
+  for the smooth V2 problem;
+* the largest grid differences at the segment ends, with a measured but
+  unanalysed local mechanism;
+* the early transient after the sudden heating is not resolved separately; the
+  temporal study measures only its effect at 5 h;
 * a grid criterion that measures successive changes, not the error, and no error
-  estimate for the 193 x 177 values;
+  estimate or extrapolated value for the 193 x 177 results;
 * no validation data: the course materials contain no measurements.
