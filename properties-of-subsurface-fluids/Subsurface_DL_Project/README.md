@@ -1,142 +1,129 @@
 # A neural surrogate for the two-phase flash calculation
 
 **CHEN60492 *Properties of Subsurface Fluids* + the Deep Learning module,
-University of Manchester**
+University of Manchester** — MSc coursework, extended and re-verified in 2026.
 
-A **synthetic surrogate benchmark** of the flash calculation taught in the
-module: Wilson $K$-values fed into Rachford-Rice. Every label is produced by
-that calculation, on mixtures generated for this study. There are no
-measurements in it, and nothing here is a claim about real vapour–liquid
-equilibrium.
+## Supervisor overview
 
-### The question
+**Question.** In reservoir and CO₂-storage simulation, the two-phase flash —
+how much of a hydrocarbon mixture is vapour at a given pressure and
+temperature — is solved again and again. Neural networks are often proposed
+to replace that iterative step. This project tests the idea on the flash the
+module teaches. **Can a neural surrogate reproduce it for mixtures it has never
+seen, where does it fail, and when does adding the Rachford-Rice residual to
+the loss improve prediction?**
 
-> The taught calculation finds the vapour fraction `F_V` by iterating on
-> Rachford-Rice. **Can a small feed-forward network predict `F_V` directly
-> from composition, pressure and temperature for mixtures it has never seen,
-> and does adding the Rachford-Rice equation itself to the loss function
-> change the result?**
+**Physical reference.** The reference is the module's own calculation. Wilson
+K-values are computed from the printed seven-component table (CO₂, C1–C5, C10;
+notes pp. 14–15) and fed into Rachford-Rice, which is solved by bisection.
+The solver reproduces the notes' worked examples: saturation pressures to
+1.3e−7 and 3.6e−6 relative, and the p. 15 flash to 1.6e−5 in `F_V`. This is a
+**synthetic benchmark**. Every label comes from that calculation, and nothing
+here is checked against measurements or claims to describe real
+vapour–liquid equilibrium.
 
-### Start here
+**Data and split.** There are 60,000 two-phase states from 3,000 generated
+mixtures (`z_i = n_i / Σ n_j`, the notes' own construction) at 2–2000 psia and
+150–220 °F. They are split **by mixture**: 1,800 / 600 / 600 for training,
+validation and test, with no mixture in two parts. Standardisation uses
+training rows only. A separate set of 401 mixtures at 2000–4000 psia tests
+pressure extrapolation.
+
+**Deep-learning approaches.** The network is the course's feed-forward
+network: 9 inputs (seven mole fractions, `p`, `T`), three hidden layers and a
+sigmoid output for `F_V`. It is trained either on the data loss alone, or on
+the data loss plus `λ·mean[h(F_V)²]`, the Rachford-Rice residual of its own
+prediction — the physics-informed loss of the course's SciML lecture. There
+are three seeds per variant, and checkpoints are chosen on validation data.
+
+**Measured findings.**
+* **Accuracy.** Test RMSE in `F_V` is 0.00636 ± 0.00026 with the data loss and
+  **0.00535 ± 0.00029 with the physics loss**, against 0.279 for predicting the
+  training mean. The ± is the spread over three seeds, not a confidence
+  interval.
+* **Where it fails.** The errors cluster next to the **dew point**. The 5 % of
+  test rows nearest it hold **45–58 % of the squared error** and most of the
+  worst 1 % of errors. The bubble-point side holds 0.7–2.6 %.
+* **When the physics loss helps.** In range it helped in **all three seeds**
+  (−8 %, −15 %, −24 % RMSE). How much of that came from the dew band varies
+  by seed (135 %, 17 %, 64 %). On the 2000–4000 psia extrapolation set it was
+  **worse in two of three seeds** (+19 %, +82 %; −25 % in the third).
+* **Capacity.** A bounded comparison froze its configuration and selection
+  rule before scoring, then tested 3 × 64, 3 × 128 and 3 × 192 hidden units on
+  the data loss. The validation rule **selected 3 × 64**: a quarter of the
+  original's parameters, with the same test error (0.00638 against 0.00636).
+  The wider network was slightly worse. The original 3 × 128 benchmark is
+  kept, and the physics-loss result applies to that width only.
+* **Guarded prediction.** The sigmoid gives a plausible-looking fraction for
+  any input. For example, the bare network calls an all-vapour state 92 %
+  vapour. The public `FlashSurrogate` now:
+  * validates the input;
+  * applies the course's phase test first;
+  * uses the network only for two-phase states inside its training ranges;
+  * otherwise falls back, with a label, to the reference solver.
+
+**Limitations.** Synthetic labels from one correlation and one fixed component
+set. The equation-of-state route is a separate future study. The domain checks
+are marginal (one variable at a time). The evidence is three seeds, and
+speed is not a benefit: bisection is already fast.
+
+**Quickest commands** (from this folder; nothing is retrained):
 
 ```bash
-git clone https://github.com/abdelghafarfouda/manchester-msc-projects.git
-cd manchester-msc-projects/properties-of-subsurface-fluids/Subsurface_DL_Project
-pip install -r requirements.txt
-jupyter notebook notebooks/flash_surrogate.ipynb
+pip install -r requirements.txt        # or requirements-ci.txt: the pinned CPU-only set CI uses
+python scripts/verify_flash.py         # reference solver vs the notes' worked examples
+python tests/run_tests.py              # 48 tests
+python scripts/evaluate.py --out-dir check --fig-dir check   # re-scores the six saved models
+python scripts/compare_results.py results/metrics/evaluation.json check/evaluation.json --expect-count 185
+jupyter notebook notebooks/flash_surrogate.ipynb   # the whole study, with saved outputs
 ```
 
-The notebook is saved with its outputs from the run reported below, so it can
-also be read directly on GitHub. It states in its header which numbers are
-loaded from disk and which are recomputed while it runs.
+Details: [error analysis](docs/ERROR_ANALYSIS.md) ·
+[capacity](docs/CAPACITY.md) · [guarded prediction](docs/GUARDED_PREDICTION.md)
+· [verification](docs/VERIFICATION.md) · [limitations](docs/LIMITATIONS.md) ·
+[sources](docs/SOURCE_MAP.md) · [review checklist](docs/REVIEW_CHECKLIST.md).
 
 ---
 
-## 1. Assumptions and scope
+## 1. Scope and sources
 
 * **Ground truth is a model, not data.** The notes give Wilson's original
   validity as below 500 psia and then apply it in their own worked examples up
   to 4000 psia. This project follows the notes, so the correlation *defines*
   the target.
-* **Only the Wilson route is modelled.** The equation-of-state route is named
-  in the notes (p. 6) without any equation of state being written down. It is
-  **outside the scope chosen here**, not unfinished work.
-* **The component constants are used exactly as printed** in the module's own
-  table, and are not checked against or corrected by any outside source.
-* **One fixed set of seven components** in varying proportions; the network is
-  never told what the components are, so nothing transfers to another set.
-* **Two-phase states only.** The module's phase test is applied before the
-  data is built; the surrogate does not decide whether a mixture splits.
-
-### Where every physical input comes from
+* **Only the Wilson route.** The equation-of-state route is named in the notes
+  (p. 6) without any equation of state being written down. It is outside the
+  scope chosen here, and comparing against one would be a separate study.
+* **Constants as printed.** The component constants are used exactly as
+  printed in the module's table, not checked against or corrected by any
+  outside source.
+* **Fixed component set.** One set of seven components in varying
+  proportions. The network is never told what the components are.
 
 | input | value | source |
 |---|---|---|
-| seven components with `Pc` (psia), `Tc` (R) and **acentric factor** | CO2, C1, C2, C3, C4, C5, C10 — `src/sfp/components.py` | `Models/3 - Two-phase flash calculation.pdf`, **pp. 14–15** |
-| K-value correlation | `K_i = (p_ci/p)·exp[5.37(1+ω_i)(1 − T_ci/T)]` | same file, p. 4 and the box on p. 14 |
-| Rachford-Rice, phase test, phase compositions | `h(F_V) = Σ z_i(K_i−1)/[F_V(K_i−1)+1] = 0` | same file, pp. 2, 7, 8, 11 |
-| composition rule | `z_i = n_i / Σ n_j` from integer mole charges | same file, p. 2, and the `ni` → `zi` columns on p. 14 |
-| pressure / temperature window | 610–680 R (150–220 °F), 2–4000 psia | span of the flash states printed on pp. 14–18 |
+| seven components with `Pc` (psia), `Tc` (R), acentric factor | `src/sfp/components.py` | `Models/3 - Two-phase flash calculation.pdf`, pp. 14–15 |
+| K-values | `K_i = (p_ci/p)·exp[5.37(1+ω_i)(1 − T_ci/T)]` | same file, p. 4 and p. 14 |
+| Rachford-Rice, phase test, phase compositions, bubble/dew points | `h(F_V) = Σ z_i(K_i−1)/[F_V(K_i−1)+1] = 0` | same file, pp. 2, 7, 8, 11–13 |
+| composition rule | `z_i = n_i / Σ n_j` from integer mole charges | same file, p. 2 and p. 14 |
+| pressure / temperature window | 610–680 R (150–220 °F), 2–4000 psia | span of the states printed on pp. 14–18 |
 | network, training loop, standardisation | `simpleFFN`, `train`/`validate`, `apply_standardization` | `Day01-Intro_DL_FFNs_and_Colab_morning_solutions.ipynb`, cells 21–41 |
 | physics-informed loss | data MSE + `λ·mean[h(NN(x))²]` | `Day13-SciML_morning.pdf`, slide 37 |
 
-No external dataset, property table, equation of state, scientific method or
-model architecture is used.
-[`docs/SOURCE_MAP.md`](docs/SOURCE_MAP.md) traces each item to a page or a
-notebook cell; its **§0** records the page-by-page OCR sweep of all 139 pages
-of `Models/` behind those references, and its **§5** lists the ordinary
-experiment settings that are project choices — mole-charge range, sample
-counts, split proportions, seeds, network width — documented as choices, not
-as anything the course prescribed.
-[`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) is the full caveat list.
+No external dataset, property table or equation of state is used.
+[`docs/SOURCE_MAP.md`](docs/SOURCE_MAP.md) traces each item to a page or cell
+and lists every project choice. The 2026 revision adds one statistical method
+from outside the course material, a resampling of test mixtures, used only to
+describe evaluation-set dependence (§5 there). The reference solver's
+agreement with the three worked examples is in
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md).
 
----
+## 2. The original benchmark (September 2026, unchanged)
 
-## 2. Verification against the notes' worked examples
-
-`scripts/verify_flash.py` → `results/metrics/verify_flash.json`. Differences
-are reported as measured.
-
-| case | what the notes print | measured here |
-|---|---|---|
-| **A** p. 14 — bubble/dew point of the 7-component mixture at 150 °F | `p_b = 1590.8769` psia, `p_d = 1.9995691` psia | `1590.8767` psia (rel. diff **1.3e−07**), `1.9995763` psia (rel. diff **3.6e−06**); closure `Σ z_iK_i = 1.000000` at `p_b`, `Σ z_i/K_i = 1.000000` at `p_d` |
-| **B** p. 15 — full flash at 796.43821 psia, 180 °F | seven `K_i`; `f_v = 0.1917145`; `x_i`, `y_i` | every `K_i` within 1e−05 of the printed 5 d.p. (one component differs by one unit in the last place); `F_V = 0.1916985`, difference **−1.6e−05**; `max\|x − x_notes\| = 7.1e−06`, `max\|y − y_notes\| = 3.9e−05` |
-| **C** pp. 16–18 — C1/nC10 binary | phase labels; `F_V = 0.457`, `x = (0.263, 0.737)`, `y = (0.999, 0.001)` | labels agree; bisection root `0.4588879`, matching **both** closed forms the notes derive (pp. 17, 18) to 1e−09; `x = (0.2626, 0.7374)` |
-
-### Case B: the cause of the 1.6e−05 difference is not established
-
-The sheet's own `Target` cell prints a non-zero residual, `9.89E-06`, so it
-stopped short of the root — consistent with a difference of this size. But the
-residual measured here at the sheet's `f_v` is `−5.19e−05`, and that value is
-not reproduced by any combination of the printed (5 d.p.) or recomputed `K`
-with the printed (8 d.p.) or recomputed `z`. The sheet's own `y` column also
-sums to 0.99996 rather than 1. Something beyond the stopping tolerance
-differs; the evidence here does not identify it, so the difference is reported
-rather than attributed.
-
-### Case C: neglecting K₂ reproduces the printed 0.457
-
-The two closed forms the notes derive (pp. 17, 18), evaluated with both
-K-values, agree with the bisection at `0.4588879`. `K₂ = 0.0029` is about
-0.3 % of 1. Neglecting it against 1 in those forms gives
-
-```
-(z₁K₁ − 1)/(K₁ − 1) = (0.6×3.8 − 1)/(3.8 − 1) = 1.28/2.8 = 0.4571428…
-```
-
-which to three decimals is **0.457**, the value the notes print. The full
-expression gives 0.4588879, which to three decimals is 0.459, so the printed
-figure is not the full expression rounded. The same neglect is also consistent
-with their `x = (0.263, 0.737)`, and their `y₁ = 0.999` is `0.263 × 3.8`
-recomputed from the already-rounded `x₁`, with `y₂ = 1 − 0.999`.
-
-**The notes do not state this approximation.** It is offered as the numerical
-explanation consistent with every figure they print, not as a claim about what
-was done. Nothing was adjusted to force agreement: the inputs are the notes'
-own `z` and `K`.
-`tests/test_flash.py::test_neglecting_K2_reproduces_the_printed_0457` asserts
-the arithmetic.
-
----
-
-## 3. Results
-
-**Dataset.** 60,000 two-phase states generated from **3,000 mixtures**, split
-**by mixture** 60/20/20:
-
-| partition | states | mixtures |
-|---|---|---|
-| train | 36,000 | 1,800 |
-| validation | 12,000 | 600 |
-| **test (held out)** | **12,000** | **600** |
-| pressure extrapolation, 2000–4000 psia | 7,931 | 401 |
-
-Zero mixtures are shared between train and test
-(`results/metrics/dataset.json`).
-
-**Model.** `simpleFFN`, 9 inputs → 3 × 128 hidden → 1, **34,433 parameters**,
-Adam, `nn.MSELoss`, 200 epochs, three seeds per variant. `F_V` is
-dimensionless, so every error below is in absolute vapour-fraction units.
+60,000 two-phase states from 3,000 mixtures, split by mixture: 36,000 / 12,000 /
+12,000 rows (1,800 / 600 / 600 mixtures). The extrapolation set has 7,931 rows
+from 401 mixtures at 2000–4000 psia. `simpleFFN`, 9 → 3 × 128 → 1 (34,433
+parameters), Adam, 200 epochs, three seeds per variant.
 
 | model | test RMSE | test R² | extrapolation RMSE | extrapolation R² |
 |---|---|---|---|---|
@@ -144,209 +131,171 @@ dimensionless, so every error below is in absolute vapour-fraction units.
 | FFN, data loss only | 0.00636 ± 0.00026 | 0.99948 | **0.00835 ± 0.00197** | 0.9838 |
 | FFN, data + Rachford-Rice loss | **0.00535 ± 0.00029** | 0.99963 | 0.00972 ± 0.00197 | 0.9783 |
 
-**What `mean ±` means.** The mean is the arithmetic mean over seeds 0, 1, 2 of
-the per-seed metric; the ± is the **population standard deviation
-(`ddof = 0`)** of those three values. It is not a standard error and not a
-confidence interval: the dataset and the split are identical across seeds, so
-it measures only variability from a different random initialisation and
-shuffling order. Per-seed numbers are in `results/metrics/evaluation.json`
-under `models`; the baseline is scored on exactly the same rows by exactly the
-same function as the networks.
+Mean over seeds 0, 1, 2 and the population standard deviation (`ddof = 0`);
+the spread measures training-run variability only. Every number is in
+`results/metrics/evaluation.json` (185 values, per seed and summarised). In
+October 2026 these were reproduced **bit for bit** from the saved dataset and
+models ([`results/original_2026-09-21/`](results/original_2026-09-21/)).
 
-### Findings, both kept visible
+![Parity on the test mixtures](results/figures/fig2_parity_test.png)
 
-1. **In range, the physics term improved the test result**: RMSE 0.00636 →
-   0.00535, a **15.9 % reduction** on 600 held-out mixtures, about three times
-   the seed-to-seed spread. The Rachford-Rice residual of the predictions
-   falls with it (mean `h²` 6.0e−04 → 3.3e−04).
-2. **On the reported pressure-extrapolation set, it did not**: RMSE 0.00835 →
-   0.00972, **16.4 % worse**. That difference is about the same size as the
-   seed spread on either variant (± 0.00197), so it is a change of sign rather
-   than a firmly separated effect — but it is the measured result.
-3. **More training mixtures reduced the error at every size tried**: 225 / 450
-   / 900 / 1,800 training mixtures give test RMSE 0.02329 / 0.01554 / 0.01065
-   / 0.00629, still falling at the largest. Only one width and depth were
-   tried, so this does **not** establish that network capacity is unimportant.
-4. **Speed is not the reason to build this surrogate.** Over all 12,000 test
-   states on the same 2-core CPU the bisection takes ~30 ms and one forward
-   pass ~10–24 ms; repeated measurements on this container span about 1.2× to
-   3.1×, moving with machine load. A 1-D bisection on a scalar monotone
-   equation is already cheap.
+## 3. What the 2026 extension found
 
-Figures in `results/figures/`, every number in `results/metrics/*.json`, every
-run's record in `logs/`.
+* **Errors by window position** ([`docs/ERROR_ANALYSIS.md`](docs/ERROR_ANALYSIS.md)).
+  Each row's position in its two-phase window is `ξ = ln(p/p_d)/ln(p_b/p_d)`,
+  from the notes' Wilson bubble and dew points: 0 at the dew point, 1 at the
+  bubble point.
+  * The 5 % of test rows nearest the dew point hold 45–58 % of the squared
+    error (data loss; 41–56 % with the physics loss) and 56–78 % of each
+    model's worst 1 % of errors. Their RMSE is 3.6 to 5.1 times that of the
+    middle 90 %.
+  * Seed by seed, the physics loss lowered the test error by 8.3, 15.1 and
+    23.8 %. Over 2,000 resamplings of the test mixtures, the central 95 % of
+    each difference stays below zero.
+  * On extrapolation the same comparison gave +18.6, −25.3 and +81.8 %.
+  * Every extrapolation row lies near the bubble point (`ξ > 0.8`). There the
+    error grows *away* from the boundary.
+* **Capacity** ([`docs/CAPACITY.md`](docs/CAPACITY.md)).
 
----
+  | width | parameters | best validation MSE | test RMSE | extrapolation RMSE | s / epoch |
+  |---|---|---|---|---|---|
+  | 3 × 64 (**selected**) | 9,025 | 5.16e−05 | 0.00638 | 0.0073 | 0.86 |
+  | 3 × 128 (original) | 34,433 | 5.62e−05 | 0.00636 | 0.0084 | 1.08 |
+  | 3 × 192 | 76,225 | 5.72e−05 | 0.00672 | 0.0097 | 1.27 |
 
-## 4. Setup
+  The selection rule — the smallest width within 10 % of the best mean
+  validation MSE — was committed before any of these models was scored. The
+  test set, already published for 3 × 128, is reported as an established
+  benchmark, not used to choose.
+* **Guarded prediction** ([`docs/GUARDED_PREDICTION.md`](docs/GUARDED_PREDICTION.md)).
+  The domain was checked against the training data. Pressure (≤ 2000 psia) and
+  temperature (610–680 R) match the earlier review's limits. Composition does
+  not: the generator permits 0.004–0.87 per component, but the training rows
+  contain only up to 0.43–0.48, so the realised ranges are used.
 
-Python 3.10+ (3.11 used). From this folder, either:
+![Error across the two-phase window](results/figures/fig6_error_across_window.png)
 
-```bash
-conda env create -f environment.yml
-conda activate flash-surrogate
+## 4. Using the guarded predictor
+
+```python
+import sys; sys.path.insert(0, "src")
+from sfp.predict import FlashSurrogate
+s = FlashSurrogate()                                   # default: validation-best saved model
+r = s.predict([0.0387597, 0.1937984, 0.0775194, 0.1162791, 0.1085271, 0.1550388, 0.3100775],
+              796.43821, 640.0)                        # mole fractions, psia, degrees Rankine
+print(r.FV, r.phase, r.method)                         # 0.1923 two_phase network
 ```
 
-or
+The `method` field says what produced the value: `network`,
+`single_phase`, `phase_boundary`, `reference_solver_fallback`,
+`network_extrapolation` (only on request) or `none`. Malformed input raises
+`InputError`. Nothing is normalised or converted silently.
 
-```bash
-pip install -r requirements.txt
-```
+## 5. Reproduce and check
 
-`requirements-lock.txt` and `results/metrics/environment.json` record the exact
-versions the reported run used (numpy 2.4.4, torch 2.14.0, matplotlib 3.10.9).
-
-### Starting command
-
-From this folder (`properties-of-subsurface-fluids/Subsurface_DL_Project`):
-
-```bash
-jupyter notebook notebooks/flash_surrogate.ipynb
-```
-
-Nothing needs to be trained first: the dataset and the six model weights are in
-the repository, and the notebook recomputes every reported metric from them in
-under a minute. The quick checks, without the notebook:
-
-```bash
-python scripts/verify_flash.py     # solver vs the notes' three worked examples
-python tests/run_tests.py          # 14 tests
-python scripts/evaluate.py         # recomputes results/metrics/evaluation.json from the saved models
-```
-
-`evaluate.py` overwrites `results/metrics/evaluation.json` and the figures;
-every metric except the timing reproduces exactly.
-
-### Reproducing the whole thing from nothing
-
-About **45 minutes on two CPU cores**, no GPU:
-
-```bash
-python scripts/verify_flash.py          # <1 s   solver vs the three worked examples
-python tests/run_tests.py               # ~40 s  14 tests
-python scripts/make_dataset.py          # ~60 s  rewrites data/flash_dataset.npz
-
-# the six reported models, ~4 min each
-python scripts/train.py --physics 0 --seed 0 --epochs 200 --hidden 128 128 128
-python scripts/train.py --physics 1 --seed 0 --epochs 200 --hidden 128 128 128
-python scripts/train.py --physics 0 --seed 1 --epochs 200 --hidden 128 128 128
-python scripts/train.py --physics 1 --seed 1 --epochs 200 --hidden 128 128 128
-python scripts/train.py --physics 0 --seed 2 --epochs 200 --hidden 128 128 128
-python scripts/train.py --physics 1 --seed 2 --epochs 200 --hidden 128 128 128
-
-python scripts/learning_curve.py        # ~8 min
-python scripts/evaluate.py              # ~30 s  metrics + figures
-python scripts/record_environment.py    # records the versions actually used
-```
-
-The commands work the same on Windows, macOS and Linux.
-`configs/experiment.json` holds the same settings in one place;
-`scripts/run_all.sh` runs the sequence end to end where `bash` is available,
-and `build_notebook.py` regenerates the notebook from source.
-
----
-
-## 5. Repository layout
-
-```
-notebooks/flash_surrogate.ipynb   the project, start here (executed, with outputs)
-configs/experiment.json           the settings behind every reported number
-src/sfp/components.py             the component table, transcribed from pp. 14-15
-src/sfp/flash.py                  Wilson K-values, Rachford-Rice, bisection, phase test
-src/sfp/data.py                   composition rule, sampling window, split-by-mixture, scaler
-src/sfp/nn.py                     simpleFFN, training loop, Rachford-Rice residual in torch
-scripts/verify_flash.py           solver vs the three worked examples in the notes
-scripts/make_dataset.py           dataset + grouped split
-scripts/train.py                  one model (--physics 0|1, --seed)
-scripts/learning_curve.py         test error against number of training mixtures
-scripts/evaluate.py               metrics and figures
-scripts/record_environment.py     writes requirements-lock.txt + environment.json
-data/flash_dataset.npz            dataset, incl. `moles`, `realisation` and the split indices
-results/checkpoints/*.pt          six model weights + their fitted scaler
-results/metrics/*.json            per-seed and summary metrics, dataset report, verification
-tests/                            14 tests: tests/run_tests.py (or pytest)
-docs/SOURCE_MAP.md                every equation and property value traced to a page or cell
-docs/LIMITATIONS.md               assumptions, caveats, and what was superseded
-logs/                             console output of the reported run
-LICENSE                           MIT, for the code in this folder
-```
-
-The course material is **not** in this repository. It is cited by page and
-notebook cell instead (see §8).
-
----
+* **Check the recorded results** (about a minute; no training): the commands in
+  the overview. CI (`.github/workflows/subsurface-dl.yml`) runs them on every
+  change to this folder. It uses Python 3.11 with the pinned CPU-only PyTorch
+  2.14.0 (`requirements-ci.txt`).
+  * It runs the flash verification, all tests, the evaluation of the six
+    saved models, the training-domain derivation, the guarded-prediction cases,
+    the error analysis and the capacity scoring.
+  * It compares every number with the recorded files, including the 185
+    original metrics, with `rtol = 1e-6` and `atol = 1e-6`.
+  * Statuses, keys and labels must match exactly. Timings, timestamps and
+    figure pixels are excluded.
+  * The tolerances are measured, not guessed.
+    `scripts/ulp_sensitivity.py` moves every float32 prediction by one and
+    three units in the last place and records how far each number moves
+    (`results/reproducibility/`).
+* **Rebuild everything from nothing** (the recorded training runs alone add up
+  to about an hour on 2–4 CPU cores, no GPU): `bash scripts/run_all.sh`. It regenerates the dataset, retrains the
+  six original and six capacity models, and reruns every analysis.
+  `configs/experiment.json` and `configs/capacity.json` hold the settings.
+* **Environments.** `requirements.txt` gives the packages. `requirements-lock.txt`
+  and `environment.yml` give the versions of the recorded 2026-09-21 run.
+  `requirements-ci.txt` is the pinned CPU-only set.
 
 ## 6. Limitations
 
-Summarised here; the full list is in
-[`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
+Summarised; the full list is [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
 
-* Synthetic benchmark: no measurements, no claim about real VLE.
+* Synthetic benchmark: no measurements, no claim about real VLE or field
+  accuracy.
 * The EoS route to K-values is outside the chosen scope.
-* Component constants used exactly as printed, including three that look
-  unusual next to the other four; correcting them would need an outside table.
-* One fixed component set; two-phase states only.
-* The extrapolation set is **selected** — at 2000–4000 psia many mixtures have
-  no two-phase state, so its composition distribution is shifted and its mean
-  `F_V` is much lower than in training.
-* Three seeds indicate whether an effect exceeds seed scatter; they are not a
+* The component constants are used exactly as printed, including three that
+  look unusual.
+* One fixed component set. The network covers two-phase states only, and the
+  guarded predictor handles everything else.
+* The extrapolation set is **selected**: at 2000–4000 psia many mixtures have
+  no two-phase state.
+* Three seeds show whether an effect exceeds seed scatter. They are not a
   significance test.
-* The learning curve shows that more mixtures helped at this architecture; it
-  does not separate data from capacity.
+* The guarded predictor's domain checks are marginal.
+* The capacity comparison covers one depth and three widths; the physics loss
+  was tested at 3 × 128 only.
+* Speed is not the reason to build this surrogate. On 12,000 test states,
+  bisection takes about 30 ms and one forward pass about 3–21 ms, depending on
+  width and machine load.
 
----
+## 7. Version history
 
-## 7. Where the results were produced and verified
+| version | date | what it is |
+|---|---|---|
+| Coursework | during the MSc | the project for CHEN60492 *Properties of Subsurface Fluids* and the Deep Learning module |
+| Rebuilt and published | run 2026-09-21, published 2026-09-27 | rebuilt on the course sources alone (Wilson table, notes' composition rule). Six models and 185 metrics (`results/original_2026-09-21/` identifies them) |
+| **Extended and re-verified** | **2026-10-04** | baseline reproduced bit for bit, then extended: guarded prediction, error analysis across the two-phase window, bounded capacity comparison, project CI with measured tolerances. No original result was changed or retrained |
 
-**Reported run.** Every number in this README and in the notebook was produced
-on **21 September 2026** in a cloud Linux container (2 vCPU, no GPU,
-Python 3.11, PyTorch 2.14.0 on CPU). The exact package versions are in
-`requirements-lock.txt` and `results/metrics/environment.json`; every metrics
-file also records its `torch_version` and `device`.
+Two earlier versions were superseded during the September rebuild, and an
+earlier CO₂-storage version used external reference data. None of them is in
+this repository (`docs/LIMITATIONS.md` §8).
 
-**Publication check.** Before publication, a fresh copy of this folder was run
-in a new virtual environment built only from `requirements.txt` (which
-resolved torch 2.14.0, numpy 2.4.6, matplotlib 3.11.2), again in a cloud Linux
-container:
+## 8. Repository layout
 
-* `scripts/verify_flash.py` — PASS on all three worked examples;
-* `tests/run_tests.py` — 14 passed, 0 failed;
-* `scripts/evaluate.py` — recomputed from the packaged dataset and the six
-  saved models, all 185 metric values in `results/metrics/evaluation.json`
-  matched the published file exactly; only the timing differs between runs;
-* `notebooks/flash_surrogate.ipynb` — executed end to end, 19 of 19 code
-  cells, no errors, same results table.
+```
+notebooks/flash_surrogate.ipynb   the whole study, executed, with outputs
+src/sfp/components.py, flash.py   the component table; Wilson, Rachford-Rice, phase test, bubble/dew points
+src/sfp/data.py, nn.py            dataset, split by mixture, scaler; simpleFFN, training loop, physics term
+src/sfp/predict.py                the guarded public prediction path
+scripts/verify_flash.py           reference solver vs the notes' worked examples
+scripts/make_dataset.py, train.py, learning_curve.py, evaluate.py   the original study
+scripts/derive_domain.py, guarded_demo.py, analyse_errors.py, capacity.py   the 2026 extension
+scripts/compare_results.py, ulp_sensitivity.py   numerical comparison and its tolerances
+configs/                          experiment, capacity (frozen) and prediction-domain settings
+data/flash_dataset.npz            dataset with mixture index and split
+results/checkpoints/, metrics/, figures/   the original six models, metrics and figures 1-5
+results/analysis/, capacity/, guarded/, reproducibility/, figures/fig6-9   the 2026 extension
+results/original_2026-09-21/      hashes of the original files and the record of their reproduction
+tests/                            48 tests: tests/run_tests.py (or pytest)
+docs/                             verification, error analysis, capacity, guarded prediction,
+                                  limitations, source map, review checklist
+```
 
-The project has not been run natively on Windows. The NumPy-only verification
-script was additionally run in the Linux workspace of the author's Windows
-desktop and gave identical output.
+The course material is not in this repository; it is cited by page and cell.
 
-Earlier runs of this project were superseded twice — first when the acentric
-factors were found in the teaching material, then when Dirichlet composition
-sampling was replaced by the notes' own `z_i = n_i / Σ n_j` construction. Both
-times the whole workflow was re-run and the metrics replaced; neither earlier
-run is included here. `docs/LIMITATIONS.md` §8 records what changed.
-
----
-
-## 8. Author and attribution
+## 9. Author and attribution
 
 Abdelghafar Fouda — MSc Subsurface Energy Engineering, University of
 Manchester.
 
 The flash model, the component table and the worked examples come from the
-CHEN60492 *Properties of Subsurface Fluids* notes (Dr Masoud Babaei,
-University of Manchester); the notes credit their seven-component example
-(pp. 14–15) to a Texas A&M PETE 310 spreadsheet. The network, training loop and
+CHEN60492 *Properties of Subsurface Fluids* notes (Dr Masoud Babaei, University
+of Manchester); the notes credit their seven-component example (pp. 14–15) to
+a Texas A&M PETE 310 spreadsheet. The network, training loop and
 standardisation follow the Deep Learning module's PyTorch notebooks, and the
-physics-informed loss follows its *Introduction to Scientific Machine
-Learning* slides (Dr Ben Moseley). No teaching material is redistributed here;
-[`docs/SOURCE_MAP.md`](docs/SOURCE_MAP.md) cites each item by file, page or
-notebook cell so it can be checked against the originals.
+physics-informed loss follows its *Introduction to Scientific Machine Learning*
+slides (Dr Ben Moseley). No teaching material is redistributed here;
+[`docs/SOURCE_MAP.md`](docs/SOURCE_MAP.md) cites each item.
 
+AI assistance was used substantially in writing the code and documentation of
+the September 2026 version; the scope, the source restriction, the
+corrections and the reported results were directed and checked by the author.
+The October 2026 extension was implemented with an AI coding assistant
+(Claude, Anthropic) at the author's direction. That covers the baseline
+reproduction, the guarded predictor, the analyses, the capacity runs, CI and
+this documentation, including an AI-run adversarial review of the predictor.
+Every number in it is produced by the scripts named above and checked by CI.
 NumPy, PyTorch, Matplotlib and Jupyter are used under their own open-source
-licences. AI assistance was used substantially in writing the code and
-documentation; the scope, the source restriction, the corrections and the
-reported results were directed and checked by the author.
+licences.
 
 Licence: MIT (see [`LICENSE`](LICENSE)).

@@ -27,9 +27,12 @@ r.FV, r.status, r.phase, r.method, r.domain_violations, r.model, r.message
    with a one-line explanation. Nothing is normalised, reordered or converted.
    * The composition must be seven mole fractions in the order of the notes'
      table (pp. 14–15): `CO2, C1, C2, C3, C4, C5, C10`. Alternatively, give a
-     mapping from exactly those names. A different number of components is
-     refused. The message says that other mixtures, such as the notes' C1/nC10
-     binary, can be flashed with `sfp.flash`.
+     mapping from exactly those names, with one value per component, or one
+     sequence of values per component for a batch. A different number of
+     components is refused. The message says that other mixtures, such as the
+     notes' C1/nC10 binary, can be flashed with `sfp.flash`.
+   * Only real numbers are accepted. Booleans, text, complex numbers, `None`
+     and ragged batches are refused, not converted.
    * A stated `components_order` must equal the notes' order.
    * Values must be finite. Mole fractions must be non-negative and sum to one
      within 1e−6; they are **not** normalised.
@@ -38,14 +41,22 @@ r.FV, r.status, r.phase, r.method, r.domain_violations, r.model, r.message
      (`T[R] = T[°F] + 460`, the notes' convention).
 2. **The course phase test** — `classify_phase`, with Wilson K-values (notes
    p. 4, p. 8, p. 11). Because Wilson's `K` is proportional to `1/p`,
-   `Σ z_iK_i = p_b/p` and `Σ z_i/K_i = p/p_d`.
+   `Σ z_iK_i = p_b/p` and `Σ z_i/K_i = p/p_d`. The sums are compared with
+   `Σ z_i` rather than with 1, which is the Rachford-Rice function at its two
+   ends, `h(0)` and `h(1)` (p. 8). A composition accepted within the 1e−6
+   tolerance is therefore classified exactly as its normalised counterpart, and
+   it is still not normalised. Components with `z_i = 0` contribute nothing.
+   Conditions so extreme that a present component's K-value overflows or
+   underflows are refused.
    * `Σ z_iK_i < 1`: **liquid**, `F_V = 0`.
    * `Σ z_i/K_i < 1`: **vapour**, `F_V = 1`.
    * `|Σ z_iK_i − 1| ≤ 1e−9`: **bubble point**, `F_V = 0` (p. 12).
    * `|Σ z_i/K_i − 1| ≤ 1e−9`: **dew point**, `F_V = 1` (p. 13).
-   * Both sums equal to one: **indeterminate**, returned as `unsupported` with
-     no value. This happens only when every `K_i` of a component present equals
-     1 — for example a pure component at its own Wilson vapour pressure.
+   * Both sums equal to one (within 1e−9): **indeterminate**, returned as
+     `unsupported` with no value. The bubble and dew points then coincide:
+     every `K_i` of a component present is 1, as for an (effectively) pure
+     component at its own Wilson vapour pressure, and `p` and `T` do not fix a
+     vapour fraction.
    * The network is never called for any of these.
 3. **The training domain** — `TrainingDomain`, from
    `configs/prediction_domain.json` (§3). A two-phase state inside every range
@@ -129,7 +140,28 @@ Two examples show the hazard. The bare network calls an all-vapour state
 92 % vapour, and it gives a definite answer for a pure component at its
 vapour pressure, where no vapour fraction is defined.
 
-## 5. The notes' binary example
+## 5. How it was checked
+
+`tests/test_predict.py` holds 34 tests of this path; the whole suite has 48.
+After the first version, an adversarial review was run. Four reviewers
+covered input validation, phase logic, the domain and metadata, and the tests
+themselves; a sceptic then re-ran every finding against the code. It
+confirmed 16 defects, all fixed:
+
+* named compositions holding per-state values were read transposed;
+* booleans and complex numbers were converted instead of refused;
+* the phase test compared with 1 rather than `Σ z_i`;
+* underflowed K-values of absent components produced NaN;
+* scalar pressures were not applied to every row of a batch in the domain
+  check;
+* several messages were imprecise;
+* tests were not tied to the source of each route's value. Mutation testing
+  showed that a network answer computed by the solver, or a batch with
+  misaligned rows, would still have passed.
+
+Tests for each of these are now included.
+
+## 6. The notes' binary example
 
 The C1/nC10 binary of notes pp. 16–18 verifies the **reference calculation**
 (`scripts/verify_flash.py`, case C: the bisection reproduces both of the notes'

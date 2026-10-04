@@ -54,7 +54,7 @@ is zero for an exact flash.
 * **The errors are concentrated next to the dew point.** The 5 % of test rows
   nearest it hold **45–58 % of the squared error** of the data-only models (mean
   51 %) and 56–78 % of each model's worst 1 % of errors. Their RMSE, 0.015–0.022,
-  is four to five times the RMSE elsewhere. This confirms the earlier
+  is 3.6 to 5.1 times the RMSE of the middle 90 %. This confirms the earlier
   observation that about half the squared error sits there.
 * **The bubble-point side is not a problem area.** The 5 % of rows nearest the
   bubble point hold 0.7–2.6 % of the squared error and none of the worst 1 % of
@@ -84,8 +84,8 @@ on the same rows (`results/analysis/physics_vs_data_only.csv`).
 **What this supports.**
 
 * **In range, the physics loss helped in all three seeds** (−8.3 %, −15.1 %,
-  −23.8 %). For each seed, resampling the test mixtures leaves the difference
-  on the same side of zero.
+  −23.8 %). For each seed, the central 95 % of the resampled differences lies
+  below zero (in seed 0, 99.8 % of the resamples favour the physics loss).
 * **Where the improvement came from depends on the seed.** In seed 0 the dew
   band accounts for more than all of it (135 %, while the middle got slightly
   worse). In seed 2 it accounts for 64 %, and in seed 1 for only 17 %. "Most of

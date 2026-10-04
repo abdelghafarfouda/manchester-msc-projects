@@ -176,7 +176,7 @@ Added in the October 2026 revision (extension and re-verification), also project
 | boundary bands, groups, worst errors | 5 % of test rows nearest each boundary; 20 equal-count groups; largest 1 % of errors | how the error is summarised |
 | **mixture bootstrap** | 2,000 resamples of whole test mixtures, seed 20261004 | a standard statistical resampling, **not taken from the course material**. It is used only to describe how a comparison of two fixed models depends on which mixtures are in the evaluation set. It adds no physics and no model |
 | capacity comparison | widths 3 × 64 and 3 × 192 beside the original 3 × 128; seeds 0–2; selection by mean validation MSE with a 10 % margin (`configs/capacity.json`) | a bounded check of the original width choice |
-| CI tolerances | relative 1e-6, absolute 1e-12 | reproducibility checking (`scripts/compare_results.py`) |
+| CI tolerances | original 185 metrics and other reported metrics: relative 1e-6, absolute 1e-6; derived analysis tables (bands, groups, bootstrap): relative 1e-4, absolute 2e-6 | reproducibility checking (`scripts/compare_results.py`); the absolute values are set from measured one- and three-ULP float32 sensitivity (`results/reproducibility/ulp_sensitivity.json`) |
 
 Two further facts belong here rather than in a footnote:
 

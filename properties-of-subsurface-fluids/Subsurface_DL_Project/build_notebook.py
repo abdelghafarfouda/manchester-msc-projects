@@ -506,13 +506,14 @@ Both variants sit far below the training-mean baseline, which is the sanity
 floor. Two findings, both reported:
 
 * **In range, the physics term improved the test result.** Test RMSE falls by
-  about a quarter, several times the seed-to-seed spread, and the
-  Rachford-Rice residual of the predictions falls with it.
+  about 16 % (printed above), about three times the seed-to-seed spread, and
+  the Rachford-Rice residual of the predictions falls with it.
 * **On the reported pressure-extrapolation set, it did not.** There the
-  physics-trained models are worse on average. That difference is about the
-  same size as the seed-to-seed spread on either variant, so it is a change of
-  sign rather than a firmly separated effect — but it is the measured result
-  and it is reported as such. Whatever the residual term buys in range,
+  physics-trained models are worse on average, and worse in two of the three
+  seeds (§4.2). The average difference is about the same size as the
+  seed-to-seed spread on either variant, so it is a change of sign rather
+  than a firmly separated effect — but it is the measured result and it is
+  reported as such. Whatever the residual term buys in range,
   robustness at 2000–4000 psia is not part of it in this benchmark.
 """)
 
@@ -647,7 +648,7 @@ for name in sets:
         d_ = ea**2 - eb**2
         ch = 100 * (np.sqrt((eb**2).mean()) / np.sqrt((ea**2).mean()) - 1)
         print(f"  {name:>13} seed {seed}: RMSE {ch:+6.1f} %   dew-band share of the change "
-              f"{d_[XI[name] <= dew_max].sum() / d_.sum():6.1%}")
+              f"{d_[XI[name] <= dew_max].sum() / d_.sum() + 0.0:6.1%}")
 """)
 
 code(r"""
@@ -829,9 +830,15 @@ md(r"""
 * A feed-forward network of the size taught in the course reproduces the
   taught flash calculation, on the module's own component table, for unseen
   compositions at the accuracy reported in §4, with the split done by mixture.
+* Its errors are concentrated next to the **dew point**: about half of the
+  squared error sits in the 5 % of test rows nearest it (§4.2).
 * Adding the Rachford-Rice residual to the loss improved the in-range test
-  result and did not improve the reported pressure-extrapolation result.
-* More training mixtures reduced the error at every size tried.
+  result in every seed, but on the pressure-extrapolation set it made the
+  error worse in two of the three seeds.
+* A network a quarter of the size (3 x 64) matches 3 x 128 on the test set and
+  is the one the frozen validation rule selects (§6).
+* The guarded prediction path applies the phase test first and calls the
+  network only inside its training domain (§7).
 
 **Does not.**
 
@@ -840,17 +847,17 @@ md(r"""
   The notes give Wilson's original validity as below 500 psia and then use it
   in their own examples up to 4000 psia; this project follows the notes.
 * Cover the equation-of-state route to $K$-values, which is outside the scope
-  chosen here.
+  chosen here (a separate future study).
 * Correct the component constants. They are used exactly as printed.
 * Transfer to another component set: one fixed set of seven components in
   varying proportions, with the network never told what the components are.
-* Decide whether a mixture splits — two-phase states only, with the phase test
-  of p. 8 applied beforehand.
+* Certify coverage: the guarded predictor's domain checks are marginal, one
+  variable at a time.
 * Give a random out-of-distribution sample: at 2000–4000 psia many mixtures
   have no two-phase state, so the extrapolation set is selected.
 * Establish significance. Three seeds show whether an effect exceeds seed
   scatter; the ± is a standard deviation over seeds and nothing more.
-* Separate data from capacity, as §5 notes.
+* Extend the physics-loss finding beyond the 3 x 128 network it was measured on.
 
 `docs/LIMITATIONS.md` carries the full list. `docs/SOURCE_MAP.md` traces every
 equation, property value, architecture and loss term to a page or a notebook
