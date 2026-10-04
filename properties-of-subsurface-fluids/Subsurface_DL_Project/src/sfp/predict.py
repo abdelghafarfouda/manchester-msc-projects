@@ -44,7 +44,7 @@ from __future__ import annotations
 import json
 import math
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass, field
 
 import numpy as np
@@ -64,6 +64,18 @@ BOUNDARY_TOL = 1.0e-9
 
 PRESSURE_UNITS = ("psia",)
 TEMPERATURE_UNITS = ("R", "degR", "Rankine")
+_UNIT_HINTS = {
+    "psig": "p[psia] = p[psig] + the atmospheric pressure (about 14.7 psia)",
+    "MPa": f"p[psia] = p[MPa] x {components.PSIA_PER_MPA}",
+    "kPa": f"p[psia] = p[kPa] x {components.PSIA_PER_MPA / 1000:.7f}",
+    "bar": "p[psia] = p[bar] x 14.50377",
+    "Pa": f"p[psia] = p[Pa] x {components.PSIA_PER_MPA / 1e6:.4e}",
+    "F": "T[R] = T[degF] + 460 (the notes' convention)",
+    "degF": "T[R] = T[degF] + 460 (the notes' convention)",
+    "C": "T[R] = 1.8 T[degC] + 32 + 460 (via degF, the notes' convention)",
+    "degC": "T[R] = 1.8 T[degC] + 32 + 460 (via degF, the notes' convention)",
+    "K": "T[R] = 1.8 T[K] (absolute scales; the notes' degF convention differs by 0.33 R)",
+}
 
 # Values of the ``phase``, ``method`` and ``status`` fields.
 PHASES = ("two_phase", "liquid", "vapour", "bubble_point", "dew_point", "indeterminate")
@@ -82,12 +94,32 @@ class InputError(ValueError):
 # --------------------------------------------------------------------------
 # 1. input validation
 # --------------------------------------------------------------------------
+def _short(value):
+    text = repr(value)
+    return text if len(text) <= 80 else text[:77] + "..."
+
+
 def _as_float_array(value, what):
+    """Real numbers only: booleans, strings, complex numbers, None and ragged
+    nested sequences are refused rather than converted."""
+    if value is None:
+        raise InputError(f"{what} is missing (None)")
     try:
-        arr = np.asarray(value, dtype=float)
-    except (TypeError, ValueError):
-        raise InputError(f"{what} must be numeric; got {value!r}") from None
-    return arr
+        arr = np.asarray(value)
+    except ValueError:
+        raise InputError(f"{what} must be a rectangular array of numbers "
+                         "(every state with the same number of values)") from None
+    if arr.dtype.kind == "O":
+        if any(not isinstance(v, (int, float, np.integer, np.floating)) or isinstance(v, bool)
+               for v in arr.ravel()):
+            raise InputError(f"{what} must contain real numbers only, in a rectangular array; "
+                             f"got {_short(value)}")
+        arr = arr.astype(float)
+    if arr.dtype.kind not in "iuf":
+        kind = {"b": "booleans", "U": "text", "S": "text", "c": "complex numbers"}.get(
+            arr.dtype.kind, f"values of type {arr.dtype}")
+        raise InputError(f"{what} must be real numbers, not {kind}; got {_short(value)}")
+    return arr.astype(float)
 
 
 def validate_inputs(z, p_psia, T_R, *, components_order=None,
@@ -106,13 +138,13 @@ def validate_inputs(z, p_psia, T_R, *, components_order=None,
     """
     names = components.NAMES
     if pressure_unit not in PRESSURE_UNITS:
-        raise InputError(
-            f"pressure must be given in psia (got unit {pressure_unit!r}); convert it "
-            f"first, e.g. p[psia] = p[MPa] x {components.PSIA_PER_MPA}")
+        hint = _UNIT_HINTS.get(str(pressure_unit), "convert it to absolute pounds per square inch")
+        raise InputError(f"pressure must be given in psia (got unit {pressure_unit!r}); "
+                         f"convert it first: {hint}")
     if temperature_unit not in TEMPERATURE_UNITS:
-        raise InputError(
-            f"temperature must be given in degrees Rankine (got unit {temperature_unit!r}); "
-            "convert it first with the notes' convention T[R] = T[degF] + 460")
+        hint = _UNIT_HINTS.get(str(temperature_unit), "the notes use T[R] = T[degF] + 460")
+        raise InputError(f"temperature must be given in degrees Rankine (got unit "
+                         f"{temperature_unit!r}); convert it first: {hint}")
 
     if isinstance(z, Mapping):
         keys = set(z)
@@ -122,10 +154,18 @@ def validate_inputs(z, p_psia, T_R, *, components_order=None,
             raise InputError(
                 f"composition must give exactly the seven components {list(names)}; "
                 f"missing {missing}, unexpected {extra}")
-        z = [z[n] for n in names]
         if components_order is not None:
             raise InputError("components_order applies to sequences, not to a mapping")
+        columns = [_as_float_array(z[n], f"mole fraction of {n}") for n in names]
+        shapes = {c.shape for c in columns}
+        if len(shapes) != 1 or columns[0].ndim > 1:
+            raise InputError("a composition mapping must give every component either one "
+                             "value or a 1-D sequence of the same length (one value per state)")
+        z = np.stack(columns, axis=-1)          # (7,) for one state, (n, 7) for n states
     elif components_order is not None:
+        if isinstance(components_order, (str, bytes)) or not isinstance(components_order, Iterable):
+            raise InputError(f"components_order must be a sequence of the seven component names "
+                             f"{list(names)}; got {_short(components_order)}")
         order = [str(c) for c in components_order]
         if order != list(names):
             raise InputError(
@@ -133,8 +173,13 @@ def validate_inputs(z, p_psia, T_R, *, components_order=None,
                 f"got {order}. Reorder the mole fractions explicitly before calling")
 
     z = _as_float_array(z, "composition")
+    if z.size == 0:
+        raise InputError("no states given")
     if z.ndim not in (1, 2):
         raise InputError(f"composition must have shape (7,) or (n, 7); got {z.shape}")
+    if z.ndim == 2 and z.shape[1] == 1 and z.shape[0] == components.N_COMPONENTS:
+        raise InputError("composition was given as a column of shape (7, 1); pass one state as "
+                         "seven values, shape (7,), or a batch as rows, shape (n, 7)")
     single = z.ndim == 1
     z = np.atleast_2d(z)
     if z.shape[-1] != components.N_COMPONENTS:
@@ -144,8 +189,6 @@ def validate_inputs(z, p_psia, T_R, *, components_order=None,
             "mixtures, such as the C1/nC10 binary of pp. 16-18, can be flashed "
             "directly with sfp.flash")
     n = z.shape[0]
-    if n == 0:
-        raise InputError("no states given")
     if not np.isfinite(z).all():
         raise InputError("composition contains NaN or infinite values")
     if (z < 0.0).any():
@@ -185,27 +228,45 @@ def validate_inputs(z, p_psia, T_R, *, components_order=None,
 def classify_phase(z, p_psia, T_R):
     """Wilson K-values and the phase test of notes p. 8 / p. 11, row by row.
 
+    The test is made on ``SUM z_i K_i / SUM z_i`` and ``SUM (z_i / K_i) / SUM z_i``,
+    i.e. on the Rachford-Rice function at its two ends, ``h(0)`` and ``h(1)``
+    (p. 8), so it does not depend on how the mole fractions were rounded to sum
+    to one.  Components with ``z_i = 0`` contribute nothing.
+
     Returns a dict of arrays: ``phase`` (one of :data:`PHASES`), ``sum_zK``,
     ``sum_z_over_K``, ``p_bubble_psia``, ``p_dew_psia`` and ``K``.  Inputs must
     already be validated (:func:`validate_inputs`).
     """
     T = np.asarray(T_R, float).reshape(-1, 1)
     p = np.asarray(p_psia, float).reshape(-1, 1)
-    K = flash.wilson_k(p, T, components.TC_RANKINE[None, :],
-                       components.PC_PSIA[None, :], components.OMEGA[None, :])
-    s_zk, s_zok = flash.phase_sums(z, K)
-    pb, pd = flash.wilson_saturation_pressures(z, T[:, 0], components.TC_RANKINE,
-                                               components.PC_PSIA, components.OMEGA)
-    on_bubble = np.abs(s_zk - 1.0) <= BOUNDARY_TOL
-    on_dew = np.abs(s_zok - 1.0) <= BOUNDARY_TOL
+    with np.errstate(over="ignore", under="ignore", divide="ignore", invalid="ignore"):
+        K = flash.wilson_k(p, T, components.TC_RANKINE[None, :],
+                           components.PC_PSIA[None, :], components.OMEGA[None, :])
+        present = z > 0.0
+        s_zk = np.where(present, z * K, 0.0).sum(-1)
+        s_zok = np.where(present, z / np.where(present, K, 1.0), 0.0).sum(-1)
+        pb, pd = flash.wilson_saturation_pressures(z, T[:, 0], components.TC_RANKINE,
+                                                   components.PC_PSIA, components.OMEGA)
+    bad = ~(np.isfinite(s_zk) & np.isfinite(s_zok) & (s_zk > 0) & (s_zok > 0))
+    if bad.any():
+        i = int(np.flatnonzero(bad)[0])
+        raise InputError(
+            f"Wilson K-values cannot be evaluated at p = {p[i, 0]:.10g} psia, T = {T[i, 0]:.10g} R "
+            "(they overflow or underflow); these conditions are far outside any range the "
+            "correlation or the network covers")
+    total = z.sum(-1)
+    r_zk, r_zok = s_zk / total, s_zok / total
+    on_bubble = np.abs(r_zk - 1.0) <= BOUNDARY_TOL
+    on_dew = np.abs(r_zok - 1.0) <= BOUNDARY_TOL
     phase = np.full(s_zk.shape, "two_phase", dtype=object)
-    phase[s_zk < 1.0] = "liquid"           # sum z_i K_i <= 1: no vapour can form
-    phase[s_zok < 1.0] = "vapour"          # sum z_i / K_i <= 1: no liquid can form
+    # Cauchy-Schwarz: (sum z K)(sum z/K) >= (sum z)^2, so r_zk and r_zok cannot both be < 1
+    phase[r_zk < 1.0] = "liquid"           # no vapour can form
+    phase[r_zok < 1.0] = "vapour"          # no liquid can form
     phase[on_bubble] = "bubble_point"
     phase[on_dew] = "dew_point"
-    # (sum z_i K_i)(sum z_i / K_i) >= (sum z_i)^2 = 1, with equality only when
-    # every K_i of a component present equals 1: then both sums are 1 and no
-    # split is defined.
+    # both at once: the bubble and dew points coincide within the tolerance -- every
+    # K_i of a component present is 1, e.g. an (effectively) pure component at its
+    # own vapour pressure -- so p and T do not fix a vapour fraction
     phase[on_bubble & on_dew] = "indeterminate"
     return {"phase": phase, "sum_zK": s_zk, "sum_z_over_K": s_zok,
             "p_bubble_psia": pb, "p_dew_psia": pd, "K": K}
@@ -241,24 +302,28 @@ class TrainingDomain:
                    source=os.path.relpath(path, HERE))
 
     def violations(self, z, p_psia, T_R):
+        z = np.atleast_2d(np.asarray(z, float))
+        n = z.shape[0]
+        p_all = np.broadcast_to(np.ravel(np.asarray(p_psia, float)), (n,))
+        T_all = np.broadcast_to(np.ravel(np.asarray(T_R, float)), (n,))
         out = []
-        for zi, p, T in zip(np.atleast_2d(z), np.ravel(p_psia), np.ravel(T_R)):
+        for zi, p, T in zip(z, p_all, T_all):
             v = []
             if p > self.p_max_psia:
                 where = ("inside the reported pressure-extrapolation test (2000-4000 psia), "
                          "where the network's error was measured but it was not trained"
                          if p <= self.p_max_tested_psia else
                          "above every pressure tested, including the extrapolation test")
-                v.append(f"p = {p:g} psia is above the training maximum "
+                v.append(f"p = {p:.10g} psia is above the training maximum "
                          f"{self.p_max_psia:g} psia ({where})")
             elif p < self.p_min_psia:
-                v.append(f"p = {p:g} psia is below the training minimum {self.p_min_psia:g} psia")
+                v.append(f"p = {p:.10g} psia is below the training minimum {self.p_min_psia:g} psia")
             if not self.T_min_R <= T <= self.T_max_R:
-                v.append(f"T = {T:g} R is outside the training range "
+                v.append(f"T = {T:.10g} R is outside the training range "
                          f"{self.T_min_R:g}-{self.T_max_R:g} R")
             for name, x, lo, hi in zip(components.NAMES, zi, self.z_min, self.z_max):
                 if not lo <= x <= hi:
-                    v.append(f"z_{name} = {x:.6g} is outside the training range "
+                    v.append(f"z_{name} = {x:.10g} is outside the training range "
                              f"{lo:.6g}-{hi:.6g}")
             out.append(v)
         return out
@@ -303,8 +368,10 @@ _MESSAGES = {
               "the network was not used",
     "bubble_point": "on the bubble point (sum z_i K_i = 1): F_V = 0; the network was not used",
     "dew_point": "on the dew point (sum z_i / K_i = 1): F_V = 1; the network was not used",
-    "indeterminate": "every K_i = 1: both phase-test sums equal 1 and no vapour fraction "
-                     "is defined; the network was not used",
+    "indeterminate": "the bubble and dew points coincide (both phase-test sums equal 1 within "
+                     "the tolerance): every K_i of a component present is 1, as for an "
+                     "effectively pure component at its own vapour pressure, so p and T do not "
+                     "fix a vapour fraction; the network was not used",
 }
 
 
@@ -369,7 +436,10 @@ class FlashSurrogate:
             FV[use_net] = self._network(z[use_net], p[use_net], T[use_net])
         use_solver = two & ~inside & (on_unsupported == "solver")
         if use_solver.any():
-            FV[use_solver], _ = flash.solve_fv(z[use_solver], ph["K"][use_solver])
+            # an absent component (z_i = 0) contributes nothing to Rachford-Rice; give it
+            # K = 1 so that an underflowed K_i cannot turn the solver's phase test into 0/0
+            K_eff = np.where(z > 0.0, ph["K"], 1.0)
+            FV[use_solver], _ = flash.solve_fv(z[use_solver], K_eff[use_solver])
 
         results = []
         for i in range(z.shape[0]):
@@ -415,17 +485,17 @@ class FlashSurrogate:
     def predict(self, z, p_psia, T_R, **kwargs):
         """Guarded prediction for one state; returns one :class:`Prediction`."""
         if isinstance(z, Mapping):
+            if any(np.ndim(v) for v in z.values()):
+                raise InputError("predict() takes one state: give one mole fraction per "
+                                 "component, or use predict_many() for a batch")
             zz = z
         else:
             zz = _as_float_array(z, "composition")
             if zz.ndim != 1:
-                raise InputError("predict() takes one state; use predict_many() for a batch")
+                raise InputError(f"predict() takes one state of seven mole fractions, shape (7,); "
+                                 f"got shape {zz.shape}. Use predict_many() for a batch")
+            zz = zz[None, :]
         if np.ndim(p_psia) or np.ndim(T_R):
             raise InputError("predict() takes scalar pressure and temperature; "
                              "use predict_many() for a batch")
-        return self.predict_many(zz if isinstance(zz, Mapping) else zz[None, :],
-                                 [p_psia], [T_R], **kwargs)[0]
-
-
-def _is_sequence(x):
-    return isinstance(x, Sequence) and not isinstance(x, (str, bytes))
+        return self.predict_many(zz, [p_psia], [T_R], **kwargs)[0]

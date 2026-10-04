@@ -101,7 +101,7 @@ def test_negative_nan_and_non_numeric_compositions_are_rejected():
     z[0], z[1] = -0.01, z[1] + 0.01 + z[0]
     raises_input_error(lambda: P.validate_inputs(z, 500.0, 640.0), "non-negative")
     raises_input_error(lambda: P.validate_inputs([np.nan] * 7, 500.0, 640.0), "NaN")
-    raises_input_error(lambda: P.validate_inputs(["a"] * 7, 500.0, 640.0), "numeric")
+    raises_input_error(lambda: P.validate_inputs(["a"] * 7, 500.0, 640.0), "real numbers")
 
 
 def test_pressure_and_temperature_must_be_finite_and_positive():
@@ -268,3 +268,177 @@ def test_batch_mixes_every_route_and_labels_each_row():
         assert r.status in P.STATUSES and r.phase in P.PHASES and r.method in P.METHODS
         assert set(r.as_dict()) >= {"FV", "status", "phase", "method", "in_training_domain",
                                     "domain_violations", "model", "message"}
+
+
+# --------------------------------------------------------------------------
+# added after an adversarial review (mutation testing of predict.py)
+# --------------------------------------------------------------------------
+def test_units_and_component_order_are_enforced_on_the_public_path():
+    s = surrogate()
+    raises_input_error(lambda: s.predict(Z_EX, 180.0, 640.0, temperature_unit="F"), "Rankine")
+    raises_input_error(lambda: s.predict_many(Z_EX[None], [5.5], [640.0], pressure_unit="MPa"),
+                       "psia", "145.0377")
+    raises_input_error(lambda: s.predict_many(Z_EX[None], [500.0], [640.0],
+                                              components_order=list(reversed(C.NAMES))), "order")
+    for bad in ("CO2", 5):
+        raises_input_error(lambda: P.validate_inputs(Z_EX, 500.0, 640.0, components_order=bad),
+                           "components_order")
+    raises_input_error(lambda: P.validate_inputs(Z_EX, 500.0, 300.0, temperature_unit="C"), "1.8")
+    raises_input_error(lambda: P.validate_inputs(Z_EX, 485.3, 640.0, pressure_unit="psig"), "14.7")
+
+
+def test_named_mapping_in_any_key_order_gives_the_same_answer():
+    s = surrogate()
+    ref = s.predict(Z_EX, 796.43821, 640.0)
+    shuffled = dict(reversed(list(zip(C.NAMES, Z_EX))))
+    assert s.predict(shuffled, 796.43821, 640.0).FV == ref.FV
+
+
+def test_mapping_with_one_value_per_state_is_a_batch_not_a_transpose():
+    s = surrogate()
+    zb = np.array([np.roll(Z_EX, k) for k in range(7)])     # rows and columns both sum to 1
+    p, T = np.full(7, 300.0), np.full(7, 640.0)
+    by_rows = s.predict_many(zb, p, T)
+    by_name = s.predict_many({n: zb[:, i] for i, n in enumerate(C.NAMES)}, p, T)
+    assert [r.FV for r in by_name] == [r.FV for r in by_rows]
+    assert [r.method for r in by_name] == [r.method for r in by_rows]
+    raises_input_error(lambda: s.predict({n: zb[:, i] for i, n in enumerate(C.NAMES)}, 300.0, 640.0),
+                       "one state")
+    raises_input_error(lambda: P.validate_inputs({n: [0.1] * (2 + (i == 0)) for i, n in
+                                                  enumerate(C.NAMES)}, 300.0, 640.0), "same length")
+
+
+def test_booleans_text_complex_none_and_ragged_input_are_refused():
+    raises_input_error(lambda: P.validate_inputs(Z_EX, True, 640.0), "booleans")
+    raises_input_error(lambda: P.validate_inputs(Z_EX > 0.1, 500.0, 640.0), "booleans")
+    raises_input_error(lambda: P.validate_inputs(Z_EX, "796.4", 640.0), "text")
+    raises_input_error(lambda: P.validate_inputs([str(v) for v in Z_EX], 500.0, 640.0), "text")
+    raises_input_error(lambda: P.validate_inputs(Z_EX, 796.4 + 1j, 640.0), "complex")
+    raises_input_error(lambda: P.validate_inputs(Z_EX, None, 640.0), "None")
+    msg = raises_input_error(lambda: P.validate_inputs([list(Z_EX), list(Z_EX[:6])], 500.0, 640.0),
+                             "rectangular")
+    big = raises_input_error(lambda: P.validate_inputs([list(Z_EX)] * 5000 + [["x"] * 7], 500.0, 640.0))
+    assert len(msg) < 300 and len(big) < 300
+    raises_input_error(lambda: P.validate_inputs(Z_EX[:, None], 500.0, 640.0), "column")
+    raises_input_error(lambda: P.validate_inputs([], 500.0, 640.0), "no states")
+    raises_input_error(lambda: surrogate().predict(0.5, 500.0, 640.0), "shape")
+
+
+def test_composition_sum_tolerance_is_one_in_a_million():
+    raises_input_error(lambda: P.validate_inputs(Z_EX * 0.995, 500.0, 640.0), "sum to 1")
+    raises_input_error(lambda: P.validate_inputs(Z_EX * (1 + 2e-6), 500.0, 640.0), "sum to 1")
+    P.validate_inputs(Z_EX * (1 + 5e-7), 500.0, 640.0)            # accepted, unchanged
+
+
+def test_phase_test_does_not_depend_on_rounding_of_the_composition():
+    """A composition accepted within the 1e-6 sum tolerance is classified as its
+    normalised counterpart, also within that tolerance of a phase boundary."""
+    s = surrogate()
+    pb, pd = saturation(Z_EX, 640.0)
+    for factor in (1 - 9e-7, 1 + 9e-7):
+        z = Z_EX * factor
+        assert s.predict(z, pb * (1 + 5e-7), 640.0).phase == "liquid"
+        assert s.predict(z, pb * (1 - 5e-7), 640.0).phase == "two_phase"
+        assert s.predict(z, pd * (1 - 5e-7), 640.0).phase == "vapour"
+        assert s.predict(z, pd, 640.0).phase == "dew_point"
+    zc1 = np.zeros(7)
+    zc1[1] = 1 - 5e-7                                              # accepted, near-pure C1
+    psat = C.PC_PSIA[1] * np.exp(5.37 * (1 + C.OMEGA[1]) * (1 - C.TC_RANKINE[1] / 640.0))
+    assert s.predict(zc1, psat * 1.0000004, 640.0).phase == "liquid"
+
+
+def test_extreme_conditions_are_refused_or_answered_by_the_solver_not_the_network():
+    s = surrogate()
+    # K-values underflow to zero for components that are present: refused
+    raises_input_error(lambda: s.predict(Z_EX, 500.0, 1.0), "cannot be evaluated")
+    # absent components with underflowed K: still a valid, labelled solver answer
+    z = np.array([0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0])
+    r = s.predict(z, 1e-77, 10.0)
+    assert r.method == "reference_solver_fallback" and np.isfinite(r.FV) and 0.0 < r.FV < 1.0
+    assert r.model is None and any(v.startswith("T = 10 R") for v in r.domain_violations)
+
+
+def test_lower_and_upper_domain_edges():
+    dom = P.TrainingDomain.from_file()
+    z = Z_EX[None]
+    assert dom.violations(z, [2000.0], [610.0]) == [[]]               # both edges inside
+    assert dom.violations(z, [2.0], [680.0]) == [[]]
+    assert any("above the training maximum" in v for v in dom.violations(z, [2000.001], [640.0])[0])
+    assert any("below the training minimum" in v for v in dom.violations(z, [1.999], [640.0])[0])
+    assert any(v.startswith("T = 609.99999 R") for v in dom.violations(z, [500.0], [609.99999])[0])
+    low = Z_EX.copy()
+    low[2], low[6] = dom.z_min[2] * 0.9, low[6] + low[2] - dom.z_min[2] * 0.9
+    assert any(v.startswith("z_C2") for v in dom.violations(low[None], [500.0], [640.0])[0])
+    # a scalar p and T apply to every row, and mismatched lengths are refused
+    bad = np.array([0.60, 0.10, 0.05, 0.05, 0.05, 0.05, 0.10])
+    v = dom.violations(np.vstack([Z_EX, bad, bad]), 500.0, 640.0)
+    assert len(v) == 3 and v[0] == [] and v[1] and v[2]
+    try:
+        dom.violations(Z_EX, [500.0, 5000.0, 9000.0], [640.0] * 3)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("mismatched lengths accepted")
+
+
+def test_each_route_gets_its_value_from_the_right_source():
+    s = surrogate()
+    blob = np.load(os.path.join(HERE, "data", "flash_dataset.npz"))
+    z, p, T = blob["z_ood"][0], float(blob["p_ood_psia"][0]), float(blob["T_ood_R"][0])
+    K = flash.wilson_k(p, T, C.TC_RANKINE, C.PC_PSIA, C.OMEGA)[None]
+    solver = flash.solve_fv(z[None], K)[0][0]
+    net = s._network(z[None], np.array([p]), np.array([T]))[0]
+    assert abs(net - solver) > 1e-3                                  # the two sources differ here
+    assert s.predict(z, p, T).FV == solver
+    assert s.predict(z, p, T, on_unsupported="extrapolate").FV == net
+    inside = s.predict(Z_EX, 796.43821, 640.0)
+    assert inside.FV == s._network(Z_EX[None], np.array([796.43821]), np.array([640.0]))[0]
+
+
+def test_network_is_never_called_for_single_phase_or_boundary_states():
+    s = P.FlashSurrogate()
+    calls = []
+    original = s._network
+    s._network = lambda z, p, T: (calls.append(len(z)), original(z, p, T))[1]
+    pb, pd = saturation(Z_EX, 610.0)
+    s.predict_many(np.repeat(Z_EX[None], 4, 0), [1.5 * pb, 0.5 * pd, pb, pd], [610.0] * 4)
+    assert calls == []
+    s.predict(Z_EX, 796.43821, 640.0)
+    assert calls == [1]
+
+
+def test_batch_rows_match_single_predictions_and_carry_their_own_metadata():
+    s = surrogate()
+    blob = np.load(os.path.join(HERE, "data", "flash_dataset.npz"))
+    pb, pd = saturation(Z_EX, 610.0)
+    z = np.vstack([Z_EX, Z_EX, blob["z"][blob["idx_test"][0]], blob["z_ood"][0], Z_EX, Z_EX])
+    p = [1.5 * pb, 796.43821, float(blob["p_psia"][blob["idx_test"][0]]),
+         float(blob["p_ood_psia"][0]), 796.43821, 0.5 * pd]
+    T = [610.0, 640.0, float(blob["T_R"][blob["idx_test"][0]]), float(blob["T_ood_R"][0]), 700.0, 610.0]
+    for mode in P.ON_UNSUPPORTED:
+        batch = s.predict_many(z, p, T, on_unsupported=mode)
+        for i, r in enumerate(batch):
+            one = s.predict(z[i], p[i], T[i], on_unsupported=mode)
+            a, b = r.as_dict(), one.as_dict()
+            fa, fb = a.pop("FV"), b.pop("FV")
+            assert a == b, (mode, i)
+            # a float32 forward pass over a batch may round differently from one row
+            assert (fa is None and fb is None) or abs(fa - fb) <= 1e-6, (mode, i, fa, fb)
+
+
+def test_metadata_of_every_route():
+    s = surrogate()
+    blob = np.load(os.path.join(HERE, "data", "flash_dataset.npz"))
+    pb, _ = saturation(Z_EX, 610.0)
+    liquid = s.predict(Z_EX, 1.5 * pb, 610.0)
+    assert (liquid.in_training_domain, liquid.domain_violations, liquid.model) == (None, (), None)
+    assert liquid.sum_zK < 1.0 < liquid.sum_z_over_K and "single phase" in liquid.message
+    z, p, T = blob["z_ood"][0], float(blob["p_ood_psia"][0]), float(blob["T_ood_R"][0])
+    for mode, method, model in (("solver", "reference_solver_fallback", None),
+                                ("status", "none", None),
+                                ("extrapolate", "network_extrapolation", s.model_name)):
+        r = s.predict(z, p, T, on_unsupported=mode)
+        assert r.method == method and r.in_training_domain is False and r.model == model
+        assert r.domain_violations and r.p_dew_psia < p < r.p_bubble_psia
+    ok = s.predict(Z_EX, 796.43821, 640.0)
+    assert ok.in_training_domain is True and ok.domain_violations == ()

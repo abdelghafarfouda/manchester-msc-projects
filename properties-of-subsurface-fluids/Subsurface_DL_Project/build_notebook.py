@@ -706,7 +706,119 @@ this architecture. On its own it does not say whether the width was right;
 # ------------------------------------------------------------------ 6
 md(r"""
 ---
-## 6. What this does and does not show
+## 6. Network capacity: 3 x 64, 3 x 128, 3 x 192 hidden units
+
+Was the original width a sensible choice? The data-only network was trained at
+three widths, three seeds each, with the same split, standardisation,
+optimiser, epoch budget and checkpoint rule (`configs/capacity.json`, frozen and
+committed before any of these models was scored on the test or extrapolation
+sets). The original 3 x 128 runs were reused after their provenance was
+checked; six new runs were added.
+
+**Selection uses validation data only:** the smallest width whose mean best
+validation MSE is within 10 % of the lowest. The test set is an *established
+benchmark* — its 3 x 128 results were published before this comparison — so it
+is reported, not used to choose. The physics-loss comparison of §4 was run at
+3 x 128 only and is not extended to other widths here.
+""")
+
+code(r"""
+cap = json.load(open(os.path.join(ROOT, "results", "capacity", "capacity_results.json")))   # loaded
+sel = cap["selection"]
+print("selection (training records, validation data only):")
+for w in (64, 128, 192):
+    s_ = cap["summary_by_width"][str(w)]
+    print(f"  3 x {w:3d}: {s_['n_parameters']:6d} parameters   mean best validation MSE "
+          f"{s_['mean_best_val_mse']:.3e} +/- {s_['std_best_val_mse']:.1e}")
+print(f"  threshold (lowest + 10 %): {sel['threshold']:.3e}  ->  selected 3 x {sel['selected_width']}"
+      f"   (original 3 x {sel['original_width']})")
+
+# test and extrapolation errors, recomputed now from the saved checkpoints
+print("\nrecomputed from the checkpoints:")
+cap_rmse = {}
+for key, r in sorted(cap["runs"].items(), key=lambda kv: (kv[1]["width"], kv[1]["seed"])):
+    ck = torch.load(os.path.join(ROOT, r["checkpoint"]), map_location="cpu", weights_only=False)
+    m = snn.simpleFFN(ck["n_inputs"], num_hidden=tuple(ck["hidden"])); m.load_state_dict(ck["model_state_dict"]); m.eval()
+    sc = sdata.Standardiser().load_state_dict(ck["scaler"])
+    cap_rmse[key] = {n: float(np.sqrt(((snn.predict(m, sc.transform(sets[n][0])) - sets[n][1])**2).mean()))
+                     for n in sets}
+for w in (64, 128, 192):
+    t_ = [cap_rmse[f"h{w}_s{s}"]["test"] for s in (0, 1, 2)]
+    e_ = [cap_rmse[f"h{w}_s{s}"]["extrapolation"] for s in (0, 1, 2)]
+    print(f"  3 x {w:3d}: test RMSE {np.mean(t_):.5f} +/- {np.std(t_):.5f}   "
+          f"extrapolation RMSE {np.mean(e_):.5f} +/- {np.std(e_):.5f}  [-]")
+""")
+
+code(r"""
+fig, axes = plt.subplots(1, 3, figsize=(13.5, 3.8))
+for ax, (lab, get) in zip(axes, (("best validation MSE  [-]", lambda k: cap["runs"][k]["best_val_mse"]),
+                                 ("test RMSE  [-]", lambda k: cap_rmse[k]["test"]),
+                                 ("extrapolation RMSE  [-]", lambda k: cap_rmse[k]["extrapolation"]))):
+    for seed, mk in zip((0, 1, 2), ("o", "s", "^")):
+        ax.plot((64, 128, 192), [get(f"h{w}_s{seed}") for w in (64, 128, 192)], mk + "-", color="0.55", lw=1,
+                label=f"seed {seed}")
+    ax.plot((64, 128, 192), [np.mean([get(f"h{w}_s{s}") for s in (0, 1, 2)]) for w in (64, 128, 192)],
+            "D-", color="C0", lw=2, label="mean")
+    ax.set_xticks((64, 128, 192)); ax.set_xlabel("hidden units per layer (3 layers)"); ax.set_ylabel(lab)
+    ax.grid(alpha=0.3)
+axes[0].legend(fontsize=8); fig.tight_layout(); plt.show()
+""")
+
+md(r"""
+`docs/CAPACITY.md` gives the parameter counts, training and inference times, the
+training and validation curves, and the reading of this comparison.
+""")
+
+# ------------------------------------------------------------------ 7
+md(r"""
+---
+## 7. Guarded prediction: when the network is allowed to answer
+
+The sigmoid output returns a plausible-looking fraction for *any* input,
+including single-phase states the network never saw. The public prediction
+path, `sfp.predict.FlashSurrogate`, therefore validates the input (seven
+components in the notes' order, finite, non-negative, summing to one, psia and
+degrees Rankine), applies the course phase test first, and calls the network
+only for two-phase states inside the training domain. Out-of-domain two-phase
+states go to the reference solver, labelled as such, unless the caller asks
+for an `unsupported` status or a marked extrapolation. `docs/GUARDED_PREDICTION.md`
+has the details.
+""")
+
+code(r"""
+from sfp.predict import FlashSurrogate, InputError
+surr = FlashSurrogate()
+print("default model:", surr.model_name, "(lowest validation MSE of the six reported models)\n")
+z_ex = C.EXAMPLE_MOLES / C.EXAMPLE_MOLES.sum()
+pb_ex, pd_ex = (float(v[0]) for v in flash.wilson_saturation_pressures(z_ex[None], 610.0, C.TC_RANKINE, C.PC_PSIA, C.OMEGA))
+cases = [("p. 15 flash, 796.4 psia, 640 R", z_ex, 796.43821, 640.0),
+         ("p. 14 mixture at its dew point", z_ex, pd_ex, 610.0),
+         ("p. 14 mixture at 1 psia (vapour)", z_ex, 1.0, 610.0),
+         ("p. 14 mixture at 2500 psia (liquid)", z_ex, 2500.0, 610.0),
+         ("p. 15 state at 700 R (outside 610-680 R)", z_ex, 796.43821, 700.0)]
+print(f"{'case':<42}{'phase':<14}{'method':<28}{'F_V':>7}{'bare network':>14}")
+for name, z_, p_, T_r in cases:
+    r = surr.predict(z_, p_, T_r)
+    bare = surr._network(z_[None], np.array([p_]), np.array([T_r]))[0]
+    print(f"{name:<42}{r.phase:<14}{r.method:<28}{r.FV:7.4f}{bare:14.4f}")
+try:
+    surr.predict([0.6, 0.4], 1000.0, 620.0)            # the notes' C1/nC10 binary
+except InputError as e:
+    print("\nbinary of pp. 16-18 ->", e)
+""")
+
+md(r"""
+The bare network calls an all-vapour state about 92 % vapour and misses the
+dew point by 0.10; the guarded path returns the phase test's answer and never
+consults the network for either. The notes' binary verifies the reference
+calculation (§1.3) but is not a seven-component state, so the network is not
+allowed to answer it.
+""")
+
+# ------------------------------------------------------------------ 8
+md(r"""
+---
+## 8. What this does and does not show
 
 **Does.**
 

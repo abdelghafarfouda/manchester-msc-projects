@@ -301,21 +301,22 @@ def figure(cfg, runs, summary, selected, path):
 
     widths = cfg["widths"]
     fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.0))
-    for ax, (key, label) in zip(axes, (("best_val_mse", "best validation MSE  [-]"),
+    for ax, (key, label) in zip(axes, (("best_val_mse", r"best validation MSE  [$10^{-5}$]"),
                                        ("test", "test RMSE  [-]"),
                                        ("extrapolation", "extrapolation RMSE  [-]"))):
+        scale = 1e5 if key == "best_val_mse" else 1.0
         for seed, marker in zip(cfg["seeds"], ("o", "s", "^")):
-            ys = [runs[f"h{w}_s{seed}"][key] if key == "best_val_mse"
-                  else runs[f"h{w}_s{seed}"][key]["rmse"] for w in widths]
+            ys = [scale * (runs[f"h{w}_s{seed}"][key] if key == "best_val_mse"
+                           else runs[f"h{w}_s{seed}"][key]["rmse"]) for w in widths]
             ax.plot(widths, ys, marker + "-", color="0.55", lw=1, ms=5, label=f"seed {seed}")
-        means = [summary[str(w)]["mean_best_val_mse"] if key == "best_val_mse"
-                 else summary[str(w)][f"{key}_rmse_mean"] for w in widths]
+        means = [scale * (summary[str(w)]["mean_best_val_mse"] if key == "best_val_mse"
+                          else summary[str(w)][f"{key}_rmse_mean"]) for w in widths]
         ax.plot(widths, means, "D-", color="C0", lw=2, ms=7, label="mean of 3 seeds")
         ax.set_xticks(widths)
         ax.set_xticklabels([f"3 x {w}\n{summary[str(w)]['n_parameters']:,} params" for w in widths])
         ax.set_ylabel(label)
         ax.grid(alpha=0.3)
-    axes[0].axhline((1 + cfg["selection_rule"]["tolerance_relative"]) *
+    axes[0].axhline(1e5 * (1 + cfg["selection_rule"]["tolerance_relative"]) *
                     min(summary[str(w)]["mean_best_val_mse"] for w in widths),
                     color="C3", ls="--", lw=1, label="selection threshold (+10 %)")
     axes[0].set_title(f"Selection (validation): 3 x {selected} selected", fontsize=10)

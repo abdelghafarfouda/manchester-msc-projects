@@ -60,7 +60,7 @@ jobs:
       - name: Error analysis across the two-phase window
         run: |
           python scripts/analyse_errors.py --out-dir ci/analysis --fig-dir ci/figures
-          python scripts/compare_results.py results/analysis ci/analysis
+          python scripts/compare_results.py results/analysis ci/analysis --profile derived
       - name: Capacity comparison, scored from the saved checkpoints
         run: |
           python scripts/capacity.py score --out-dir ci/capacity --fig-dir ci/figures

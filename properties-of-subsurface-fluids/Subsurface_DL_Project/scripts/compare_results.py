@@ -1,13 +1,17 @@
 """Compare recorded numerical results with a fresh run, value by value.
 
-    python scripts/compare_results.py RECORDED NEW [--expect-count N]
+    python scripts/compare_results.py RECORDED NEW [--expect-count N] [--profile metrics|derived]
 
 RECORDED and NEW are two JSON files, two CSV files, or two folders (every
 ``*.json`` and ``*.csv`` directly inside RECORDED is compared with the file of
 the same name in NEW).
 
-* Numbers pass if ``|new - recorded| <= ATOL + RTOL * |recorded|``, with
-  ``RTOL = 1e-6`` and ``ATOL = 1e-12``.
+* Numbers pass if ``|new - recorded| <= atol + rtol * |recorded|``.  Profile
+  ``metrics`` (the default), ``rtol = 1e-6`` and ``atol = 1e-6``, is used for the
+  185 original metrics and every other directly computed output; profile
+  ``derived`` (``--profile derived``), ``rtol = 1e-4`` and ``atol = 2e-6``, for the
+  error-analysis tables, whose numbers are differences and shares of nearly
+  equal errors and are partly written with six decimals.
 * Keys, list lengths, CSV headers and every non-numerical value (labels,
   statuses, phase names, True/False) must match exactly.  A key present on one
   side only is a failure, so a missing output cannot pass.
@@ -16,18 +20,33 @@ the same name in NEW).
   platform, timestamps) and ``run`` (dates and commands).  Figures (PNG) are
   never compared.
 
-Why these tolerances.  The reported metrics are computed in float64 from
-float32 network outputs.  Re-running the six saved models reproduced all 185
-recorded metrics bit for bit with the recorded two torch threads; with four
-threads 40 of them changed by at most 1.8e-9 relative, because the float32
-sums are accumulated in a different order.  ``RTOL = 1e-6`` leaves three orders
-of magnitude for such reordering and for different CPU builds of the same
-PyTorch release, and still catches any change in a reported digit.
-``ATOL = 1e-12`` only matters for values that are zero or nearly zero: the
-physics weight ``lambda = 0`` of the data-only models and seed index 0, which
-must stay zero to round-off.  It is more than six orders of magnitude below the
-smallest non-zero recorded metric (the training-mean baseline's test R^2,
-4.4e-6), so it cannot hide a real change.
+Why these tolerances.  The networks compute in float32, so each prediction is
+known to one unit in the last place (ULP), up to 6e-8 near F_V = 1, and a
+different CPU or PyTorch build moves predictions by about that much.
+``scripts/ulp_sensitivity.py`` moves every prediction of every saved model by
+1 and by 3 ULPs and records how far each compared number moves
+(``results/reproducibility/ulp_sensitivity.json``):
+
+* the 185 original metrics move by at most 1.7e-7 (1 ULP) and 4.6e-7 (3 ULPs)
+  in absolute terms -- a median of the Rachford-Rice residual |h|, about
+  6e-3 -- and by more than 1e-6 relative only where they are that small.
+  ``rtol = 1e-6`` with ``atol = 1e-6`` covers even the 3-ULP shift with a
+  factor of two.  The absolute part is still smaller than the smallest
+  non-zero recorded metric (4.4e-6, the baseline's test R^2, which is pure
+  NumPy, does not depend on the network, and is reproduced exactly);
+* the error-analysis outputs -- percentage changes and shares formed from
+  differences of nearly equal errors -- amplify the same rounding (up to about
+  1e-4 relative, 2.5e-5 absolute in percentage points), and those written to
+  CSV with six decimals can change in their last printed digit (1e-6).
+  Profile ``derived`` covers this and is still far below any digit quoted in
+  the documentation.
+
+The sensitivity script also checks that a 3-ULP perturbation of every
+prediction stays inside the tolerance of each file's profile.
+
+In the first CI run on GitHub's CPU-only PyTorch build, 182 of the 185
+metrics agreed within 1e-6 relative; the other three, all medians of |h|,
+differed by up to 5.5e-8 absolute, inside the 1-ULP range measured here.
 
 ``--expect-count N`` also requires exactly N numerical values to have been
 compared (185 for ``results/metrics/evaluation.json``).
@@ -44,12 +63,26 @@ import os
 import sys
 
 RTOL = 1.0e-6
-ATOL = 1.0e-12
+ATOL = 1.0e-6
+#: (rtol, atol) per kind of output; see the module docstring and
+#: results/reproducibility/ulp_sensitivity.json for the measurements behind them.
+PROFILES = {"metrics": (RTOL, ATOL), "derived": (1.0e-4, 2.0e-6)}
+#: which profile each compared output uses (paths relative to the project folder)
+FILE_PROFILES = {
+    "results/metrics/evaluation.json": "metrics",
+    "results/metrics/verify_flash.json": "metrics",
+    "configs/prediction_domain.json": "metrics",
+    "results/guarded/demo_cases.json": "metrics",
+    "results/capacity/capacity_results.json": "metrics",
+    "results/capacity/capacity_table.csv": "metrics",
+    "results/analysis": "derived",
+}
 SKIP_KEYS = {"timing", "environment", "run"}
 
 
 class Report:
-    def __init__(self):
+    def __init__(self, rtol=RTOL, atol=ATOL):
+        self.rtol, self.atol = rtol, atol
         self.numbers = 0
         self.texts = 0
         self.max_rel = 0.0
@@ -68,7 +101,7 @@ class Report:
         diff = abs(new - old)
         if old != 0.0:
             self.max_rel = max(self.max_rel, diff / abs(old))
-        if diff > ATOL + RTOL * abs(old):
+        if diff > self.atol + self.rtol * abs(old):
             self.failures.append(f"{where}: {new!r} vs recorded {old!r} (difference {diff:.3e})")
 
     def text(self, where, new, old):
@@ -158,9 +191,12 @@ def main(argv=None):
     ap.add_argument("new")
     ap.add_argument("--expect-count", type=int, default=None,
                     help="require exactly this many numerical values to be compared")
+    ap.add_argument("--profile", choices=sorted(PROFILES), default="metrics",
+                    help="tolerance profile: metrics (rtol 1e-6, atol 1e-6) or derived "
+                         "(rtol 1e-4, atol 2e-6)")
     args = ap.parse_args(argv)
 
-    rep = Report()
+    rep = Report(*PROFILES[args.profile])
     if os.path.isdir(args.recorded):
         names = sorted(n for n in os.listdir(args.recorded)
                        if n.endswith((".json", ".csv")))
@@ -182,7 +218,7 @@ def main(argv=None):
     if args.expect_count is not None and rep.numbers != args.expect_count:
         rep.failures.append(f"compared {rep.numbers} numerical values, expected {args.expect_count}")
     print(f"{args.recorded}: compared {rep.numbers} numbers and {rep.texts} non-numerical values "
-          f"(rtol {RTOL:g}, atol {ATOL:g}; skipped keys {sorted(SKIP_KEYS)}); "
+          f"(rtol {rep.rtol:g}, atol {rep.atol:g}; skipped keys {sorted(SKIP_KEYS)}); "
           f"largest relative difference {rep.max_rel:.2e}")
     for f in rep.failures[:40]:
         print("  DIFFERS", f)

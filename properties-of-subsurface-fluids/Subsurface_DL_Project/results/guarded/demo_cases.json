@@ -168,7 +168,7 @@
       "method": "reference_solver_fallback",
       "in_training_domain": false,
       "domain_violations": [
-        "p = 2666.93 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
+        "p = 2666.92643 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
       ],
       "model": null,
       "message": "two-phase state outside the training domain: answered by the reference solver (bisection on Rachford-Rice), not the network",
@@ -201,7 +201,7 @@
       "method": "none",
       "in_training_domain": false,
       "domain_violations": [
-        "p = 2666.93 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
+        "p = 2666.92643 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
       ],
       "model": null,
       "message": "two-phase state outside the training domain: no prediction returned",
@@ -234,7 +234,7 @@
       "method": "network_extrapolation",
       "in_training_domain": false,
       "domain_violations": [
-        "p = 2666.93 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
+        "p = 2666.92643 psia is above the training maximum 2000 psia (inside the reported pressure-extrapolation test (2000-4000 psia), where the network's error was measured but it was not trained)"
       ],
       "model": "ffn_phys1_s2",
       "message": "EXTRAPOLATION: two-phase state outside the training domain; network answer returned on request, accuracy not established",
@@ -328,7 +328,7 @@
       "in_training_domain": null,
       "domain_violations": [],
       "model": null,
-      "message": "every K_i = 1: both phase-test sums equal 1 and no vapour fraction is defined; the network was not used",
+      "message": "the bubble and dew points coincide (both phase-test sums equal 1 within the tolerance): every K_i of a component present is 1, as for an effectively pure component at its own vapour pressure, so p and T do not fix a vapour fraction; the network was not used",
       "p_bubble_psia": 8242.219764146887,
       "p_dew_psia": 8242.219764146887,
       "reference_solver_FV": null,
@@ -386,7 +386,7 @@
         }
       },
       "status": "rejected",
-      "message": "temperature must be given in degrees Rankine (got unit 'F'); convert it first with the notes' convention T[R] = T[degF] + 460"
+      "message": "temperature must be given in degrees Rankine (got unit 'F'); convert it first: T[R] = T[degF] + 460 (the notes' convention)"
     }
   ]
 }

@@ -2935,7 +2935,7 @@
         "rmse_change_percent": 18.578428791225594,
         "squared_error_reduction_total": -0.1592583903804836,
         "share_of_squared_error_reduction_by_band": {
-          "dew": -0.0,
+          "dew": 0.0,
           "middle": 0.13824492881750383,
           "bubble": 0.8617550711824963
         },
@@ -2979,7 +2979,7 @@
         "rmse_change_percent": 81.77256185669548,
         "squared_error_reduction_total": -0.8643359607059042,
         "share_of_squared_error_reduction_by_band": {
-          "dew": -0.0,
+          "dew": 0.0,
           "middle": 0.024199886295872854,
           "bubble": 0.9758001137041272
         },
@@ -3125,9 +3125,9 @@
         81.77256185669548
       ],
       "dew_band_share_of_squared_error_reduction_per_seed": [
-        -0.0,
         0.0,
-        -0.0
+        0.0,
+        0.0
       ]
     }
   }
