@@ -11,12 +11,15 @@ match exactly.  Floats must agree within
     |new - recorded| <= ATOL + RTOL * |recorded|,  RTOL = 1e-9, ATOL = 1e-12.
 
 Why these values.  With the pinned lock file every table and value reproduces
-bit for bit (``results/original_2026-09-27/``).  A fresh install of the newest
-compatible NumPy and SciPy changes the last bits only: at most 8.7e-16
-relative in the tables, and 1.6e-15 absolute on the in-sample refit bias, a
-value near zero (relative 1.7e-12).  A verification residual recorded as 0.0
-came out as 3.1e-16.  The tolerances sit several orders of magnitude above
-those differences and far below the four significant figures reported.
+bit for bit in this project's own environments (``results/original_2026-09-27/``).
+A fresh install of the newest compatible NumPy and SciPy changes the last bits
+only: at most 1.7e-12 relative (the in-sample refit bias, a value near -9e-4).
+On GitHub's runners even the locked environment differs in the last bits: at
+most 5.6e-9 absolute on an impedance of order 1e7, and 7.1e-12 relative on a
+small reflection coefficient (2026-10-04).  A verification residual recorded as
+0.0 came out as 3.1e-16, which ATOL covers.  RTOL is more than 100 times the
+largest relative difference seen, and far below the four significant figures
+reported (docs/REPRODUCIBILITY.md).
 
 Skipped: ``generated_utc`` (a timestamp).  Figures are not compared.
 Exit status 1 on any difference.
