@@ -5,14 +5,14 @@
   "config": {
     "name": "study",
     "paths": {
-      "root": "/home/claude/work/SubsurfaceML",
-      "results": "/home/claude/work/SubsurfaceML/results/study",
-      "figures": "/home/claude/work/SubsurfaceML/results/study/figures",
-      "data": "/home/claude/work/SubsurfaceML/results/study/data",
-      "models": "/home/claude/work/SubsurfaceML/results/study/models",
-      "metrics": "/home/claude/work/SubsurfaceML/results/study/metrics",
-      "reports": "/home/claude/work/SubsurfaceML/results/study/reports",
-      "course_materials": "/home/claude/work/SubsurfaceML/D:/Advanced Subsurface Modelling"
+      "root": "/home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML",
+      "results": "/home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study",
+      "figures": "/home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/figures",
+      "data": "/home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/data",
+      "models": "/home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/models",
+      "metrics": "/home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/metrics",
+      "reports": "/home/user/manchester-msc-projects/advanced-subsurface-modelling/SubsurfaceML/results/study/reports",
+      "course_materials": null
     },
     "grid": {
       "n_r": 60,
@@ -32,7 +32,8 @@
       "enforce_cfl": true,
       "outer_bc": "closed",
       "p_init_MPa": 15.0,
-      "validation_full": true
+      "validation_full": true,
+      "max_steps": 200000
     },
     "schedule": {
       "n_periods": 4,
@@ -109,7 +110,13 @@
       "band_lower_pct": 5.0,
       "band_upper_pct": 95.0,
       "margin_warning_fraction": 0.8,
-      "run_studies": true
+      "run_studies": true,
+      "feature_set": "all",
+      "feature_set_plume": "all",
+      "feature_set_sweep": "baseline",
+      "pressure_model": "hybrid",
+      "interval_method": "adaptive_conformal",
+      "interval_alpha": 0.1
     },
     "optim": {
       "p_limit_MPa": 24.0,
@@ -119,26 +126,48 @@
       "n_test_realisations": 8,
       "use_error_band": true
     },
+    "evaluation": {
+      "final_test_seed": 20261104,
+      "final_test_realisations": 100,
+      "final_test_id_offset": 10000,
+      "shift_seed": 20261105,
+      "shift_realisations": 60,
+      "shift_id_offset": 20000,
+      "shift_k_median_mD": [
+        10.0,
+        30.0
+      ],
+      "screening_reservoirs_final_test": 20,
+      "screening_reservoirs_shift": 10,
+      "screening_budget": 4,
+      "screening_candidates": 4000
+    },
+    "numerics": {
+      "run": true,
+      "cases_per_cell": 3,
+      "finer_cases": 10,
+      "finer_max_production_steps": 12000
+    },
     "n_jobs": -1
   },
   "environment": {
     "python": "3.11.15",
-    "platform": "Linux-6.18.44-fc-v37-x86_64-with-glibc2.39",
+    "platform": "Linux-6.18.44-fc-v64-x86_64-with-glibc2.39",
     "machine": "x86_64",
     "numpy": "2.4.4",
     "scipy": "1.17.1",
     "pandas": "3.0.2",
     "scikit_learn": "1.8.0",
     "xgboost": "3.2.0",
-    "git_commit": "ee9c90c"
+    "git_commit": "561948e"
   },
   "master_seed": 20260909,
   "n_requested": 880,
   "n_success": 880,
   "n_failed": 0,
-  "wall_time_s": 1460.4621195660002,
-  "cpu_seconds_simulation": 2909.5914550749985,
-  "mean_sim_seconds": 3.3063539262215893,
+  "wall_time_s": 650.2909191660001,
+  "cpu_seconds_simulation": 2545.8593128120083,
+  "mean_sim_seconds": 2.893021946377282,
   "sampling_ranges": {
     "k_median_mD": [
       30.0,
