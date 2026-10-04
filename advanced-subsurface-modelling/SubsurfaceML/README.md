@@ -3,13 +3,44 @@
 A radial IMPES simulator for CO₂ injection into a sealed, layered saline
 aquifer, written in Python and verified against analytical and conservation
 results, is used to generate 880 synthetic injection cases. Machine-learning
-surrogates trained on those cases are then tested on reservoirs they have never
-seen, and used — with re-simulation as the final check — to screen injection
-schedules against an assumed pressure limit.
+surrogates are trained on 496 of them, their error bands are calibrated on 164,
+and they are tested on the remaining 220 cases, which come from 55 reservoirs
+held out of training and calibration. The surrogates are then used — with
+re-simulation as the final check — to screen injection schedules against an
+assumed pressure limit.
 
 **All data are synthetic.** Every case is produced by the simulator in this
 repository. Nothing is calibrated to, or validated against, a real site, and the
 pressure and plume limits are stated assumptions, not safety limits.
+
+## Summary
+
+* **Objective.** Find how permeability, heterogeneity, fluid mobility and the
+  injection schedule control peak pressure build-up and plume spread in a
+  sealed, layered saline aquifer, and how accurately an inexpensive surrogate
+  predicts them for reservoirs outside its training set.
+* **Method.** A radial, multi-layer IMPES simulator with one shared bottom-hole
+  pressure, verified by 18 analytical and conservation checks, generates 880
+  cases (220 reservoir realisations × 4 injection schedules). They are split by
+  realisation into 496 training, 164 calibration and 220 test cases, the test
+  cases coming from 55 held-out reservoirs. Eleven regression families from the
+  course are tuned by grouped cross-validation, error bands are set on the
+  calibration cases, and surrogate-screened schedules are re-simulated.
+* **Key result.** On the 220 test cases, peak pressure build-up is predicted
+  with an RMSE of 1.24 MPa and R² = 0.941 (mean-value baseline: 5.08 MPa), and
+  the plume radius with an RMSE of 10.5 m and R² = 0.995. The P5–P95 error
+  bands, set for 90 % coverage, cover 83–91 % of the test cases.
+* **Main limitation.** The data are synthetic, and the simulator leaves out
+  gravity (the largest omission for CO₂ plumes), dissolution, residual trapping
+  and capillary pressure. The surrogate is weakest in low-permeability
+  reservoirs: on one 40 mD test reservoir, every screened schedule and the
+  constant-rate baseline exceeded the assumed pressure limit when re-simulated,
+  although the surrogate and its error band predicted they would stay below it.
+* **How to run.** With Python 3.11, install the pinned versions
+  (`python -m pip install -r requirements-lock.txt`, then
+  `python -m pip install -e . --no-deps`) and run
+  `notebooks/00_START_HERE.ipynb`, which reads the saved study run and takes
+  under a minute; see [Run it](#run-it).
 
 ## Question
 
@@ -145,11 +176,24 @@ carried into the error-source table of the technical report.
 
 ### Study run — the reference results (`results/study/`)
 
-220 reservoir realisations × 4 injection schedules = **880 simulations**, 0
-failed. Split by realisation into 124 training, 41 calibration and **55 test
-reservoirs** (496 / 164 / 220 cases); no reservoir appears in two partitions.
+**880 generated cases**: 220 reservoir realisations × 4 injection schedules,
+all simulated successfully (0 failed). Each realisation is placed, with all four
+of its schedules, in exactly one partition:
 
-| Target (220 held-out cases) | Selected family | RMSE | MAE | R² | Worst case | Mean-baseline RMSE | P5–P95 band coverage |
+| Partition | Reservoirs | Cases | Used for |
+|---|---|---|---|
+| Training | 124 | 496 | tuning, selecting and fitting the regression surrogates |
+| Calibration | 41 | 164 | setting the P5–P95 error bands |
+| Test (held out) | **55** | **220** | every test metric below |
+| Total | 220 | 880 | |
+
+No reservoir appears in two partitions. The counts and the zero overlaps are
+recorded under `ml.leakage` in `results/study/metrics/summary.json`, and the
+case counts agree with `results/study/data/scenarios.csv`. The pressure-screen
+classifier below is fitted on the training and calibration cases together (660)
+and scored on the same 220 test cases.
+
+| Target (220 test cases from 55 held-out reservoirs) | Selected family | RMSE | MAE | R² | Worst case | Mean-baseline RMSE | P5–P95 band coverage |
 |---|---|---|---|---|---|---|---|
 | Peak pressure build-up | SVR | **1.24 MPa** | 0.42 MPa | **0.941** | 14.8 MPa | 5.08 MPa | 88 % |
 | Plume radius (95 % of CO₂ mass) | elastic net | 10.5 m | 6.5 m | 0.995 | 57 m | 142 m | 91 % |
@@ -316,7 +360,12 @@ docs/                          TECHNICAL_REPORT · WALKTHROUGH · SOURCE_MAP · 
 
 ## Author and attribution
 
-Abdelghafar Fouda. The physics, numerical methods and machine-learning methods
+Abdelghafar Fouda. I developed the original project myself. AI tools were
+subsequently used to help publish it on GitHub and make minor quality
+improvements. Every number in this README is read from files in `results/`
+produced by the code in this repository.
+
+The physics, numerical methods and machine-learning methods
 follow the CHEN60482 *Advanced Subsurface Modelling* course materials (lectures by
 Dr Masoud Babaei; uncertainty material by Dr Lin Ma) and the accompanying *Data
 Science and Machine Learning* notebooks, as traced in
@@ -324,9 +373,6 @@ Science and Machine Learning* notebooks, as traced in
 here. The code uses NumPy, SciPy, pandas, scikit-learn, Matplotlib, joblib, PyYAML,
 XGBoost, SHAP, imbalanced-learn, scikit-optimize, umap-learn and Streamlit, all
 under permissive open-source licences (BSD, MIT or Apache 2.0; Matplotlib under
-its own PSF-style licence). AI assistance was used substantially in writing,
-correcting, testing and documenting the code, including the corrections recorded
-in `docs/CHANGELOG.md`; every number in this README is read from files in
-`results/` produced by the code in this repository.
+its own PSF-style licence).
 
 Licence: MIT (see [`LICENSE`](LICENSE)).

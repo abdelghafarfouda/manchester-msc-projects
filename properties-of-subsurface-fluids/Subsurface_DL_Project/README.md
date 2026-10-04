@@ -9,6 +9,34 @@ that calculation, on mixtures generated for this study. There are no
 measurements in it, and nothing here is a claim about real vapour–liquid
 equilibrium.
 
+### Summary
+
+* **Objective.** Test whether a small feed-forward network can predict the
+  vapour fraction `F_V` of the module's two-phase flash directly from
+  composition, pressure and temperature for mixtures it has never seen, and
+  whether adding the Rachford-Rice residual to the loss helps.
+* **Method.** The taught flash (Wilson K-values and Rachford-Rice), checked
+  against the notes' three worked examples, labels 60,000 two-phase states from
+  3,000 generated mixtures, split by mixture into 1,800 training, 600
+  validation and 600 test mixtures. A PyTorch network with 34,433 parameters is
+  trained with the data loss alone and with the Rachford-Rice residual added,
+  three seeds each.
+* **Key result.** On the 600 held-out mixtures the test RMSE in `F_V` (mean ±
+  s.d. over three seeds) is 0.00636 ± 0.00026 with the data loss and
+  0.00535 ± 0.00029 with the physics term, a 15.9 % reduction. On a
+  2000–4000 psia pressure-extrapolation set the physics term did not improve the
+  result: 0.00835 → 0.00972, a difference about the size of the seed spread
+  (± 0.00197).
+* **Main limitation.** This is a synthetic benchmark: the labels come from the
+  Wilson correlation, not from measurements, for one fixed set of seven
+  components and two-phase states only. Three seeds are not a significance
+  test, and the network is only about 1.2–3.1 times faster than the cheap 1-D
+  bisection it replaces.
+* **How to run.** `pip install -r requirements.txt`, then
+  `jupyter notebook notebooks/flash_surrogate.ipynb`. The dataset and trained
+  weights are included, so the notebook recomputes every reported metric in
+  under a minute without training (see *Start here* below and §4).
+
 ### The question
 
 > The taught calculation finds the vapour fraction `F_V` by iterating on
@@ -332,7 +360,8 @@ run is included here. `docs/LIMITATIONS.md` §8 records what changed.
 ## 8. Author and attribution
 
 Abdelghafar Fouda — MSc Subsurface Energy Engineering, University of
-Manchester.
+Manchester. I developed the original project myself. AI tools were subsequently
+used to help publish it on GitHub and make minor quality improvements.
 
 The flash model, the component table and the worked examples come from the
 CHEN60492 *Properties of Subsurface Fluids* notes (Dr Masoud Babaei,
@@ -345,8 +374,6 @@ Learning* slides (Dr Ben Moseley). No teaching material is redistributed here;
 notebook cell so it can be checked against the originals.
 
 NumPy, PyTorch, Matplotlib and Jupyter are used under their own open-source
-licences. AI assistance was used substantially in writing the code and
-documentation; the scope, the source restriction, the corrections and the
-reported results were directed and checked by the author.
+licences.
 
 Licence: MIT (see [`LICENSE`](LICENSE)).
