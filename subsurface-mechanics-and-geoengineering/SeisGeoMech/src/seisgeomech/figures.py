@@ -348,9 +348,10 @@ def fig_depth_blocks(result, root):
         p = pred[pred["evaluate_on"] == d["evaluate_on"]]
         h, s = d["held_out_block_fit"], d["held_out_supplied_gardner"]
         colour = BLOCK_COLOURS[d["evaluate_on"]]
-        ax.plot(p["residual_supplied_gardner_gcc"], p["dept_m"], lw=0.6, ls=":",
-                color=colour, label=f"block {d['evaluate_on']}, supplied: RMSE {s['rmse_gcc']:.3f}")
-        ax.plot(p["residual_block_fit_gcc"], p["dept_m"], lw=0.6, color=colour,
+        ax.plot(p["residual_supplied_gardner_gcc"], p["dept_m"], lw=0.5,
+                color=REFERENCE_INK, alpha=0.8,
+                label=f"block {d['evaluate_on']}, supplied: RMSE {s['rmse_gcc']:.3f}")
+        ax.plot(p["residual_block_fit_gcc"], p["dept_m"], lw=0.7, color=colour,
                 label=f"block {d['evaluate_on']}, fitted on {d['fit_on']}: RMSE {h['rmse_gcc']:.3f}")
     ax.axvline(0.0, color="black", lw=0.8)
     ax.axhspan(lo, hi, color=EXCLUDED_INK, alpha=0.25, lw=0)

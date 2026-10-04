@@ -419,3 +419,28 @@ def test_the_committed_design_is_frozen_and_unchanged(config, split):
     assert config["frozen_on"] == "2026-10-04"
     db.check_frozen(record, config)
     assert db.config_sha256(config) == FROZEN_CONFIG_SHA256
+
+
+# --------------------------------------------------------------------------
+# The recorded scores (written after the freeze commit) reproduce
+# --------------------------------------------------------------------------
+
+def test_recorded_scores_reproduce(tmp_path):
+    result = db.run(tmp_path)
+    for name in ("depth_block_results.json",):
+        _close(json.loads((RECORDED / name).read_text()),
+               json.loads((tmp_path / name).read_text()), rel=1e-9)
+    for name in ("depth_block_table.csv", "depth_block_predictions.csv",
+                 "residual_lag_correlation.csv"):
+        a, b = pd.read_csv(RECORDED / name), pd.read_csv(tmp_path / name)
+        pd.testing.assert_frame_equal(a, b, check_exact=False, rtol=1e-9, atol=1e-12)
+    assert result["scores"]["overall_reading"] == "block fit better"
+
+
+def test_held_out_scores_follow_the_frozen_reading_rule():
+    r = json.loads((RECORDED / "depth_block_results.json").read_text())
+    for d in r["directions"].values():
+        assert d["reading"] == db.reading(d["held_out_block_fit"], d["held_out_supplied_gardner"])
+        assert d["held_out_block_fit"]["n"] == d["held_out_supplied_gardner"]["n"] == d["evaluation"]["n"]
+    assert r["overall_reading"] == db.overall_reading(d["reading"] for d in r["directions"].values())
+    assert r["qualifications"]["vertical_depth_established"] is False
