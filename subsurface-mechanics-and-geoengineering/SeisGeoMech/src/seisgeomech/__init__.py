@@ -12,7 +12,7 @@ equation, parameter and dataset.  Nothing outside those two folders is used.
 
 from __future__ import annotations
 
-__version__ = "3.0.0"
+__version__ = "3.1.0"
 
 from . import analysis, depth_blocks, elasticity, las_io, seismic, stress, units, worked_examples
 

@@ -35,6 +35,9 @@ from pathlib import Path
 RTOL = 1e-9
 ATOL = 1e-12
 SKIP_KEYS = {"generated_utc"}
+#: values smaller than this (verification residuals near zero) are left out of
+#: the reported largest relative difference; ATOL covers them
+REL_FLOOR = 1e-6
 
 
 class Report:
@@ -42,7 +45,11 @@ class Report:
         self.failures = []
         self.values = 0
         self.max_abs = 0.0
+        self.max_abs_where = ""
+        self.max_rel = 0.0
+        self.max_rel_where = ""
         self.byte_identical = 0
+        self.differing_files = []
         self.files = 0
 
     def number(self, where, a, b):
@@ -61,7 +68,10 @@ class Report:
                 self.failures.append(f"{where}: {a!r} != {b!r}")
             return
         diff = abs(a - b)
-        self.max_abs = max(self.max_abs, diff)
+        if diff > self.max_abs:
+            self.max_abs, self.max_abs_where = diff, where
+        if abs(a) > REL_FLOOR and diff / abs(a) > self.max_rel:
+            self.max_rel, self.max_rel_where = diff / abs(a), where
         if diff > ATOL + RTOL * abs(a):
             self.failures.append(f"{where}: recorded {a!r}, new {b!r} (|diff| {diff:.3e})")
 
@@ -123,6 +133,8 @@ def compare_file(rep, recorded: Path, new: Path):
         return
     if recorded.read_bytes() == new.read_bytes():
         rep.byte_identical += 1
+    else:
+        rep.differing_files.append(recorded.name)
     if recorded.suffix == ".json":
         _walk(rep, recorded.name, json.loads(recorded.read_text()), json.loads(new.read_text()))
     else:
@@ -153,6 +165,12 @@ def main(argv=None) -> int:
     print(f"{rep.files} files, {rep.values} values compared "
           f"(rtol {RTOL:g}, atol {ATOL:g}); largest absolute difference {rep.max_abs:.3e}; "
           f"{rep.byte_identical} of {rep.files} files byte-identical")
+    if rep.max_abs:
+        print(f"  largest absolute difference at {rep.max_abs_where}")
+        print(f"  largest relative difference (|recorded| > {REL_FLOOR:g}) {rep.max_rel:.3e} "
+              f"at {rep.max_rel_where}")
+    if rep.differing_files:
+        print(f"  not byte-identical: {', '.join(rep.differing_files)}")
     for f in rep.failures[:50]:
         print("  FAIL", f)
     if len(rep.failures) > 50:
