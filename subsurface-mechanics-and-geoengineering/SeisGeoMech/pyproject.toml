@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seisgeomech"
-version = "3.0.0"
+version = "3.1.0"
 description = "Testing Gardner's density relation at well 48/10b-9 and following its error into overburden stress and seismic reflectivity"
 readme = "README.md"
 requires-python = ">=3.10"   # verified on 3.10.12 and 3.11.15
@@ -15,6 +15,7 @@ dependencies = [
     "matplotlib>=3.7",
     "lasio>=0.31",
     "bruges>=0.5.4",
+    "setuptools<81",   # bruges 0.5.4 imports pkg_resources; see requirements.txt
 ]
 
 [project.optional-dependencies]

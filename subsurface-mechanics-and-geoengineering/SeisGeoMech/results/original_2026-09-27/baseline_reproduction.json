@@ -1,0 +1,259 @@
+{
+  "purpose": "Reproduction of the SeisGeoMech results published 2026-09-27, before any change to scientific behaviour, and the before/after record of the clean-install fix.",
+  "starting_commit": "3236c15becc3633627fd4e1ffc4c545315598571",
+  "reproduced_on": "2026-10-04",
+  "machine": "cloud Linux container (x86_64), not the author's machine",
+  "las_sha256": "8059581f2b1a6f0245db417b0f5c503eb50c31276afdd3c87b6b7b91a8cf3ab0",
+  "manifest": "MANIFEST_original.sha256 (LAS file, 12 CSV tables, summary.json, environment.txt, 6 figures and the notebook, as committed at the starting commit)",
+  "excluded_from_comparison": [
+    "summary.json generated_utc (a timestamp)"
+  ],
+  "runs": {
+    "1_baseline": {
+      "description": "untouched copy of the starting commit; fresh Python 3.11 venv; pip install -r requirements-lock.txt (unchanged)",
+      "python": "3.11.15",
+      "packages": {
+        "numpy": "2.4.6",
+        "pandas": "3.0.6",
+        "scipy": "1.17.1",
+        "matplotlib": "3.11.2",
+        "lasio": "0.32",
+        "bruges": "0.5.4",
+        "setuptools": "79.0.1",
+        "pytest": "9.1.1",
+        "pip": "26.2.1"
+      },
+      "note": "the Python 3.11 venv seeds setuptools 79.0.1 itself; requirements-lock.txt did not list it",
+      "pytest": "126 passed",
+      "run_all_exit": 0,
+      "comparison_with_committed_results": {
+        "csv_byte_identical": [
+          "depth_convention_evidence.csv",
+          "gardner_vs_rhob.csv",
+          "hole_condition.csv",
+          "impedance_and_reflectivity.csv",
+          "las_curve_coverage.csv",
+          "merivale_window_sensitivity.csv",
+          "p_wave_modulus_profile.csv",
+          "resolution_sweep.csv",
+          "rho_g_profile.csv",
+          "uniaxial_strain_stress_ratio.csv",
+          "worked_example_merivale.csv",
+          "worked_example_olivine.csv"
+        ],
+        "csv_differing": {},
+        "summary_scalars_compared": 65,
+        "summary_scalars_identical": 65,
+        "summary_scalars_differing": {},
+        "figures_byte_identical": 6
+      }
+    },
+    "2_defect_before_fix": {
+      "description": "fresh Python 3.13 venv; pip install -r requirements.txt as committed (no setuptools)",
+      "python": "3.13.14",
+      "packages": {
+        "numpy": "2.5.3",
+        "pandas": "3.0.6",
+        "scipy": "1.18.1",
+        "matplotlib": "3.11.2",
+        "lasio": "0.32",
+        "bruges": "0.5.4",
+        "setuptools": "absent",
+        "pytest": "9.1.1",
+        "pip": "26.1.2"
+      },
+      "pytest": "7 failed, 102 passed, 17 errors",
+      "run_all_exit": 1,
+      "error": "ModuleNotFoundError: No module named 'pkg_resources' (bruges/__init__.py line 20: from pkg_resources import get_distribution, DistributionNotFound)",
+      "also_failing": "pip install . (pyproject.toml) in a fresh Python 3.13 venv: same ModuleNotFoundError on import bruges"
+    },
+    "3_fixed_requirements": {
+      "description": "fresh Python 3.13 venv; pip install -r requirements.txt with setuptools<81",
+      "python": "3.13.14",
+      "packages": {
+        "numpy": "2.5.3",
+        "pandas": "3.0.6",
+        "scipy": "1.18.1",
+        "matplotlib": "3.11.2",
+        "lasio": "0.32",
+        "bruges": "0.5.4",
+        "setuptools": "80.10.2",
+        "pytest": "9.1.1",
+        "pip": "26.1.2"
+      },
+      "pytest": "126 passed",
+      "run_all_exit": 0,
+      "comparison_with_committed_results": {
+        "csv_byte_identical": [
+          "depth_convention_evidence.csv",
+          "hole_condition.csv",
+          "impedance_and_reflectivity.csv",
+          "las_curve_coverage.csv",
+          "p_wave_modulus_profile.csv",
+          "resolution_sweep.csv",
+          "rho_g_profile.csv",
+          "uniaxial_strain_stress_ratio.csv",
+          "worked_example_olivine.csv"
+        ],
+        "csv_differing": {
+          "gardner_vs_rhob.csv": {
+            "cells_differing": 1105,
+            "max_abs_difference": 2.220446049250313e-15,
+            "max_rel_difference": 8.697761455456103e-16
+          },
+          "merivale_window_sensitivity.csv": {
+            "cells_differing": 6,
+            "max_abs_difference": 9.094947017729282e-13,
+            "max_rel_difference": 2.843616355509483e-16
+          },
+          "worked_example_merivale.csv": {
+            "cells_differing": 5,
+            "max_abs_difference": 9.094947017729282e-13,
+            "max_rel_difference": 2.843616355509483e-16
+          }
+        },
+        "summary_scalars_compared": 65,
+        "summary_scalars_identical": 59,
+        "summary_scalars_differing": {
+          "gardner_refit_bias_gcc": {
+            "recorded": -0.0009097914550393785,
+            "regenerated": -0.0009097914550378224,
+            "abs_difference": 1.5561553781684445e-15
+          },
+          "gardner_refit_coefficient": {
+            "recorded": 0.15940647662489332,
+            "regenerated": 0.15940647662489327,
+            "abs_difference": 5.551115123125783e-17
+          },
+          "gardner_refit_exponent": {
+            "recorded": 0.33316822339664465,
+            "regenerated": 0.33316822339664476,
+            "abs_difference": 1.1102230246251565e-16
+          },
+          "gardner_refit_rmse_gcc": {
+            "recorded": 0.06903989763039402,
+            "regenerated": 0.06903989763039399,
+            "abs_difference": 2.7755575615628914e-17
+          },
+          "gardner_refit_rmse_reduction_pct_in_sample": {
+            "recorded": 41.45776346381238,
+            "regenerated": 41.457763463812405,
+            "abs_difference": 2.842170943040401e-14
+          },
+          "identity_E_roundtrip_rel_error": {
+            "recorded": 3.0533098123209847e-16,
+            "regenerated": 0.0,
+            "abs_difference": 3.0533098123209847e-16
+          }
+        },
+        "figures_byte_identical": 6
+      },
+      "note": "numpy 2.5.3 and scipy 1.18.1 here, newer than the lock; the remaining differences are last-bit rounding in the least-squares refit and one identity residual, not an effect of setuptools"
+    },
+    "4_fixed_lock": {
+      "description": "fresh Python 3.13 venv; pip install -r requirements-lock.txt with setuptools==79.0.1",
+      "python": "3.13.14",
+      "packages": {
+        "numpy": "2.4.6",
+        "pandas": "3.0.6",
+        "scipy": "1.17.1",
+        "matplotlib": "3.11.2",
+        "lasio": "0.32",
+        "bruges": "0.5.4",
+        "setuptools": "79.0.1",
+        "pytest": "9.1.1",
+        "pip": "26.1.2"
+      },
+      "pytest": "126 passed",
+      "run_all_exit": 0,
+      "comparison_with_committed_results": {
+        "csv_byte_identical": [
+          "depth_convention_evidence.csv",
+          "gardner_vs_rhob.csv",
+          "hole_condition.csv",
+          "impedance_and_reflectivity.csv",
+          "las_curve_coverage.csv",
+          "merivale_window_sensitivity.csv",
+          "p_wave_modulus_profile.csv",
+          "resolution_sweep.csv",
+          "rho_g_profile.csv",
+          "uniaxial_strain_stress_ratio.csv",
+          "worked_example_merivale.csv",
+          "worked_example_olivine.csv"
+        ],
+        "csv_differing": {},
+        "summary_scalars_compared": 65,
+        "summary_scalars_identical": 65,
+        "summary_scalars_differing": {},
+        "figures_byte_identical": 6
+      }
+    }
+  },
+  "setuptools_versions_checked": {
+    "79.0.1": "pkg_resources importable (DeprecationWarning)",
+    "80.10.2": "importable (UserWarning advising setuptools<81)",
+    "81.0.0": "importable (UserWarning advising setuptools<81)",
+    "82.0.0": "No module named 'pkg_resources'",
+    "82.0.1": "absent",
+    "83.0.0": "absent",
+    "84.0.0": "absent"
+  },
+  "reference_findings_recalculated": {
+    "paired_samples": 1105,
+    "overlap_top_m": 3614.1999852000004,
+    "overlap_base_m": 3835.0000008,
+    "overlap_thickness_m": 220.80001559999982,
+    "supplied_gardner_bias_gcc": -0.09321050627796293,
+    "supplied_gardner_rmse_gcc": 0.1179317732210612,
+    "in_sample_refit_rmse_gcc": 0.06903989763039402,
+    "in_sample_refit_coefficient": 0.15940647662489332,
+    "in_sample_refit_exponent": 0.33316822339664465,
+    "rho_g_gradient_measured_MPa_per_km": 25.887321173780506,
+    "rho_g_gradient_gardner_MPa_per_km": 24.97329471046138
+  },
+  "reference_findings_check": {
+    "paired_samples": {
+      "recalculated": 1105,
+      "stated": 1105,
+      "tolerance": 0,
+      "agrees": true
+    },
+    "overlap_thickness_m": {
+      "recalculated": 220.80001559999982,
+      "stated": 221,
+      "tolerance": 1.0,
+      "agrees": true
+    },
+    "supplied_gardner_bias_gcc": {
+      "recalculated": -0.09321050627796293,
+      "stated": -0.0932,
+      "tolerance": 5e-05,
+      "agrees": true
+    },
+    "supplied_gardner_rmse_gcc": {
+      "recalculated": 0.1179317732210612,
+      "stated": 0.1179,
+      "tolerance": 5e-05,
+      "agrees": true
+    },
+    "in_sample_refit_rmse_gcc": {
+      "recalculated": 0.06903989763039402,
+      "stated": 0.069,
+      "tolerance": 5e-05,
+      "agrees": true
+    },
+    "rho_g_gradient_gardner_MPa_per_km": {
+      "recalculated": 24.97329471046138,
+      "stated": 24.973,
+      "tolerance": 0.0005,
+      "agrees": true
+    },
+    "rho_g_gradient_measured_MPa_per_km": {
+      "recalculated": 25.887321173780506,
+      "stated": 25.887,
+      "tolerance": 0.0005,
+      "agrees": true
+    }
+  },
+  "reference_findings_source": "summary.json regenerated in run 1 (not the committed file)"
+}

@@ -1,0 +1,92 @@
+{
+  "name": "two-direction depth-block test of the Gardner form with locally fitted coefficients",
+  "status": "frozen: committed with the derived split before any held-out prediction was scored",
+  "frozen_on": "2026-10-04",
+  "question": "Fitted on one contiguous depth block of the overlap, do coefficients of the supplied Gardner form predict the other block better or worse than the supplied coefficients do on exactly the same samples, read by the rule under 'reading_rule', in each direction separately?",
+  "scope": "A within-well test at 48/10b-9 only. The two blocks are adjacent parts of one 221 m interval of one log, not independent data. Validation on another well is unavailable: the supplied material contains paired DT and RHOB for this one well only.",
+  "blinding": "Pre-specified, not blind. The full-overlap residuals of the supplied relation and of the all-sample in-sample refit, for every sample in both blocks, were published on 2026-09-27 (results/tables/gardner_vs_rhob.csv, figure 2) before this design. The midpoint rule and the approximately 20 m gap follow the task brief. No block-fitted coefficient or held-out prediction was computed before the freeze commit.",
+  "samples": {
+    "definition": "the paired samples of analysis.stage_load: rows of the supplied LAS with DT and RHOB both present after removing the header NULL, Vp = 1e6 * 0.3048 / DT finite and positive",
+    "expected_count": 1105,
+    "order": "ascending logged depth coordinate DEPT_M",
+    "identifier": "row index of the sample in the supplied LAS data section (0-based) and its logged DEPT value in feet; ids_sha256 = sha256 of one 'las_row:repr(dept_ft)' line per sample, in depth order"
+  },
+  "coordinate": {
+    "name": "DEPT_M",
+    "definition": "logged DEPT (ft) * 0.3048",
+    "caveat": "The logged coordinate. The file does not establish whether it is vertical (README, 'Two things the numbers depend on'), so the gap and every block length are differences along this coordinate, not vertical or bed thicknesses."
+  },
+  "split": {
+    "midpoint_rule": "midpoint of the overlap's logged coordinate range, (first DEPT_M + last DEPT_M) / 2",
+    "exclusion_gap_m": 20.0,
+    "excluded_if": "abs(DEPT_M - midpoint) <= exclusion_gap_m / 2",
+    "block_A": "every remaining sample at smaller logged coordinate than the gap (DEPT_M < midpoint - exclusion_gap_m / 2)",
+    "block_B": "every remaining sample at larger logged coordinate than the gap (DEPT_M > midpoint + exclusion_gap_m / 2)",
+    "authoritative_assignment": "results/depth_blocks/split_samples.csv (las_row to block) and the ids_sha256 values under 'frozen_split' are the frozen assignment; the rule above records how it was derived.",
+    "edge_note": "The overlap is sampled every 0.2 m (0.6562 ft, stored to four decimals in feet) and the midpoint, 3724.6 m, falls on a sample, so both nominal gap edges lie within about 1.6e-5 m of a sample. The exact DEPT_M values put the sample at 3714.600008 m inside the gap and the sample at 3734.600009 m in block B: A 502, excluded 100, B 503 samples, and 20.2 m between the last A and the first B sample. split.json records the samples either side of each edge.",
+    "gap_rationale": "An earlier review estimated how far along the log the Gardner residuals stay correlated, and that estimate motivated a gap of about 20 m. It is a design choice, not a guarantee that the two blocks are statistically independent.",
+    "not_tuned": "The midpoint, the gap and the two blocks are fixed here. No other split or gap is scored, and none will be chosen after seeing held-out results."
+  },
+  "directions": [
+    {"name": "A_to_B", "fit_on": "A", "evaluate_on": "B"},
+    {"name": "B_to_A", "fit_on": "B", "evaluate_on": "A"}
+  ],
+  "fit": {
+    "form": "rho = a * Vp ** b (the supplied Gardner form, Seismic/Ex1.ipynb markdown cell 35)",
+    "units": "Vp in m/s, rho in g/cm3",
+    "method": "numpy.polyfit(log(Vp), log(RHOB), 1) on the training block only; b = slope, a = exp(intercept). The method of the original in-sample refit (analysis.stage_gardner)"
+  },
+  "reference": {
+    "relation": "supplied Gardner, rho = 0.31 * Vp ** 0.25, coefficients fixed",
+    "evaluated_on": "exactly the evaluation samples of each direction"
+  },
+  "metrics": {
+    "residual": "predicted density - measured RHOB, g/cm3",
+    "reported": [
+      "n",
+      "bias (mean residual) and bias as % of the mean measured density",
+      "RMSE",
+      "MAE",
+      "RMSE and MAE reduction, % = 100 * (supplied - block fit) / supplied; positive means the block fit has the lower error (the sign of the original in-sample 41.5 % reduction)",
+      "training-block fit statistics of the block fit",
+      "number of evaluation samples whose Vp lies outside the training block's Vp range"
+    ],
+    "geomechanical_consequence": "mean rho g gradient over the evaluation block (stress.mean_rho_g_gradient along the logged coordinate) with measured, supplied-Gardner and block-fitted density, and the differences from measured; the one-dimensional qualification of the original gradients applies unchanged"
+  },
+  "reading_rule": {
+    "per_direction": "The block fit predicts better in a direction only if both its held-out RMSE and its held-out MAE are lower than those of the supplied relation on the same samples; worse only if both are higher; otherwise mixed. Bias is reported with its sign and does not enter the reading.",
+    "across_directions": "The two directions are read separately and never pooled or averaged. If they agree, that is the reading; if they disagree, the result is direction-dependent.",
+    "reported_whatever_the_outcome": "Every metric, both directions and the rho g differences are reported whatever the reading.",
+    "interpretation": "Both relations share the functional form. A 'better' reading shows that coefficients fitted on one block transfer to the adjacent block of this interval better than the supplied coefficients do; it is not evidence that the form is correct, and says nothing about other depths or wells. The supplied coefficients carry a known in-sample bias of -0.093 g/cm3 over the whole overlap."
+  },
+  "context": {
+    "residual_lag_correlation": "Pearson correlation of the residual series with itself shifted by 0.2, 1, 2, 5, 10, 20, 30 and 40 m along the logged coordinate, for the supplied-relation residuals and for the all-sample in-sample refit residuals (analysis.stage_gardner). Descriptive only: not a test of independence and not a decorrelation length, computed after the gap was fixed and not used to choose it."
+  },
+  "outputs": {
+    "split": ["results/depth_blocks/split.json", "results/depth_blocks/split_samples.csv"],
+    "scores": [
+      "results/depth_blocks/depth_block_results.json",
+      "results/depth_blocks/depth_block_table.csv",
+      "results/depth_blocks/depth_block_predictions.csv",
+      "results/depth_blocks/residual_lag_correlation.csv"
+    ],
+    "figure": "results/depth_blocks/fig07_depth_blocks.png"
+  },
+  "frozen_split": {
+    "all_ids_sha256": "ec419aadd9b8f9a984b5af09528a7d1e9ad608a7d48afe39c0d9e46346e73c81",
+    "blocks": {
+      "A": {
+        "n": 502,
+        "ids_sha256": "b50104e81e4492e33fd1363ca0b8dad0d85aace6d4892f1aa6ff92890fc84956"
+      },
+      "B": {
+        "n": 503,
+        "ids_sha256": "930df8f71b6fe065a082e9053771dc75b89010af13b90ee0aa7d90c49da360b9"
+      },
+      "excluded": {
+        "n": 100,
+        "ids_sha256": "c41645b26f1d5aba244f6b43057ef4651ab7a8db92a32e29bb8c381c4003013f"
+      }
+    }
+  }
+}

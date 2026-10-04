@@ -1,0 +1,99 @@
+name: SeisGeoMech
+
+# Two jobs, both expected to pass:
+#   locked - the pinned environment that produced the published results
+#            (Python 3.11, requirements-lock.txt), plus the notebook;
+#   fresh  - a clean Python 3.13 virtual environment built from requirements.txt
+#            alone, i.e. the install that failed before setuptools<81 was listed
+#            (bruges imports pkg_resources).
+# Each regenerates every table into ci/ and compares it with the recorded
+# results (scripts/compare_results.py: rtol 1e-9, atol 1e-12, timestamps
+# skipped, figures not compared).  Nothing is fitted beyond what run_all.py
+# does in about five seconds.  No recorded result is overwritten; the locked
+# job ends by checking that no tracked file under results/ has changed.
+
+on:
+  push:
+    paths:
+      - "subsurface-mechanics-and-geoengineering/SeisGeoMech/**"
+      - ".github/workflows/seisgeomech.yml"
+  pull_request:
+    paths:
+      - "subsurface-mechanics-and-geoengineering/SeisGeoMech/**"
+      - ".github/workflows/seisgeomech.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  locked:
+    name: locked environment (Python 3.11, requirements-lock.txt)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: subsurface-mechanics-and-geoengineering/SeisGeoMech
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install the locked environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-lock.txt
+          python -c "import sys, numpy, scipy, setuptools, bruges; print(sys.version); print('numpy', numpy.__version__, 'scipy', scipy.__version__, 'setuptools', setuptools.__version__, 'bruges', bruges.__version__)"
+      - name: Tests
+        run: python -m pytest tests -q
+      - name: Regenerate every result into ci/
+        run: python scripts/run_all.py --out-dir ci
+      - name: Original 12 tables and summary.json match the recorded results
+        run: python scripts/compare_results.py results/tables ci/tables --expect-files 13
+      - name: Depth-block split and scores match the recorded results
+        run: python scripts/compare_results.py results/depth_blocks ci/depth_blocks --expect-files 6
+      - name: Execute the notebook
+        run: python -m jupyter nbconvert --to notebook --execute notebooks/SeisGeoMech.ipynb --output-dir ci --output SeisGeoMech_executed.ipynb
+      - name: No recorded result was modified
+        run: git diff --exit-code --stat -- results
+      - name: Keep the CI outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seisgeomech-locked
+          path: subsurface-mechanics-and-geoengineering/SeisGeoMech/ci
+          if-no-files-found: ignore
+
+  fresh:
+    name: fresh install (Python 3.13, requirements.txt)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: subsurface-mechanics-and-geoengineering/SeisGeoMech
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: A fresh virtual environment contains no setuptools
+        run: |
+          python -m venv .venv
+          .venv/bin/python -c "import importlib.util, sys; found = importlib.util.find_spec('setuptools'); print('setuptools before install:', found); sys.exit(1 if found else 0)"
+      - name: Install from requirements.txt alone
+        run: |
+          .venv/bin/python -m pip install -r requirements.txt
+          .venv/bin/python -W ignore -c "import sys, setuptools, pkg_resources, bruges, numpy; print(sys.version); print('setuptools', setuptools.__version__, 'bruges', bruges.__version__, 'numpy', numpy.__version__); assert int(setuptools.__version__.split('.')[0]) < 81"
+      - name: Tests
+        run: .venv/bin/python -m pytest tests -q
+      - name: Regenerate every result into ci/
+        run: .venv/bin/python scripts/run_all.py --out-dir ci
+      - name: Original 12 tables and summary.json match the recorded results
+        run: .venv/bin/python scripts/compare_results.py results/tables ci/tables --expect-files 13
+      - name: Depth-block split and scores match the recorded results
+        run: .venv/bin/python scripts/compare_results.py results/depth_blocks ci/depth_blocks --expect-files 6
+      - name: Keep the CI outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seisgeomech-fresh
+          path: subsurface-mechanics-and-geoengineering/SeisGeoMech/ci
+          if-no-files-found: ignore

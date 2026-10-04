@@ -1,0 +1,20 @@
+SeisGeoMech - running workflow
+Traceback (most recent call last):
+  File "defect_copy/scripts/run_all.py", line 50, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "defect_copy/scripts/run_all.py", line 22, in main
+    res = analysis.run()
+  File "defect_copy/src/seisgeomech/analysis.py", line 536, in run
+    stage_resolution(res)
+    ~~~~~~~~~~~~~~~~^^^^^
+  File "defect_copy/src/seisgeomech/analysis.py", line 362, in stage_resolution
+    sweep_m = sx.resolution_sweep(rc_m, dt_s, RESOLUTION_FREQUENCIES_HZ)
+  File "defect_copy/src/seisgeomech/seismic.py", line 191, in resolution_sweep
+    w, _ = ricker_wavelet(duration=dur, dt=dt_s, frequency=f)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "defect_copy/src/seisgeomech/seismic.py", line 92, in ricker_wavelet
+    import bruges as bg
+  File "venv_defect313/lib/python3.13/site-packages/bruges/__init__.py", line 20, in <module>
+    from pkg_resources import get_distribution, DistributionNotFound
+ModuleNotFoundError: No module named 'pkg_resources'

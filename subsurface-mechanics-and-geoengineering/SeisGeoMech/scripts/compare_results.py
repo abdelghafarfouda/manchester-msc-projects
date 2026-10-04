@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""Compare regenerated results with the recorded ones.
+
+    python scripts/compare_results.py results/tables ci/tables
+    python scripts/compare_results.py results/depth_blocks ci/depth_blocks
+
+Every ``.csv`` and ``.json`` file in the recorded folder must exist in the new
+one, and the new one may hold no others; columns, rows and keys must match.
+Types must match; integers, strings and booleans must be equal, and so must
+infinities and NaNs.  Floats must agree within
+
+    |new - recorded| <= ATOL + RTOL * |recorded|,  RTOL = 1e-9, ATOL = 1e-12.
+
+Why these values.  With the pinned lock file every table and value reproduces
+bit for bit in this project's own environments (``results/original_2026-09-27/``).
+A fresh install of the newest compatible NumPy and SciPy changes the last bits
+only: at most 1.7e-12 relative (the in-sample refit bias, a value near -9e-4).
+On GitHub's runners even the locked environment differs in the last bits: at
+most 5.6e-9 absolute on an impedance of order 1e7, and 7.1e-12 relative on a
+small reflection coefficient (CI runs of 2026-10-04).  A verification residual
+recorded as 3.1e-16 (identity_E_roundtrip_rel_error) came out as 0.0 in a fresh
+install, which ATOL covers.  RTOL is more than 100 times the
+largest relative difference seen, and far below the four significant figures
+reported (docs/REPRODUCIBILITY.md).
+
+Skipped: ``generated_utc`` (a timestamp).  Figures are not compared.
+Exit status 1 on any difference.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import io
+import json
+import math
+import sys
+from pathlib import Path
+
+RTOL = 1e-9
+ATOL = 1e-12
+SKIP_KEYS = {"generated_utc"}
+#: values smaller than this (verification residuals near zero) are left out of
+#: the reported largest relative difference; ATOL covers them
+REL_FLOOR = 1e-6
+
+
+class Report:
+    def __init__(self):
+        self.failures = []
+        self.values = 0
+        self.max_abs = 0.0
+        self.max_abs_where = ""
+        self.max_rel = 0.0
+        self.max_rel_where = ""
+        self.byte_identical = 0
+        self.differing_files = []
+        self.files = 0
+
+    def number(self, where, a, b):
+        self.values += 1
+        if type(a) is not type(b):
+            # bool vs int, int vs float, number vs string, None: never the same value
+            self.failures.append(f"{where}: type differs, recorded {a!r}, new {b!r}")
+            return
+        if not isinstance(a, float):
+            # integers, strings, booleans, None: exact
+            if a != b:
+                self.failures.append(f"{where}: {a!r} != {b!r}")
+            return
+        if math.isnan(a) or math.isnan(b) or math.isinf(a) or math.isinf(b):
+            if not ((math.isnan(a) and math.isnan(b)) or a == b):
+                self.failures.append(f"{where}: {a!r} != {b!r}")
+            return
+        diff = abs(a - b)
+        if diff > self.max_abs:
+            self.max_abs, self.max_abs_where = diff, where
+        if abs(a) > REL_FLOOR and diff / abs(a) > self.max_rel:
+            self.max_rel, self.max_rel_where = diff / abs(a), where
+        if diff > ATOL + RTOL * abs(a):
+            self.failures.append(f"{where}: recorded {a!r}, new {b!r} (|diff| {diff:.3e})")
+
+
+def _walk(rep, where, a, b):
+    if isinstance(a, dict):
+        if not isinstance(b, dict):
+            rep.failures.append(f"{where}: expected an object")
+            return
+        ka = set(a) - SKIP_KEYS
+        kb = set(b) - SKIP_KEYS
+        if ka != kb:
+            rep.failures.append(f"{where}: keys differ, missing {sorted(ka - kb)}, "
+                                f"extra {sorted(kb - ka)}")
+        for k in sorted(ka & kb):
+            _walk(rep, f"{where}.{k}", a[k], b[k])
+    elif isinstance(a, list):
+        if not isinstance(b, list) or len(a) != len(b):
+            rep.failures.append(f"{where}: list length differs")
+            return
+        for i, (x, y) in enumerate(zip(a, b)):
+            _walk(rep, f"{where}[{i}]", x, y)
+    else:
+        rep.number(where, a, b)
+
+
+def _cell(text):
+    """A CSV cell as int, float or the original string."""
+    if text != text.strip() or "_" in text:
+        return text
+    try:
+        return int(text)
+    except ValueError:
+        pass
+    try:
+        return float(text)
+    except ValueError:
+        return text
+
+
+def compare_csv(rep, name, a_text, b_text):
+    a = list(csv.reader(io.StringIO(a_text)))
+    b = list(csv.reader(io.StringIO(b_text)))
+    if not a or not b or a[0] != b[0]:
+        rep.failures.append(f"{name}: header differs")
+        return
+    if len(a) != len(b):
+        rep.failures.append(f"{name}: {len(a) - 1} rows recorded, {len(b) - 1} new")
+        return
+    for i, (ra, rb) in enumerate(zip(a[1:], b[1:]), start=1):
+        if len(ra) != len(rb):
+            rep.failures.append(f"{name} row {i}: column count differs")
+            continue
+        for col, x, y in zip(a[0], ra, rb):
+            rep.number(f"{name}[{i}].{col}", _cell(x), _cell(y))
+
+
+def compare_file(rep, recorded: Path, new: Path):
+    rep.files += 1
+    if not new.exists():
+        rep.failures.append(f"{new}: missing")
+        return
+    if recorded.read_bytes() == new.read_bytes():
+        rep.byte_identical += 1
+    else:
+        rep.differing_files.append(recorded.name)
+    if recorded.suffix == ".json":
+        _walk(rep, recorded.name, json.loads(recorded.read_text()), json.loads(new.read_text()))
+    else:
+        compare_csv(rep, recorded.name, recorded.read_text(), new.read_text())
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="Compare regenerated results with recorded ones.")
+    ap.add_argument("recorded", help="recorded folder or file")
+    ap.add_argument("new", help="regenerated folder or file")
+    ap.add_argument("--expect-files", type=int, default=None,
+                    help="fail unless exactly this many .csv/.json files are compared")
+    args = ap.parse_args(argv)
+
+    rep = Report()
+    rec, new = Path(args.recorded), Path(args.new)
+    if rec.is_dir():
+        names = sorted(p.name for p in rec.iterdir() if p.suffix in (".csv", ".json"))
+        if not names:
+            rep.failures.append(f"{rec}: no .csv or .json files")
+        for n in names:
+            compare_file(rep, rec / n, new / n)
+        if new.is_dir():
+            extra = sorted({p.name for p in new.iterdir() if p.suffix in (".csv", ".json")}
+                           - set(names))
+            if extra:
+                rep.failures.append(f"{new}: files not in the recorded results: {extra}")
+    else:
+        compare_file(rep, rec, new)
+    if args.expect_files is not None and rep.files != args.expect_files:
+        rep.failures.append(f"compared {rep.files} files, expected {args.expect_files}")
+
+    print(f"{rep.files} files, {rep.values} values compared "
+          f"(rtol {RTOL:g}, atol {ATOL:g}); largest absolute difference {rep.max_abs:.3e}; "
+          f"{rep.byte_identical} of {rep.files} files byte-identical")
+    if rep.max_abs:
+        print(f"  largest absolute difference at {rep.max_abs_where}")
+        print(f"  largest relative difference (|recorded| > {REL_FLOOR:g}) {rep.max_rel:.3e} "
+              f"at {rep.max_rel_where}")
+    if rep.differing_files:
+        print(f"  not byte-identical: {', '.join(rep.differing_files)}")
+    for f in rep.failures[:50]:
+        print("  FAIL", f)
+    if len(rep.failures) > 50:
+        print(f"  ... and {len(rep.failures) - 50} more")
+    print("FAIL" if rep.failures else "PASS")
+    return 1 if rep.failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

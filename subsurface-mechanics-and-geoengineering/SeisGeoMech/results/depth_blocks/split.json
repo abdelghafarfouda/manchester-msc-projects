@@ -1,0 +1,96 @@
+{
+  "config": "configs/depth_blocks.json",
+  "n_paired_samples": 1105,
+  "all_ids_sha256": "ec419aadd9b8f9a984b5af09528a7d1e9ad608a7d48afe39c0d9e46346e73c81",
+  "ids_hash_recipe": "sha256 of one 'las_row:repr(dept_ft)' line per sample, in depth order",
+  "overlap_top_m": 3614.1999852000004,
+  "overlap_base_m": 3835.0000008,
+  "midpoint_m": 3724.5999930000003,
+  "exclusion_gap_m": 20.0,
+  "excluded_interval_m": [
+    3714.5999930000003,
+    3734.5999930000003
+  ],
+  "separation_last_A_to_first_B_m": 20.200010400000338,
+  "gap_edges": {
+    "lower": [
+      {
+        "las_row": 18296,
+        "dept_ft": 12186.3517,
+        "depth_m": 3714.39999816,
+        "block": "A",
+        "signed_distance_from_edge_m": -0.19999484000027223
+      },
+      {
+        "las_row": 18297,
+        "dept_ft": 12187.0079,
+        "depth_m": 3714.6000079200003,
+        "block": "excluded",
+        "signed_distance_from_edge_m": 1.492000001235283e-05
+      }
+    ],
+    "upper": [
+      {
+        "las_row": 18396,
+        "dept_ft": 12251.9685,
+        "depth_m": 3734.3999988000005,
+        "block": "excluded",
+        "signed_distance_from_edge_m": -0.19999419999976453
+      },
+      {
+        "las_row": 18397,
+        "dept_ft": 12252.6247,
+        "depth_m": 3734.6000085600003,
+        "block": "B",
+        "signed_distance_from_edge_m": 1.5560000065306667e-05
+      }
+    ]
+  },
+  "blocks": {
+    "A": {
+      "n": 502,
+      "las_row_first": 17795,
+      "las_row_last": 18296,
+      "las_rows_contiguous": true,
+      "dept_ft_first": 11857.6115,
+      "dept_ft_last": 12186.3517,
+      "depth_m_first": 3614.1999852000004,
+      "depth_m_last": 3714.39999816,
+      "length_along_log_m": 100.20001295999964,
+      "vp_min_m_s": 3395.3814791297664,
+      "vp_max_m_s": 5508.148373036097,
+      "vp_mean_m_s": 4687.860079161796,
+      "ids_sha256": "b50104e81e4492e33fd1363ca0b8dad0d85aace6d4892f1aa6ff92890fc84956"
+    },
+    "B": {
+      "n": 503,
+      "las_row_first": 18397,
+      "las_row_last": 18899,
+      "las_rows_contiguous": true,
+      "dept_ft_first": 12252.6247,
+      "dept_ft_last": 12582.021,
+      "depth_m_first": 3734.6000085600003,
+      "depth_m_last": 3835.0000008,
+      "length_along_log_m": 100.39999223999985,
+      "vp_min_m_s": 3496.7762659752657,
+      "vp_max_m_s": 5504.766101621451,
+      "vp_mean_m_s": 4472.682666248187,
+      "ids_sha256": "930df8f71b6fe065a082e9053771dc75b89010af13b90ee0aa7d90c49da360b9"
+    },
+    "excluded": {
+      "n": 100,
+      "las_row_first": 18297,
+      "las_row_last": 18396,
+      "las_rows_contiguous": true,
+      "dept_ft_first": 12187.0079,
+      "dept_ft_last": 12251.9685,
+      "depth_m_first": 3714.6000079200003,
+      "depth_m_last": 3734.3999988000005,
+      "length_along_log_m": 19.799990880000223,
+      "vp_min_m_s": 3796.8155579749327,
+      "vp_max_m_s": 4968.312338627651,
+      "vp_mean_m_s": 4459.158893644498,
+      "ids_sha256": "c41645b26f1d5aba244f6b43057ef4651ab7a8db92a32e29bb8c381c4003013f"
+    }
+  }
+}
