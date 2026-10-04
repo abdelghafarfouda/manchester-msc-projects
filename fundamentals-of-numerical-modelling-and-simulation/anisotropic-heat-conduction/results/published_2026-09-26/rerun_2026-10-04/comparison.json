@@ -1,0 +1,27 @@
+{
+  "approved": "results/published_2026-09-26 (the original recorded outputs, commit ea480d8)",
+  "new": "results/ of an unmodified copy of main at 68e532f, re-run on 2026-10-04 (see rerun_2026-10-04_environment.txt)",
+  "subset": false,
+  "rtol": 1e-09,
+  "atol": 1e-09,
+  "files": [
+    "centreline_5h.csv",
+    "checks.csv",
+    "corner_temperatures_5h.csv",
+    "field_5h_13x12.csv",
+    "field_5h_193x177.npz",
+    "grid_sensitivity.csv",
+    "history_193x177.csv",
+    "summary.json",
+    "verification_anisotropy.csv",
+    "verification_exact_space.csv",
+    "verification_exact_time.csv",
+    "verification_rod.csv"
+  ],
+  "numbers_compared": 57066,
+  "text_fields_compared": 22188,
+  "max_abs_difference": 0.0,
+  "max_rel_difference": 0.0,
+  "failures": [],
+  "passed": true
+}

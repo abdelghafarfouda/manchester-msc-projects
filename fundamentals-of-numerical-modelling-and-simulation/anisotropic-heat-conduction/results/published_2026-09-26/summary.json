@@ -1,0 +1,159 @@
+{
+  "question": "Temperature field, mean temperature and heat uptake of the plate after 5 h, and the grid needed for the mean temperature to change by < 0.2 % (Equation 4)",
+  "inputs": {
+    "Lx": 1.0,
+    "Ly": 1.0,
+    "kx": 16.0,
+    "ky": 20.0,
+    "rho": 7800.0,
+    "cp": 500.0,
+    "T_initial": 300.0,
+    "T_top": 500.0,
+    "t_end": 18000.0,
+    "bottom_segment": "300 sin(pi x / L) + 400 K"
+  },
+  "base_case_13x12": {
+    "nx": 13,
+    "ny": 12,
+    "dt_s": 1285.7142857142858,
+    "steps": 14,
+    "T_avg_5h_K": 444.9473737026352,
+    "heat_in_top_MJ_per_m": 181.94425679403105,
+    "heat_in_bottom_MJ_per_m": 325.3906682737184,
+    "corners_K": {
+      "bottom_left": 465.88176435188535,
+      "bottom_right": 465.8817643518855,
+      "top_left": 406.5915790193463,
+      "top_right": 406.59157901934634
+    },
+    "energy_closure": -7.989033761445281e-15
+  },
+  "finest_grid": {
+    "nx": 193,
+    "ny": 177,
+    "dt_s": 5.289450484866294,
+    "steps": 3403,
+    "T_avg_5h_K": 438.5440828063478,
+    "heat_in_top_MJ_per_m": 190.85378476130734,
+    "heat_in_bottom_MJ_per_m": 346.28042234516425,
+    "corners_K": {
+      "bottom_left": 453.7568826340114,
+      "bottom_right": 453.7568826340057,
+      "top_left": 395.05028161287277,
+      "top_right": 395.0502816128833
+    },
+    "energy_closure": -5.193740702338842e-12
+  },
+  "assignment_study_first_below_0p2_percent_nx": 17,
+  "joint_refinement_first_below_0p2_percent": [
+    193,
+    177
+  ],
+  "joint_refinement_changes_percent": [
+    0.7249387967369605,
+    0.40583478584025323,
+    0.2133466723050318,
+    0.10917050782191891
+  ],
+  "joint_refinement_change_ratios": [
+    1.7935398244464016,
+    1.9062899667327395,
+    1.9563853664490012
+  ],
+  "diagnostic_full_edges_change_ratios": [
+    3.6414257634177867,
+    3.8741406381631918
+  ],
+  "verification": {
+    "rod_max_abs_diff_C": 4.697254220431546e-05,
+    "exact_space_order_rms": 1.9707881297479488,
+    "exact_space_order_max": 1.9736089221927482,
+    "exact_space_order_rms_one_sided": 0.9553513605979721,
+    "exact_space_dt_sensitivity": {
+      "benchmark_dt_s": 0.25,
+      "benchmark_order_rms": 1.9707881297479488,
+      "finer_dt_s": 0.0625,
+      "finer_order_rms": 1.9894206387101485,
+      "finest_grid_rms_error_K": {
+        "benchmark": 0.0025061643860156044,
+        "finer": 0.002405314052956615
+      }
+    },
+    "exact_time_order_rms": 0.9786043659410382,
+    "exact_time_order_max": 0.9786043658841925,
+    "worst_energy_closure": 5.193740702338842e-12,
+    "units": {
+      "dt_eq3_s": 1354.1666666666665,
+      "dt_eq3_h_in_s": 1354.1666666666667,
+      "max_abs_dT": 1.0231815394945443e-12,
+      "H_rel_diff": 1.9972584403613203e-15
+    },
+    "anisotropy": {
+      "nx": 33,
+      "ny": 17,
+      "steps": 19,
+      "dt_s": 189.47368421052633,
+      "lambda_h_per_s": 0.00024032319576663486,
+      "tolerance_K": 1e-09,
+      "max_abs_error_K": 1.648e-12,
+      "max_abs_error_exchanged_K": 4.66
+    }
+  },
+  "checks": [
+    {
+      "check": "V1 course worked solution (rod, 4 steps)",
+      "value": "max |dT| = 4.70e-05 C",
+      "tolerance": "<= 5e-5 C (half the last tabulated digit)",
+      "passed": true,
+      "establishes": "the implicit-Euler / central-difference assembly reproduces the course's hand solution"
+    },
+    {
+      "check": "V2 exact solution, spatial order (RMS)",
+      "value": "1.971 (max norm 1.974)",
+      "tolerance": "2 +/- 0.1",
+      "passed": true,
+      "establishes": "second-order central differences and the ghost-node insulated boundary for smooth data; the square grid makes x and y interchangeable here, so this test cannot detect an exchange of alpha_x and alpha_y (V5 covers that)"
+    },
+    {
+      "check": "V2 exact solution, temporal order (RMS)",
+      "value": "0.979 (max norm 0.979)",
+      "tolerance": "1 +/- 0.1",
+      "passed": true,
+      "establishes": "first-order backward Euler"
+    },
+    {
+      "check": "V3 energy balance (every plate run)",
+      "value": "worst relative closure 5.2e-12",
+      "tolerance": "<= 1e-10",
+      "passed": true,
+      "establishes": "the scheme conserves energy: storage change = heat conducted in through the segments"
+    },
+    {
+      "check": "V4 units: same case in (cm, h) vs (m, s)",
+      "value": "max |dT| = 1.0e-12 K, heat input rel. diff 2.0e-15",
+      "tolerance": "<= 1e-8 K and <= 1e-10",
+      "passed": true,
+      "establishes": "no hidden unit assumption; Equation 3 gives seconds (m^2 kg/m^3 J/(kg K) / W/(m K) = s)"
+    },
+    {
+      "check": "V5 anisotropy orientation (exact discrete solution, dx != dy)",
+      "value": "max |dT| = 1.6e-12 K as implemented, 4.7e+00 K with alpha_x and alpha_y exchanged",
+      "tolerance": "<= 1e-09 K as implemented, and the exchanged case must exceed it",
+      "passed": true,
+      "establishes": "alpha_x and alpha_y act on the correct derivatives: the solver reproduces the analytic solution of the discrete scheme, and exchanging them in the assembly breaks the match"
+    }
+  ],
+  "environment": {
+    "started_utc": "2026-09-26T00:06:35+00:00",
+    "command": "python run_project.py",
+    "python": "3.10.12",
+    "implementation": "CPython",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+    "machine": "x86_64",
+    "numpy": "2.2.6",
+    "scipy": "1.15.3",
+    "matplotlib": "3.10.9",
+    "finished_utc": "2026-09-26T00:07:26+00:00",
+    "wall_time_s": 51.5
+  }
+}
