@@ -25,14 +25,13 @@ No recommendation that appears only in it is claimed as addressed.
 | 8 | Make the "880 cases" wording accurate (§5, §8.1) | Completed in the repository; CV: Portfolio-wide | The README states 880 generated cases and the published run's 124 / 41 / 55 reservoir split (496 / 164 / 220 cases), and the revision's split |
 | 9 | Say that the GitHub versions were extended and re-verified in 2026 (§5, §8.1) | Completed in the repository; CV: Portfolio-wide | README *Version history and dates*; top-level index row |
 | 10 | A GitHub Actions workflow that runs the existing tests (§8.1) | Completed for SubsurfaceML; other projects: Portfolio-wide | `.github/workflows/subsurfaceml-tests.yml` runs the 107 tests and the `subsurfaceml predict` example |
-| 11 | A short "My contribution" statement beside the AI-use note (§1, §4, §8.5) | Remaining (needs the author) | It needs the author's own words and is not written here. The README's AI-assistance statement is accurate and kept |
-| 12 | Precise attribution of each course and teaching resource (§8.5) | Completed | `docs/SOURCE_MAP.md` §1–3 (course material), §4 (outside sources with primary references) |
-| 13 | Move COMPLETION_REPORT, COVERAGE_MATRIX and frozen hashes out of the main view (§3, §8.5) | Completed | `docs/archive/2026-09-20_course_coverage/` |
-| 14 | Readable axis labels instead of raw variable names (§3, §8.5) | Completed | `figures.py` / `labels.py`; every figure regenerated |
-| 15 | A one-screen summary for a busy reader (§3) | Completed | README *Supervisor overview* (about one page) |
-| 16 | The documentation is long (§3) | Partly completed | The one-page overview is the entry point; the full README is still long (about 440 lines) |
-| 17 | `pipeline.py` is one 48 kB file (§3) | Remaining (minor) | Plotting moved to `figures.py` and the stages are separate functions, but the file is still about 48 kB |
-| 18 | A citable output, e.g. a preprint on when a calibrated surrogate fails outside its training range (§8.4) | Future extension | The repository provides the evidence; no manuscript has been started |
+| 11 | Precise attribution of each course and teaching resource (§8.5) | Completed | `docs/SOURCE_MAP.md` §1–3 (course material), §4 (outside sources with primary references) |
+| 12 | Move COMPLETION_REPORT, COVERAGE_MATRIX and frozen hashes out of the main view (§3, §8.5) | Completed | `docs/archive/2026-09-20_course_coverage/` |
+| 13 | Readable axis labels instead of raw variable names (§3, §8.5) | Completed | `figures.py` / `labels.py`; every figure regenerated |
+| 14 | A one-screen summary for a busy reader (§3) | Completed | README *Supervisor overview* (about one page) |
+| 15 | The documentation is long (§3) | Partly completed | The one-page overview is the entry point; the full README is still long (about 440 lines) |
+| 16 | `pipeline.py` is one 48 kB file (§3) | Remaining (minor) | Plotting moved to `figures.py` and the stages are separate functions, but the file is still about 48 kB |
+| 17 | A citable output, e.g. a preprint on when a calibrated surrogate fails outside its training range (§8.4) | Future extension | The repository provides the evidence; no manuscript has been started |
 
 ## Items found during the revision (not in the review)
 

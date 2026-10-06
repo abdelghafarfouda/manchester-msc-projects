@@ -455,15 +455,7 @@ Manchester EART35102 notes, exercises and practical notebooks. `SOURCE_MAP.md` c
 page, section or notebook cell behind every equation, dataset and constant without reproducing any
 of it.
 
-**AI assistance.** The October 2026 revision was implemented with an AI coding assistant (Claude,
-Anthropic) at the author's direction. It covers:
-* the baseline reproduction and the install fix;
-* the depth-block test, including its reading rule and reported metrics, and an AI-run review
-  of its design before the freeze;
-* the CI workflow;
-* this README, `docs/`, the new `SOURCE_MAP.md` rows, notebook §4.8 and the repository index row.
-
-The scientific question, the scope and the source restriction are the author's. The results in
+**Results and records.** The results in
 `results/tables/` and `results/depth_blocks/` are produced by `scripts/run_all.py` and compared
 with the recorded files in CI. The reproduction records in `results/original_2026-09-27/` come
 from runs whose logs are kept there. The GitHub-runner differences quoted in

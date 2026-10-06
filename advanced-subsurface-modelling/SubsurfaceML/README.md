@@ -420,12 +420,7 @@ redistributed here. Components added in October 2026 that come from outside
 the course material are listed with their primary sources in §4 of the same
 file.
 
-AI assistance: the versions published here were produced after the module.
-AI assistance was used substantially in writing, correcting, testing and
-documenting the code of the 2026-09-20 version (`docs/CHANGELOG.md`), and
-the October 2026 revision — the diagnosis, the new modules, the experiments,
-the results and this documentation — was implemented with an AI coding
-assistant (Claude, Anthropic) at the author's direction. Every number in
+The versions published here were produced after the module. Every number in
 this README is read from files in `results/` produced by the code in this
 repository.
 

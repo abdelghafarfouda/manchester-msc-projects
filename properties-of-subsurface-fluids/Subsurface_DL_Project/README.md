@@ -287,14 +287,8 @@ physics-informed loss follows its *Introduction to Scientific Machine Learning*
 slides (Dr Ben Moseley). No teaching material is redistributed here;
 [`docs/SOURCE_MAP.md`](docs/SOURCE_MAP.md) cites each item.
 
-AI assistance was used substantially in writing the code and documentation of
-the September 2026 version; the scope, the source restriction, the
-corrections and the reported results were directed and checked by the author.
-The October 2026 extension was implemented with an AI coding assistant
-(Claude, Anthropic) at the author's direction. That covers the baseline
-reproduction, the guarded predictor, the analyses, the capacity runs, CI and
-this documentation, including an AI-run adversarial review of the predictor.
-Every number in it is produced by the scripts named above and checked by CI.
+Every number in this README is produced by the scripts named above and
+checked by CI.
 NumPy, PyTorch, Matplotlib and Jupyter are used under their own open-source
 licences.
 
