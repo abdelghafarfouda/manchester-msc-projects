@@ -68,6 +68,12 @@ TEMPORAL_GRIDS = (FINE, COARSE)
 # meets an insulated part of the same edge.
 SEGMENT_ENDS = ((0.25, 0.0), (0.75, 0.0), (0.25, 1.0), (0.75, 1.0))
 NEAR_END_M = 0.1                                     # "near an end": within 0.1 m of one
+# The plate and its boundary conditions are symmetric about x = Lx/2, so the largest
+# |T(coarse) - T(fine)| occurs at a mirror-image pair of nodes whose values differ only by
+# round-off (at most 1.1e-12 relative, measured on every grid pair). Nodes within TIE_RTOL of
+# the maximum are treated as equivalent, and the right-hand one (largest x, then smallest y)
+# is reported, so the reported location does not depend on the CPU's floating-point kernels.
+TIE_RTOL = 1e-9
 DISTANCE_BAND_M = 0.05                               # distance bands in figure 6
 # Boundary intervals for the heat input: one per heated node of the 13 x 12 grid
 # (spacing L/12), so every grid is compared over the same stretches of edge.
@@ -238,7 +244,8 @@ def temperature_differences(coarse: dict, fine: dict) -> dict:
     d = coarse["T"] - T_fine
     g = coarse["grid"]
     near = distance_to_segment_end(g) <= NEAR_END_M
-    j, i = np.unravel_index(np.abs(d).argmax(), d.shape)
+    ties = np.argwhere(np.abs(d) >= (1.0 - TIE_RTOL) * np.abs(d).max())   # (j, i) of equivalent maxima
+    j, i = min(ties.tolist(), key=lambda ji: (-ji[1], ji[0]))               # largest x, then smallest y
     return dict(diff=d, mismatch=mismatch, nodes=d.size, near_nodes=int(near.sum()),
                 max_abs=float(np.abs(d).max()), x_at_max=float(g.x[i]), y_at_max=float(g.y[j]),
                 diff_at_max=float(d[j, i]), max_abs_near=float(np.abs(d[near]).max()),
