@@ -553,7 +553,10 @@ coordinates (check S2). Physical boundary locations are therefore the same on ev
 grid; in particular the segment ends x = L/4 and 3L/4 are nodes on all of them.
 
 **Temperature at matching nodes.** T(grid) - T(193 x 177) at the grid's own nodes.
-"Near an end" means within 0.1 m of one of the four segment ends.
+"Near an end" means within 0.1 m of one of the four segment ends. The field is
+symmetric about x = L/2, so each largest difference occurs at a mirror-image pair of
+nodes whose values agree to round-off (at most 1.1e-12 relative); the right-hand node
+is reported, so the location does not depend on the CPU's floating-point kernels.
 
 | Grid | nodes | largest difference (x, y) | within 0.1 m of an end | elsewhere: largest / RMS | mean |
 |---|---|---|---|---|---|

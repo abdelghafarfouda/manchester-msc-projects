@@ -433,6 +433,7 @@ results/published_2026-09-26/   the original outputs, their hashes, and the base
 | Coursework | during the MSc | the module's Assignment (3), completed by the author: method, temperature field, corner temperatures, centreline and the nx study at ny = 12 (Q1–Q5) |
 | First published version | 2026-09-26 | this Python implementation, published after the module: verification V1–V5, the joint refinement and the full-edge diagnostic (`results/published_2026-09-26/`) |
 | **This revision** | **2026-10-04** | after an independent review: heat-input accounting, separate spatial and temporal studies, segment-end comparison, CI and numerical comparison of results. The equations, inputs, boundary conditions, solver and original outputs are unchanged |
+| CI fix | 2026-10-06 | the result comparison failed on a GitHub runner with different floating-point kernels. Mirror-image maxima are now reported at the right-hand node (two locations in `segment_end_temperatures.csv` move to their mirror image; no magnitude changes), and the 21 convergence ratios and observed orders are compared at a measured relative tolerance of 1e-7 (`compare_results.py`). No other recorded value changed |
 
 Everything beyond the assignment's five questions is extension and verification
 work done in 2026 for this repository.
