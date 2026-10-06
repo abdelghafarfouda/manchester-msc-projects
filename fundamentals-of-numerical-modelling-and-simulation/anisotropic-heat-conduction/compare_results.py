@@ -22,6 +22,21 @@ the smallest recorded value with physical meaning, the V1 difference from the
 course table (4.7e-5 C), is more than four orders of magnitude above it.
 Each round-off quantity is also bounded by its own verification check.
 
+RATIO_RTOL = 1e-7 applies only to the convergence ratios and observed orders of
+accuracy in the JSON summaries (keys ending in "change_ratios" or "order_max",
+"order_rms", "order_rms_one_sided"; 21 values).  Each is a ratio, or the
+logarithm of a ratio, of two small differences between nearly equal results,
+so it magnifies the round-off of those results.  Across five floating-point
+environments - the recorded one and four OpenBLAS/NumPy kernel variants
+(Haswell, AVX2-only, Zen, SandyBridge), one of which reproduces the GitHub
+runner's values of 2026-10-06 exactly - the underlying temperatures differed by
+at most about 1e-13 relative, but these values by up to 3.1e-9 relative
+(exact_space_order_max; temporal change ratios up to 2.2e-9).  1e-7 is 30 times
+that spread, and more than 3000 times smaller than the smallest scientifically
+meaningful difference among these values (successive temporal ratios
+1.99863 and 1.99932, 3.4e-4 apart relative); a change of scheme or order of
+accuracy changes them by order one.  Every other value keeps RTOL.
+
 Not compared: run_log.txt and environment.txt (timestamps, run time, software
 versions), the "environment" block of summary.json for the same reason, and
 the PNG figures (pixels change with the Matplotlib version and fonts).
@@ -48,6 +63,8 @@ import numpy as np
 
 RTOL = 1e-9
 ATOL = 1e-9
+RATIO_RTOL = 1e-7
+RATIO_KEY = re.compile(r"\.\w*(?:change_ratios\[\d+\]|order_(?:max|rms|rms_one_sided))$")
 SKIP_FILES = {"run_log.txt", "environment.txt"}
 SKIP_JSON_KEYS = {"environment"}
 NUMBER = re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?|(?<![A-Za-z])[-+]?(?:nan|inf)\b",
@@ -58,12 +75,15 @@ class Comparison:
     def __init__(self):
         self.n_numbers = 0
         self.n_text = 0
+        self.n_ratio = 0
         self.max_abs = 0.0
         self.max_rel = 0.0
         self.failures: list[str] = []
 
     def number(self, where: str, new: float, old: float) -> None:
         self.n_numbers += 1
+        rtol = RATIO_RTOL if RATIO_KEY.search(where) else RTOL
+        self.n_ratio += rtol == RATIO_RTOL
         if math.isnan(old) or math.isnan(new):
             if not (math.isnan(old) and math.isnan(new)):
                 self.failures.append(f"{where}: {new!r} vs approved {old!r}")
@@ -76,7 +96,7 @@ class Comparison:
         self.max_abs = max(self.max_abs, diff)
         if old != 0.0:
             self.max_rel = max(self.max_rel, diff / abs(old))
-        if diff > ATOL + RTOL * abs(old):
+        if diff > ATOL + rtol * abs(old):
             self.failures.append(f"{where}: {new!r} vs approved {old!r} (difference {diff:.3e})")
 
     def text(self, where: str, new, old) -> None:
@@ -194,7 +214,8 @@ def main(argv=None) -> int:
 
     files = sorted(approved & new)
     print(f"compared {len(files)} files: {cmp.n_numbers} numbers and {cmp.n_text} text fields "
-          f"(rtol {RTOL:g}, atol {ATOL:g}{', subset' if args.subset else ''})")
+          f"(rtol {RTOL:g}, atol {ATOL:g}; rtol {RATIO_RTOL:g} for {cmp.n_ratio} convergence ratios and "
+          f"observed orders{', subset' if args.subset else ''})")
     print(f"largest absolute difference {cmp.max_abs:.3e}; largest relative difference {cmp.max_rel:.3e}")
     for line in cmp.failures[:50]:
         print("  DIFFERS", line)
@@ -204,6 +225,7 @@ def main(argv=None) -> int:
     if args.report:
         args.report.write_text(json.dumps(dict(
             approved=str(args.approved), new=str(args.new), subset=args.subset, rtol=RTOL, atol=ATOL,
+            ratio_rtol=RATIO_RTOL, ratio_values_compared=cmp.n_ratio,
             files=files, numbers_compared=cmp.n_numbers, text_fields_compared=cmp.n_text,
             max_abs_difference=cmp.max_abs, max_rel_difference=cmp.max_rel,
             failures=cmp.failures, passed=not cmp.failures), indent=2) + "\n", encoding="utf-8")
