@@ -1,7 +1,9 @@
 # A neural surrogate for the two-phase flash calculation
 
 **CHEN60492 *Properties of Subsurface Fluids* + the Deep Learning module,
-University of Manchester** — MSc coursework, extended and re-verified in 2026.
+University of Manchester** — MSc coursework.
+
+Version note: This GitHub version was extended and its results re-verified in 2026.
 
 ## Supervisor overview
 
