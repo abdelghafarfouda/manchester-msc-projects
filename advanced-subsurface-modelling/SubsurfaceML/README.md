@@ -1,5 +1,7 @@
 # SubsurfaceML — surrogate-assisted screening of CO₂ injection schedules, with simulator verification
 
+Version note: This GitHub version was extended and its results re-verified in 2026.
+
 ## Supervisor overview
 
 **Question and why it matters.** In a sealed, layered saline aquifer, can a

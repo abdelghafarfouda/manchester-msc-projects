@@ -1,5 +1,7 @@
 # Transient heat conduction in an anisotropic plate
 
+Version note: This GitHub version was extended and its results re-verified in 2026.
+
 ## Supervisor overview
 
 **Question and set-up.** A 1 m × 1 m plate, initially at 300 K, is heated for

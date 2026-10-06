@@ -6,6 +6,8 @@ folder, and each project sits in its own folder inside that module, keeping its
 own documentation, dependencies and results so that it can be read and run on
 its own.
 
+Version note: The GitHub versions of these projects were extended and their results re-verified in 2026.
+
 ## Start here
 
 Each project's README opens with a one-page **Supervisor overview**: the question, the method,

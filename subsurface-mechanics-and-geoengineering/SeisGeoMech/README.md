@@ -5,8 +5,10 @@
 density errors imply for the qualified ρg calculations?**
 
 MSc coursework for *Subsurface Mechanics and Geoengineering* (University of Manchester), published
-in September 2026 and extended and re-verified in October 2026. It is a small, fully
+in September 2026. It is a small, fully
 source-traceable study that links one seismic method to one geomechanical consequence.
+
+Version note: This GitHub version was extended and its results re-verified in 2026.
 
 ## Supervisor overview
 
