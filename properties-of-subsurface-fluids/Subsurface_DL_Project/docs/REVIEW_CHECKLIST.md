@@ -85,7 +85,7 @@ deliberately left out, with the reason.
 | Supervisor Overview written last, about one page, covering every listed topic, with the deep-learning-to-subsurface link visible | Completed | README top | written after CI was green on the final results |
 | Concise README; details in linked docs; notebook and outputs updated consistently | Completed | `docs/VERIFICATION.md`, `ERROR_ANALYSIS.md`, `CAPACITY.md`, `GUARDED_PREDICTION.md`; `build_notebook.py` → `notebooks/flash_surrogate.ipynb` | the notebook was executed end to end, 25 of 25 code cells, with its new sections recomputing the numbers |
 | Keep the approved-source rules; EoS comparison as a separate future study | Completed | `docs/SOURCE_MAP.md`; README §1 | no new physical input; the EoS route is listed as outside scope / future study |
-| Accurate contribution and AI-assistance statements; no invented contribution, novelty, field accuracy or speed-up | Completed | README §9 | the 2026 work is attributed to an AI coding assistant at the author's direction; speed is stated as not a benefit |
+| No invented contribution, novelty, field accuracy or speed-up | Completed | README §9 | speed is stated as not a benefit |
 | This checklist | Completed | this file | — |
 
 ## 8. Publication

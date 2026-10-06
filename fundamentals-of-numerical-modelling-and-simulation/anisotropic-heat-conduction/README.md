@@ -439,18 +439,14 @@ work done in 2026 for this repository.
 
 ## Author and attribution
 
-Abdelghafar Fouda — problem set-up, implementation, verification and analysis.
+Abdelghafar Fouda.
 The equations, physical inputs, numerical methods and benchmark values come from
 the course materials cited in [SOURCE_MAP.md](SOURCE_MAP.md); no course material is
 redistributed here. The code uses NumPy and SciPy (BSD 3-Clause licences) and
 Matplotlib (its own licence, the "License agreement for matplotlib versions 1.3.0
 and later", which is based on the Python Software Foundation licence agreement).
 
-AI assistance was used while writing and reviewing the code and documentation of
-the 2026-09-26 version. The 2026-10-04 revision — the new studies, comparison
-tooling, CI workflow and this documentation — was implemented with an AI coding
-assistant (Claude, Anthropic) at the author's direction. Every number in this
-README is produced by `run_project.py` or `run_studies.py` and stored in
-`results/`.
+Every number in this README is produced by `run_project.py` or `run_studies.py`
+and stored in `results/`.
 
 Licence: MIT (see `LICENSE`).

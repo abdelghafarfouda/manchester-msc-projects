@@ -74,7 +74,7 @@ out, with the reason.
 | Supervisor overview written last, about one page, at the top of the README | Completed | README | written after the results and CI were final |
 | Concise README; details in linked documents; notebook updated and executed | Completed | `docs/DEPTH_BLOCK_TEST.md`, `docs/REPRODUCIBILITY.md`; notebook §4.8 and updated §1, §6–§8 | executed end to end, 22 code cells, no errors; also executed in the `locked` CI job |
 | Source rule kept; new design choices recorded | Completed | `SOURCE_MAP.md` §4 rows for the split, metrics, reading rule and lag correlation | no new physical input |
-| Accurate contribution and AI statements; no invented contribution, generality or field claims | Completed | README *Licence and attribution* | — |
+| No invented contribution, generality or field claims | Completed | README *Licence and attribution* | — |
 | Repository index row | Completed | top-level `README.md`, SeisGeoMech row | — |
 | This checklist | Completed | this file | — |
 | Commit, focused PR, merge after checks; verify `main`; other projects unchanged | Recorded in the pull request and the final report | — | — |

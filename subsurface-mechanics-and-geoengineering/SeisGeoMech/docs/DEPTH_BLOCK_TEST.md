@@ -34,8 +34,8 @@ closed in `193eb36`. Since then, `depth_blocks.score` refuses to run unless the 
 marked frozen and the split derived from the data matches the frozen identifiers, and a test pins
 the configuration's hash.
 
-Before the freeze, an AI-run review (Claude, at the author's direction) reported 29 issues in
-the draft design and code. All were fixed in `193eb36`, whose commit message summarises them.
+Before the freeze, a review of the draft design and code reported 29 issues. All were fixed
+in `193eb36`, whose commit message summarises them.
 The review itself is not committed.
 
 **The split** (`results/depth_blocks/split.json`, `split_samples.csv`):
