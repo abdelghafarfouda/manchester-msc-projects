@@ -24,19 +24,15 @@ another. This file reports that test.
 | reading rule | **Better** only if held-out RMSE and MAE are both lower; **worse** only if both are higher; otherwise **mixed**. Each direction is read on its own and never pooled |
 | consequence | the mean ρg gradient over each evaluation block, with measured, supplied and block-fitted density |
 
-The design and the derived split were committed in `193eb36` (preceded by the
-work-in-progress commit `251ae90`). Scores were first computed after the freeze and committed
-in `3bea7e9`. No held-out score was computed or committed before `193eb36`: the pre-freeze
-reviewers were instructed not to score, and the tests score only synthetic data. The
-work-in-progress tree `251ae90` had no such protection. `run_all.py` could already have scored
-it, and its configuration was already labelled "frozen". Both gaps were found by the review and
-closed in `193eb36`. Since then, `depth_blocks.score` refuses to run unless the configuration is
-marked frozen and the split derived from the data matches the frozen identifiers, and a test pins
-the configuration's hash.
+The design and the derived split were committed in `193eb36`, after the work-in-progress commit
+`251ae90`. Scores were first computed after the freeze and committed in `3bea7e9`; no held-out
+score was computed or committed before `193eb36`, and the tests score only synthetic data.
 
-Before the freeze, a review of the draft design and code reported 29 issues. All were fixed
-in `193eb36`, whose commit message summarises them.
-The review itself is not committed.
+In the work-in-progress commit `251ae90`, `run_all.py` could already score the split although its
+configuration was labelled "frozen". `193eb36` fixed this, together with the other pre-freeze
+defects listed in its commit message. Since `193eb36`,
+`depth_blocks.score` refuses to run unless the configuration is marked frozen and the split
+derived from the data matches the frozen identifiers, and a test pins the configuration's hash.
 
 **The split** (`results/depth_blocks/split.json`, `split_samples.csv`):
 
@@ -52,10 +48,9 @@ So the exact metre values put one edge sample in the gap and the other in B, giv
 excluded samples rather than 101. The per-sample assignment in `split_samples.csv`, with
 its SHA-256 identifiers, is the frozen split.
 
-**What the gap is and is not.** The ~20 m gap was specified in the task brief, which based
-it on an earlier review's estimate (not recorded here) of how far the residuals stay correlated
-along the log. No block fit or held-out score informed it. It is a design choice and does not
-make the blocks independent. It is measured along the logged coordinate, whose vertical
+**What the gap is and is not.** The ~20 m gap was set from a prior estimate of how far the
+residuals stay correlated along the log. No block fit or held-out score informed it. It is a
+design choice and does not make the blocks independent. It is measured along the logged coordinate, whose vertical
 convention the file does not establish. As context, computed after the gap was fixed, the
 residuals are still correlated at 20 m: 0.08 for the supplied relation and 0.10 for the
 in-sample refit. At 40 m the values are 0.14 and 0.12 (`residual_lag_correlation.csv`). The
@@ -130,5 +125,5 @@ each block by half, unlike a plain mean.
   borehole effect.
 * The test was pre-specified but not blind. The per-sample residuals of the whole overlap
   had been published on 2026-09-27, before the design. The midpoint rule and the ~20 m gap
-  come from the task brief, and no block-fitted coefficient or held-out prediction existed
+  were fixed in advance, and no block-fitted coefficient or held-out prediction existed
   before the freeze commit.

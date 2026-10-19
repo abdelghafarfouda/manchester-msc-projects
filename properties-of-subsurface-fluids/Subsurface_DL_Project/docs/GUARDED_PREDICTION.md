@@ -85,7 +85,7 @@ Every result also carries `phase`, `in_training_domain`, the list of
 
 `python scripts/derive_domain.py` derives the domain from the training split of
 `data/flash_dataset.npz` and from `configs/experiment.json`, and checks the
-limits suggested by the earlier review:
+limits proposed before the extension:
 
 | variable | suggested limit | configuration | training rows | used |
 |---|---|---|---|---|
@@ -143,10 +143,8 @@ vapour pressure, where no vapour fraction is defined.
 ## 5. How it was checked
 
 `tests/test_predict.py` holds 34 tests of this path; the whole suite has 48.
-After the first version, an adversarial review was run. Four reviewers
-covered input validation, phase logic, the domain and metadata, and the tests
-themselves; a sceptic then re-ran every finding against the code. It
-confirmed 16 defects, all fixed:
+The first version of this path had 16 defects, in input validation, phase
+logic, the domain and metadata, and the tests. Each was fixed:
 
 * named compositions holding per-state values were read transposed;
 * booleans and complex numbers were converted instead of refused;

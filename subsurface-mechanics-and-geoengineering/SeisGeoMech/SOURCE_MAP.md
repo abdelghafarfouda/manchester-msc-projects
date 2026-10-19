@@ -5,9 +5,9 @@ Every scientific statement in this project traces to one of two supplied folders
 * `Models/` — EART35102 *Hydrogeology and Geomechanics* notes, exercises and worked solutions
 * `Seismic/` — seismic imaging practical notebooks and the LAS file they use
 
-Nothing else is a source. Earlier versions of this project, previous review documents and any
-prior output are implementation history, not scientific sources, and none of their content is
-carried forward unless it is re-derived from the two folders below.
+Nothing else is a source. Earlier versions of this project and any prior output are
+implementation history, not scientific sources, and none of their content is carried forward
+unless it is re-derived from the two folders below.
 
 Page numbers are the printed page footers of the PDFs. Cell numbers are positional indices of
 cells in the supplied `.ipynb` files.
@@ -81,7 +81,7 @@ notebook, and none introduces a rock property, a correlation or a physical param
 | Poisson's ratio sweep | 0.05–0.45 | A plain sweep of the admissible range for an isotropic solid. **No value is claimed for this well.** |
 | Gardner refit | least squares on `log rho` vs `log Vp` over the 1105 measured points | Fits the *supplied functional form* to the *supplied data*, changing no equation. Apart from the descriptive residual-correlation context of the 2026 depth-block test (below), it is not used elsewhere in the workflow. It is an **in-sample calibration**: no samples were held out; the coefficients were fitted and evaluated on the same 1,105 paired samples, so its 41.5 % RMSE reduction describes those points. It is not a prediction test and not evidence that the functional form is correct. |
 | Gardner refit, as used in the depth-block test (October 2026) | the same least squares, on one depth block only | The original method, units and functional form, fitted on block A and evaluated on block B, then the reverse (`configs/depth_blocks.json`, `src/seisgeomech/depth_blocks.py`). No other density–velocity relation is introduced. The original in-sample refit is unchanged. |
-| Depth-block split | midpoint of the overlap's logged-coordinate range; samples within 10 m of it (a 20 m gap) excluded; A above, B below | A design choice, frozen and committed before any held-out score (`configs/depth_blocks.json`, `results/depth_blocks/split.json`). The ~20 m gap was specified in the task brief, which based it on an earlier review's estimate (not recorded here) of residual correlation along the log. That is implementation history, not a source. No block fit or held-out score informed the gap, and it does **not** make the blocks independent. It is measured along the logged coordinate, whose vertical convention is unresolved (§5). |
+| Depth-block split | midpoint of the overlap's logged-coordinate range; samples within 10 m of it (a 20 m gap) excluded; A above, B below | A design choice, frozen and committed before any held-out score (`configs/depth_blocks.json`, `results/depth_blocks/split.json`). The ~20 m gap was set from a prior estimate of residual correlation along the log, which is implementation history, not a source. No block fit or held-out score informed the gap, and it does **not** make the blocks independent. It is measured along the logged coordinate, whose vertical convention is unresolved (§5). |
 | Held-out metrics and reading rule | bias, RMSE, MAE; reductions `100 (supplied − block fit)/supplied`; better/worse only if RMSE and MAE agree, each direction read separately | Summary statistics of residuals, fixed with the split before scoring. They are not physical parameters. |
 | Residual lag correlation | Pearson correlation of the residual series with itself shifted by 0.2–40 m | Context for the gap only. It is not a test of independence and not a decorrelation length. It was computed after the gap was fixed and played no part in choosing it. |
 

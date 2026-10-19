@@ -2,11 +2,11 @@
 
 ## `2026-09-11_pre-correction_demo/`
 
-Results produced on 2026-09-11 by the original version of the project,
-**before** the corrections of 2026-09-20. The author keeps them unchanged, in a
-local copy only, for comparison; **the files of this run are not included in the
-public repository, and none of its numbers should be quoted as results of the
-current code.** This note records what the run was and why it is superseded.
+Results produced on 2026-09-11 by an earlier version of the project,
+**before** the corrections of 2026-09-20. **The files of this run are not
+included in the public repository, and none of its numbers should be quoted as
+results of the current code.** This note records what the run was and why it is
+superseded.
 
 Known problems with this run (details in `docs/CHANGELOG.md`):
 

@@ -91,7 +91,7 @@ executed coverage are archived in `docs/archive/2026-09-20_course_coverage/`
 *Small language models / transformers:* not present in the material
 (`Extra_transformer.ipynb` is scikit-learn `SimpleImputer` preprocessing).
 The earlier TF-IDF "retrieval assistant" had no basis in the material and has
-been removed from the project (it remains only in the author's archive of the original version).
+been removed from the project.
 
 
 ## 4. Components added in the October 2026 revision — beyond the course material

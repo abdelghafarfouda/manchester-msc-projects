@@ -1,8 +1,8 @@
 # Changelog
 
-## 2026-10-04 — completion pass (no pipeline results changed)
+## 2026-10-04 — follow-up release (no pipeline results changed)
 
-A bounded pass to close correctness and publication issues. The pipeline's
+Correctness and documentation fixes. The pipeline's
 results, models and figures are unchanged. Two checks were added and are
 recorded separately from the original evaluation.
 
@@ -22,24 +22,18 @@ recorded separately from the original evaluation.
   4.36 MPa: a near-tied SVR/ridge choice flipped. The experiments now always rebuild their inputs from
   `scenarios.csv` and record their hash. Re-run this way, all six pressure variants are bit-identical
   to the record. Tolerances: `docs/TECHNICAL_REPORT.md` §8.
-* **Documentation.** `docs/REVIEW_CHECKLIST.md` records each review
-  recommendation as completed, remaining, portfolio-wide or future
-  extension. The Supervisor Overview, README, technical report, assumptions
-  and notebooks now state the measured coverages, the out-of-distribution
-  limits, what simulator verification checks, and that the pressure limit is
-  not a validated fracture or caprock criterion. PR #1's SubsurfaceML edits
-  were reconciled: its "how to run" line and its note on the classifier's
-  training data were adopted; its earlier split wording is superseded, and
-  its attribution sentence was not adopted because it does not describe
-  this revision.
+* **Documentation.** The Supervisor Overview, README, technical report,
+  assumptions and notebooks now state the measured coverages, the
+  out-of-distribution limits, what simulator verification checks, and that
+  the pressure limit is not a validated fracture or caprock criterion.
+  `docs/REVIEW_CHECKLIST.md` records the revision and its open items.
 * `subsurfaceml predict` / `simulate`: malformed input files give a one-line error and exit code 2,
   where they had raised a traceback.
 * Tests: 103 → 107 (calibration-check set; experiment input source; command-line input handling).
 
 ## 2026-10 — revision: reliable surrogate-assisted screening (results regenerated)
 
-Implemented after two portfolio reviews (only the English review was
-available; see the README's version history). **All results in
+**All results in
 `results/study/` and `results/demo/` were regenerated** with the code of this
 version; the 2026-09-20 run was first reproduced end to end from a clean
 environment (all 2,961 recorded values identical,
@@ -131,9 +125,9 @@ The full pipeline was run twice from clean data with identical machine-learning,
 interval and screening results; re-running the development ablation reproduced
 every design decision (`results/study/experiments/ablation_reproduction.json`).
 
-## 2026-09-27 — publication review (no results changed)
+## 2026-09-27 — pre-publication check (no results changed)
 
-Reviewed before publication in the Manchester MSc collection. **No simulation,
+Checked before publication in this repository. **No simulation,
 dataset, model, metric or figure was regenerated.**
 
 Corrections:
@@ -156,8 +150,7 @@ Corrections:
   run, although §12 reports the study run; the two are now distinguished.
 * `LICENSE` (MIT) added — `pyproject.toml` already declared MIT; README rewritten
   in the collection's format with an execution record of the clean-copy checks;
-  references to the author's local archives reworded; the superseded run is
-  described but its files are not published.
+  the superseded run is described but its files are not published.
 
 ## 2026-09-20b — presentation for publication (no results changed)
 
@@ -183,10 +176,9 @@ regenerated**; `results/study/` and `results/demo/` are the runs of
 
 ## 2026-09-20 — corrected and scoped version (this release)
 
-The original project is preserved unchanged in the author's local archive.
-Its saved results are kept locally, clearly labelled, in
-`results/historical/2026-09-11_pre-correction_demo/`; they are superseded and
-are not published with this repository.
+The results of the earlier run of 2026-09-11 are superseded and are not
+published with this repository; `results/historical/README.md` records what
+that run was and why it is superseded.
 
 ### Defects reproduced and fixed
 
