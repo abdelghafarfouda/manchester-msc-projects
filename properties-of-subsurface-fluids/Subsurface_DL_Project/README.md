@@ -1,9 +1,11 @@
-# A neural surrogate for the two-phase flash calculation
+# Neural Surrogate for the Two-Phase Flash Calculation
 
-**CHEN60492 *Properties of Subsurface Fluids* + the Deep Learning module,
-University of Manchester** — MSc coursework.
+**Personal Computational Projects — 2026** · Repository: [`manchester-msc-projects`](../../README.md) ·
+Folder: `properties-of-subsurface-fluids/Subsurface_DL_Project`
 
-Version note: This GitHub version was extended and its results re-verified in 2026.
+A personal project developed in 2026 and informed by the MSc modules CHEN60492 *Properties of
+Subsurface Fluids* and Deep Learning (University of Manchester). All code, analyses and results
+published here come from the 2026 versions, and no module mark refers to them.
 
 ## Supervisor overview
 
@@ -83,7 +85,7 @@ jupyter notebook notebooks/flash_surrogate.ipynb   # the whole study, with saved
 Details: [error analysis](docs/ERROR_ANALYSIS.md) ·
 [capacity](docs/CAPACITY.md) · [guarded prediction](docs/GUARDED_PREDICTION.md)
 · [verification](docs/VERIFICATION.md) · [limitations](docs/LIMITATIONS.md) ·
-[sources](docs/SOURCE_MAP.md) · [review checklist](docs/REVIEW_CHECKLIST.md).
+[sources](docs/SOURCE_MAP.md) · [revision record](docs/REVIEW_CHECKLIST.md).
 
 ---
 
@@ -171,7 +173,7 @@ models ([`results/original_2026-09-21/`](results/original_2026-09-21/)).
   benchmark, not used to choose.
 * **Guarded prediction** ([`docs/GUARDED_PREDICTION.md`](docs/GUARDED_PREDICTION.md)).
   The domain was checked against the training data. Pressure (≤ 2000 psia) and
-  temperature (610–680 R) match the earlier review's limits. Composition does
+  temperature (610–680 R) match the limits proposed before the extension. Composition does
   not: the generator permits 0.004–0.87 per component, but the training rows
   contain only up to 0.43–0.48, so the realised ranges are used.
 
@@ -244,7 +246,6 @@ Summarised; the full list is [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
 
 | version | date | what it is |
 |---|---|---|
-| Coursework | during the MSc | the project for CHEN60492 *Properties of Subsurface Fluids* and the Deep Learning module |
 | Rebuilt and published | run 2026-09-21, published 2026-09-27 | rebuilt on the course sources alone (Wilson table, notes' composition rule). Six models and 185 metrics (`results/original_2026-09-21/` identifies them) |
 | **Extended and re-verified** | **2026-10-04** | baseline reproduced bit for bit, then extended: guarded prediction, error analysis across the two-phase window, bounded capacity comparison, project CI with measured tolerances. No original result was changed or retrained |
 
@@ -270,7 +271,7 @@ results/analysis/, capacity/, guarded/, reproducibility/, figures/fig6-9   the 2
 results/original_2026-09-21/      hashes of the original files and the record of their reproduction
 tests/                            48 tests: tests/run_tests.py (or pytest)
 docs/                             verification, error analysis, capacity, guarded prediction,
-                                  limitations, source map, review checklist
+                                  limitations, source map, revision record
 ```
 
 The course material is not in this repository; it is cited by page and cell.

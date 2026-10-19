@@ -9,8 +9,7 @@ They are kept for transparency and for the course attribution, but they are
 **not part of the current study** and are **not regenerated**:
 
 * the October 2026 revision is organised around one research question
-  (`README.md`, `docs/TECHNICAL_REPORT.md`), not around topic coverage, as the
-  portfolio review recommended;
+  (`README.md`, `docs/TECHNICAL_REPORT.md`), not around topic coverage;
 * `build_coverage.py` checks evidence keys of the 2026-09-20 `summary.json`
   layout and the "learned" statements quote the 2026-09-20 demo run; both
   are out of date for the current results.

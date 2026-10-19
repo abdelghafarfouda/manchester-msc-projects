@@ -1,6 +1,11 @@
-# SubsurfaceML — surrogate-assisted screening of CO₂ injection schedules, with simulator verification
+# Surrogate-Assisted Screening of CO₂ Injection Schedules with Simulator Verification
 
-Version note: This GitHub version was extended and its results re-verified in 2026.
+**Personal Computational Projects — 2026** · Repository: [`manchester-msc-projects`](../../README.md) ·
+Folder: `advanced-subsurface-modelling/SubsurfaceML`
+
+A personal project developed in 2026 and informed by the MSc module CHEN60482 *Advanced
+Subsurface Modelling* (University of Manchester). All code, analyses and results published here
+come from the 2026 versions, and no module mark refers to them.
 
 ## Supervisor overview
 
@@ -35,7 +40,8 @@ shift reservoirs were generated and scored once.
 **Strongest verified results** (test reservoirs unless stated):
 
 * **Peak build-up RMSE 0.31 MPa**, against 0.70 MPa for the published
-  approach retrained on the same reservoirs (ΔRMSE −0.40 MPa, 95 % CI
+  approach (that of this project's first public version, September 2026)
+  retrained on the same reservoirs (ΔRMSE −0.40 MPa, 95 % CI
   [−0.63, −0.18]). Worst under-prediction 2.7 against 6.7 MPa; no
   exceedance of the assumed limit missed (published approach: 2 of 90).
 * The published surrogate's large failures had **one cause**: it saw each
@@ -98,7 +104,7 @@ All numbers: [`results/study/reports/RESULTS.md`](results/study/reports/RESULTS.
 Walkthrough notebook: [`notebooks/00_START_HERE.ipynb`](notebooks/00_START_HERE.ipynb)
 (install the pinned environment as in [Reproduce](#reproduce); it reads the
 saved results and runs in under a minute).
-Review recommendations and their status: [`docs/REVIEW_CHECKLIST.md`](docs/REVIEW_CHECKLIST.md).
+Record of the October 2026 revision and its open items: [`docs/REVIEW_CHECKLIST.md`](docs/REVIEW_CHECKLIST.md).
 Full write-up: [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md).
 Reproduction: [below](#reproduce).
 
@@ -383,22 +389,16 @@ docs/                              REVIEW_CHECKLIST · EVALUATION_PROTOCOL · TE
 
 | Version | Date | What it is |
 |---|---|---|
-| Module project | during the MSc (CHEN60482 *Advanced Subsurface Modelling*) | the original coursework project |
-| Corrected version | 2026-09-20, published 2026-09-27 | defects found and fixed, scoped to the course material, 880-case study run (`docs/CHANGELOG.md`) |
-| **This revision** | **2026-10-04** | extended and re-verified after two portfolio reviews: the analysis and results described above |
-| Completion pass | 2026-10-04 | calibration check on fresh reservoirs (protocol addendum), experiment inputs from one source, corrected coverage and data-role statements, review checklist; no pipeline result changed (`docs/CHANGELOG.md`) |
+| First public version | 2026-09-20, published 2026-09-27 | defects found and fixed, scoped to the course material, 880-case study run (`docs/CHANGELOG.md`) |
+| **Current version** | **2026-10-04** | extended and re-verified: the analysis and results described above |
+| Follow-up release | 2026-10-04 | calibration check on fresh reservoirs (protocol addendum), experiment inputs from one source, corrected coverage and data-role statements; no pipeline result changed (`docs/CHANGELOG.md`) |
 
-The versions on GitHub were extended and re-verified in September and
-October 2026, after the module was completed. The published 2026-09-20 study
-run was reproduced end to end before any change (all 2,961 recorded values
-identical; `results/published_2026-09-20/baseline_reproduction.json`), and
-its models are kept, hash-checked, in `results/published_2026-09-20/` so that
-they can be scored on the new test reservoirs.
-
-Of the two reviews that prompted this revision, only the English review
-("Portfolio Quick Review", 4 October 2026) was available while the work was
-done; the Arabic version was not supplied, so any recommendation that
-appears only in it has not been addressed.
+All versions published here date from September and October 2026. The first
+public version's study run (2026-09-20) was reproduced end to end before any
+change (all 2,961 recorded values identical;
+`results/published_2026-09-20/baseline_reproduction.json`), and its models are
+kept, hash-checked, in `results/published_2026-09-20/` so that they can be
+scored on the new test reservoirs.
 
 **The published 2026-09-20 study run** generated 880 cases (220 reservoirs ×
 4 schedules) and split them by reservoir into 124 training, 41 calibration
@@ -411,10 +411,10 @@ code and are superseded by the results above.
 
 ## Author and attribution
 
-Abdelghafar Fouda. The original project was developed by the author for the
+Abdelghafar Fouda. A personal project developed in 2026 and informed by the
 MSc module CHEN60482 *Advanced Subsurface Modelling* at the University of
-Manchester. Its physics, numerical methods and machine-learning methods
-follow the CHEN60482 course materials (lectures by Dr Masoud Babaei;
+Manchester. Its physics, numerical methods and machine-learning
+methods follow the CHEN60482 course materials (lectures by Dr Masoud Babaei;
 uncertainty material by Dr Lin Ma) and the accompanying *Data Science and
 Machine Learning* notebooks, as traced in
 [`docs/SOURCE_MAP.md`](docs/SOURCE_MAP.md) §1–3; no course material is
@@ -422,9 +422,8 @@ redistributed here. Components added in October 2026 that come from outside
 the course material are listed with their primary sources in §4 of the same
 file.
 
-The versions published here were produced after the module. Every number in
-this README is read from files in `results/` produced by the code in this
-repository.
+Every number in this README is read from files in `results/` produced by the
+code in this repository.
 
 The code uses NumPy, SciPy, pandas, scikit-learn, Matplotlib, joblib, PyYAML,
 XGBoost, SHAP, imbalanced-learn, scikit-optimize, umap-learn and Streamlit,

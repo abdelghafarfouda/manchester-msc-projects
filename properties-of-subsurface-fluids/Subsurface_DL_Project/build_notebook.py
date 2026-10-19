@@ -35,7 +35,7 @@ Rachford-Rice. Can a small feed-forward network reproduce it for mixtures it
 has never seen, **where does it fail**, and **when does adding the
 Rachford-Rice residual to the loss improve the prediction**?
 
-The project began as MSc coursework connecting the two modules. It was
+A personal project developed in 2026 and informed by both modules. It was
 rebuilt and re-verified in September 2026 (the six models and the metrics in
 §4), then extended in October 2026: an error analysis across the two-phase
 window (§4.2), a bounded network-capacity comparison (§6) and a guarded

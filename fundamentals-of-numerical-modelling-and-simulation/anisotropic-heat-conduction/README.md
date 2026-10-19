@@ -1,6 +1,12 @@
-# Transient heat conduction in an anisotropic plate
+# Implicit Finite-Difference Modelling of Transient Heat Conduction in an Anisotropic Plate
 
-Version note: This GitHub version was extended and its results re-verified in 2026.
+**Personal Computational Projects — 2026** · Repository: [`manchester-msc-projects`](../../README.md) ·
+Folder: `fundamentals-of-numerical-modelling-and-simulation/anisotropic-heat-conduction`
+
+A personal project developed in 2026 and informed by the MSc module *Fundamentals of Numerical
+Modelling and Simulation* (University of Manchester). The problem statement and inputs come from
+the module's Assignment (3); the Python implementation, its verification and its studies are
+2026 work, and no module mark refers to them.
 
 ## Supervisor overview
 
@@ -11,8 +17,8 @@ the boundary is insulated. The conductivity differs in x and y (kx = 16,
 ky = 20 W m⁻¹ K⁻¹; ρ = 7800 kg m⁻³, cp = 500 J kg⁻¹ K⁻¹). What are the
 temperature field, the mean temperature and the heat taken in after 5 h, and
 how much do they depend on the grid and the time step? All inputs come from
-the module's Assignment (3); the problem is a numerical exercise, not a
-model of any real rock or geothermal system.
+the course assignment; the problem is a numerical exercise, not a model of
+any real rock or geothermal system.
 
 **Method and verification.** Five-point central differences, a mirrored ghost
 node on insulated edges, and backward Euler in time with one sparse LU
@@ -65,8 +71,8 @@ problem. The measurements point to the mixed boundary conditions at the four
 segment ends as the reason, but the local mechanism is not analysed.
 
 **Where to look.** Full derivations and every table:
-[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) (sections 3.8 and 7 cover this
-revision). Review recommendations and where each was addressed:
+[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) (sections 3.8 and 7 cover the
+October 2026 revision). Record of that revision:
 [docs/REVIEW_CHECKLIST.md](docs/REVIEW_CHECKLIST.md). Sources:
 [SOURCE_MAP.md](SOURCE_MAP.md). To run: `python run_project.py` (original
 study and checks V1–V5, about 1 min) and `python run_studies.py` (revision
@@ -90,9 +96,10 @@ time step, and where on the plate do the grids differ?**
 
 ## Source and scope
 
-The problem is Assignment (3) of an MSc module in numerical modelling and
-simulation, solved with methods from that module and from the accompanying
-*Computational Mathematics* notebooks. [SOURCE_MAP.md](SOURCE_MAP.md) traces every
+The problem statement is Assignment (3) of the MSc module *Fundamentals of
+Numerical Modelling and Simulation*. This 2026 implementation solves it with
+methods from that module and from the accompanying *Computational Mathematics*
+notebooks. [SOURCE_MAP.md](SOURCE_MAP.md) traces every
 input, equation, method and benchmark to a specific file and page, slide or
 notebook cell.
 
@@ -422,7 +429,7 @@ heat2d.py             grid, assembly, backward Euler, averages, heat flow, energ
 compare_results.py    numerical comparison of a run with the recorded results
 SOURCE_MAP.md         source of every input, equation, method and benchmark
 docs/WALKTHROUGH.md   question -> equations -> method -> verification -> results
-docs/REVIEW_CHECKLIST.md   review recommendations and where each is addressed
+docs/REVIEW_CHECKLIST.md   record of the October 2026 revision
 requirements.txt      minimum versions;  requirements-lock.txt  exact versions of the recorded run
 results/              CSV tables, figures 1-6, summaries, run logs, environment
 results/published_2026-09-26/   the original outputs, their hashes, and the baseline re-run
@@ -432,13 +439,12 @@ results/published_2026-09-26/   the original outputs, their hashes, and the base
 
 | Version | Date | What it is |
 |---|---|---|
-| Coursework | during the MSc | the module's Assignment (3), completed by the author: method, temperature field, corner temperatures, centreline and the nx study at ny = 12 (Q1–Q5) |
-| First published version | 2026-09-26 | this Python implementation, published after the module: verification V1–V5, the joint refinement and the full-edge diagnostic (`results/published_2026-09-26/`) |
-| **This revision** | **2026-10-04** | after an independent review: heat-input accounting, separate spatial and temporal studies, segment-end comparison, CI and numerical comparison of results. The equations, inputs, boundary conditions, solver and original outputs are unchanged |
+| First public version | 2026-09-26 | this Python implementation: the assignment's questions, verification V1–V5, the joint refinement and the full-edge diagnostic (`results/published_2026-09-26/`) |
+| **Current version** | **2026-10-04** | heat-input accounting, separate spatial and temporal studies, segment-end comparison, CI and numerical comparison of results. The equations, inputs, boundary conditions, solver and original outputs are unchanged |
 | CI fix | 2026-10-06 | the result comparison failed on a GitHub runner with different floating-point kernels. Mirror-image maxima are now reported at the right-hand node (two locations in `segment_end_temperatures.csv` move to their mirror image; no magnitude changes), and the 21 convergence ratios and observed orders are compared at a measured relative tolerance of 1e-7 (`compare_results.py`). No other recorded value changed |
 
-Everything beyond the assignment's five questions is extension and verification
-work done in 2026 for this repository.
+Every result published here, including the quantities the assignment asks for, comes
+from the 2026 implementation.
 
 ## Author and attribution
 

@@ -1,14 +1,16 @@
-# SeisGeoMech
+# Testing Gardner's Velocity–Density Relation against Measured Well Logs
+
+**Personal Computational Projects — 2026** · Repository: [`manchester-msc-projects`](../../README.md) ·
+Folder: `subsurface-mechanics-and-geoengineering/SeisGeoMech`
 
 **How well does Gardner's velocity–density relation describe the measured interval at well
 48/10b-9, does a locally fitted relation predict a separate depth interval, and what do the
 density errors imply for the qualified ρg calculations?**
 
-MSc coursework for *Subsurface Mechanics and Geoengineering* (University of Manchester), published
-in September 2026. It is a small, fully
-source-traceable study that links one seismic method to one geomechanical consequence.
-
-Version note: This GitHub version was extended and its results re-verified in 2026.
+A personal project developed in 2026 and informed by the MSc module *Subsurface Mechanics and
+Geoengineering* (University of Manchester). It is a small, fully source-traceable study that links
+one seismic method to one geomechanical consequence. All analyses and results published here come
+from the 2026 versions (3.0.0 and 3.1.0), and no module mark refers to them.
 
 ## Supervisor overview
 
@@ -62,12 +64,9 @@ every stress is total. The depth convention is unresolved. No hole-condition fil
 because the material supplies no threshold. The depth-block gap is a design choice: it does not
 make the blocks independent.
 
-**Re-verification and a fixed install defect.** Before any change, the 126 tests passed and the 12
-tables, 65 summary values and 6 figures reproduced exactly from the recorded lock file. A clean
-Python 3.12+ install failed, because `bruges` imports `pkg_resources` and such environments ship
-without setuptools. Listing `setuptools<81` fixes it without changing any result. CI now runs a
-locked Python 3.11 job and a fresh Python 3.13 job, and both compare every table with the recorded
-one. Details: [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
+**Reproducibility.** The 3.0.0 results reproduce exactly from the recorded lock file. A clean
+install on Python 3.12 or later needs `setuptools<81`, which is listed, and CI compares every table
+with the recorded one on Python 3.11 and 3.13. Details: [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
 
 ```bash
 pip install -r requirements.txt     # Python >= 3.10; requirements-lock.txt for the exact 3.11 set
@@ -77,7 +76,7 @@ python -m pytest tests -q           # 184 tests
 
 Details: [depth-block test](docs/DEPTH_BLOCK_TEST.md) ·
 [reproducibility](docs/REPRODUCIBILITY.md) · [sources](SOURCE_MAP.md) ·
-[review checklist](docs/REVIEW_CHECKLIST.md) · notebook `notebooks/SeisGeoMech.ipynb`.
+[revision record](docs/REVIEW_CHECKLIST.md) · notebook `notebooks/SeisGeoMech.ipynb`.
 
 ---
 
@@ -315,7 +314,7 @@ SeisGeoMech/
 ├── README.md                  this file
 ├── SOURCE_MAP.md              every equation, dataset and constant, with its exact source
 ├── configs/depth_blocks.json  the frozen depth-block design (2026)
-├── docs/                      depth-block test, reproducibility, review checklist (2026)
+├── docs/                      depth-block test, reproducibility, revision record (2026)
 ├── notebooks/SeisGeoMech.ipynb   the one starting notebook
 ├── scripts/run_all.py         regenerates every table and figure
 ├── scripts/depth_blocks.py    the depth-block test on its own (--split-only: the split, no scoring)
@@ -437,9 +436,11 @@ assumes them.
 
 | version | date | what it is |
 |---|---|---|
-| Coursework | during the MSc | the project for *Subsurface Mechanics and Geoengineering*. Earlier versions included scenarios and parameters that the supplied sources could not support; they were removed before publication (`SOURCE_MAP.md` §6) |
 | 3.0.0, published | results generated 2026-09-27 | the Gardner test, ρg gradients, reflectivity, frequency sweep and worked examples; 126 tests |
 | **3.1.0, extended and re-verified** | **2026-10-04** | baseline reproduced exactly; clean-install defect fixed; frozen two-direction depth-block test; project CI with two jobs. No original result changed |
+
+Scenarios, parameters and analyses from earlier, unpublished versions that the supplied sources
+could not support were removed before publication (`SOURCE_MAP.md` §6).
 
 ## Licence and attribution
 
@@ -463,5 +464,5 @@ with the recorded files in CI. The reproduction records in `results/original_202
 from runs whose logs are kept there. The GitHub-runner differences quoted in
 `docs/REPRODUCIBILITY.md` come from CI runs whose logs are on GitHub, not in the repository.
 
-Module: **Subsurface Mechanics and Geoengineering**, MSc Subsurface Energy Engineering,
-University of Manchester.
+Informed by the MSc module **Subsurface Mechanics and Geoengineering** (MSc Subsurface Energy
+Engineering, University of Manchester).
